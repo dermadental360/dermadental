@@ -36,6 +36,18 @@ export function Header() {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
+
   // Trigger pulse micro-interaction when cart item count changes
   useEffect(() => {
     if (cart.count > 0) {
@@ -106,33 +118,33 @@ export function Header() {
             </button>
           </div>
         </nav>
-
-        {/* Mobile Navigation Drawer Overlay */}
-        <div className={`mobile-drawer-overlay ${isMobileMenuOpen ? "open" : ""}`} onClick={() => setIsMobileMenuOpen(false)} />
-        <div className={`mobile-drawer ${isMobileMenuOpen ? "open" : ""}`}>
-          <div className="drawer-header">
-            <Link href="/" className="brand" onClick={() => setIsMobileMenuOpen(false)}>
-              Derma<span>Dental360</span>
-            </Link>
-            <button className="close-btn" onClick={() => setIsMobileMenuOpen(false)}>&times;</button>
-          </div>
-          <div className="drawer-links">
-            <Link href="/shop" className={isActive("/shop")}>Shop</Link>
-            <Link href="/category/skin" className={isActive("/category/skin")}>Skin</Link>
-            <Link href="/category/hair" className={isActive("/category/hair")}>Hair</Link>
-            <Link href="/consultation" className={isActive("/consultation")}>Consultation</Link>
-            <Link href="/about" className={isActive("/about")}>About</Link>
-            <Link href="/contact" className={isActive("/contact")}>Contact</Link>
-            <div className="drawer-divider" />
-            <Link href="/search" className={isActive("/search")}>Search</Link>
-            {customer ? (
-              <Link href="/account" className={isActive("/account")}>My Account</Link>
-            ) : (
-              <Link href="/signin" className={isActive("/signin")}>Sign In</Link>
-            )}
-          </div>
-        </div>
       </header>
+
+      {/* Mobile Navigation Drawer Overlay (Now sibling to header) */}
+      <div className={`mobile-drawer-overlay ${isMobileMenuOpen ? "open" : ""}`} onClick={() => setIsMobileMenuOpen(false)} />
+      <div className={`mobile-drawer ${isMobileMenuOpen ? "open" : ""}`}>
+        <div className="drawer-header">
+          <Link href="/" className="brand" onClick={() => setIsMobileMenuOpen(false)}>
+            Derma<span>Dental360</span>
+          </Link>
+          <button className="close-btn" onClick={() => setIsMobileMenuOpen(false)}>&times;</button>
+        </div>
+        <div className="drawer-links">
+          <Link href="/shop" className={isActive("/shop")}>Shop</Link>
+          <Link href="/category/skin" className={isActive("/category/skin")}>Skin</Link>
+          <Link href="/category/hair" className={isActive("/category/hair")}>Hair</Link>
+          <Link href="/consultation" className={isActive("/consultation")}>Consultation</Link>
+          <Link href="/about" className={isActive("/about")}>About</Link>
+          <Link href="/contact" className={isActive("/contact")}>Contact</Link>
+          <div className="drawer-divider" />
+          <Link href="/search" className={isActive("/search")}>Search</Link>
+          {customer ? (
+            <Link href="/account" className={isActive("/account")}>My Account</Link>
+          ) : (
+            <Link href="/signin" className={isActive("/signin")}>Sign In</Link>
+          )}
+        </div>
+      </div>
     </>
   );
 }

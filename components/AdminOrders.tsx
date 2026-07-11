@@ -106,7 +106,7 @@ export function AdminOrders() {
                 </ul>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--line)", paddingTop: 12, marginTop: 4 }}>
+              <div className="admin-order-footer">
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontSize: 14, fontWeight: 600 }}>Update Status:</span>
                   <select

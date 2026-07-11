@@ -159,7 +159,7 @@ export function AdminProducts() {
   }
 
   return (
-    <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", alignItems: "start", gap: 32 }}>
+    <div className="grid admin-products-layout">
       <form className="card pad form" onSubmit={save}>
         <h2 style={{ fontSize: 22, borderBottom: "1px solid var(--line)", paddingBottom: 10, marginBottom: 14 }}>
           {editing ? "✏️ Edit Product Details" : "🧴 Add Catalog Product"}
@@ -289,7 +289,7 @@ export function AdminProducts() {
             const isOutOfStock = product.stock <= 0;
             const isLowStock = product.stock > 0 && product.stock < 10;
             return (
-              <div className="card pad" key={product._id} style={{ display: "grid", gridTemplateColumns: "64px 1fr auto", gap: 16, alignItems: "center" }}>
+              <div className="card pad admin-catalog-item" key={product._id}>
                 <img src={product.images[0]} alt={product.name} style={{ width: 64, height: 64, objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)" }} />
                 <div>
                   <h3 style={{ fontSize: 16, margin: 0 }}>{product.name}</h3>

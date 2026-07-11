@@ -232,7 +232,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Recent Activity Layout Split Grid */}
-      <div className="split" style={{ gridTemplateColumns: "1.2fr 0.8fr", gap: 32, alignItems: "start" }}>
+      <div className="split admin-dashboard-split">
         
         {/* Recent Orders feed */}
         <div className="card pad">

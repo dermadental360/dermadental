@@ -347,12 +347,8 @@ export function AdminReviews() {
           {filteredReviews.map((review) => (
             <div
               key={review.id}
-              className="card pad"
+              className="card pad admin-review-card"
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                gap: 16,
-                alignItems: "start",
                 borderLeft: review.approved ? "4px solid var(--success)" : "4px solid var(--gold)",
               }}
             >
