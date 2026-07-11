@@ -1,0 +1,27 @@
+# Tasks
+
+- [x] Database Schema Update (Site settings key-value store)
+  - [x] Add `Setting` model in `prisma/schema.prisma`
+  - [x] Apply database changes via `npx prisma db push`
+- [x] Settings Library & APIs
+  - [x] Create settings helpers `lib/settings.ts`
+  - [x] Create public settings endpoint `app/api/settings/route.ts`
+  - [x] Create admin settings endpoint `app/api/admin/settings/route.ts`
+- [ ] Make Frontend Pages Dynamic (Skipped as requested: keeping homepage static)
+- [x] Admin Settings Panel
+  - [x] Create `components/AdminSettings.tsx` form widget
+  - [x] Add `app/admin/settings/page.tsx` page
+  - [x] Add Link to layout sidebar `app/admin/layout.tsx`
+- [x] Verification
+  - [x] Verify everything compiles and works correctly
+- [x] Create Database Schemas and Auth Utilities (`Customer.ts`, `Inquiry.ts`, `auth.ts` additions)
+- [x] Implement Backend Authentication and Inquiry APIs
+- [x] Overhaul CSS Styles & Implement Animations (`globals.css`, `ScrollReveal.tsx`)
+- [x] Improve Public Branding & Header/Footer (`layout.tsx`, `Header.tsx`, `Footer.tsx`)
+- [x] Upgrade Homepage, Shop Lists, and Category/Concern Routes (`app/page.tsx`, `app/shop/page.tsx`, category/concern routes)
+- [x] Upgrade Product Details & Actions (`ProductCard.tsx`, `ProductActions.tsx`, product detail page)
+- [x] Build Customer Sign In, Sign Up, and Account Dashboard pages
+- [x] Refine Cart & Checkout Flow (`CartProvider.tsx` toasts, `cart/page.tsx`, `checkout/page.tsx`, confirmation page)
+- [x] Upgrade Admin Panel (Sidebar Layout, Dashboard, Inquiries Portal, Products upload preview details, Orders view)
+- [x] Verify Builds (`npm run typecheck` and `npm run build`)
+- [x] Create Walkthrough and Summary
