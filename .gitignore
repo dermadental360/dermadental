@@ -5,3 +5,4 @@
 tsconfig.tsbuildinfo
 public/uploads/products/*
 !public/uploads/products/.gitkeep
+.vercel
