@@ -11,7 +11,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   return (
     <main className="section page-enter">
       <div className="container split">
-        <aside className="card pad reveal" style={{ position: "sticky", top: 120 }}>
+        <aside className="card pad reveal shop-sidebar">
           <h2 className="filters-title">Filter Catalog</h2>
           <form className="form" method="GET" action="/shop">
             <div className="filters-group">

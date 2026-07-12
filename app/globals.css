@@ -696,6 +696,11 @@ p {
   align-items: start;
 }
 
+.shop-sidebar {
+  position: sticky;
+  top: 120px;
+}
+
 /* Filters Sidebar */
 .filters-title {
   font-family: 'Playfair Display', serif;
@@ -1044,6 +1049,12 @@ p {
     gap: 40px;
   }
 
+  .shop-sidebar {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
   .grid.cols-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1234,7 +1245,7 @@ p {
     gap: 32px;
   }
 
-  .split aside {
+  .shop-sidebar {
     position: static !important;
     width: 100% !important;
     height: auto !important;
