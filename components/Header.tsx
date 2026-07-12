@@ -69,8 +69,12 @@ export function Header() {
 
       <header className="header">
         <nav className="container nav">
-          <Link href="/" className="brand">
-            Derma<span>Dental360</span>
+          <Link href="/" className="brand-logo">
+            <img 
+              src="/logo.png" 
+              alt="Dr. Sadaf's DermaDental 360" 
+              className="logo-img"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -126,8 +130,12 @@ export function Header() {
       <div className={`mobile-drawer-overlay ${isMobileMenuOpen ? "open" : ""}`} onClick={() => setIsMobileMenuOpen(false)} />
       <div className={`mobile-drawer ${isMobileMenuOpen ? "open" : ""}`}>
         <div className="drawer-header">
-          <Link href="/" className="brand" onClick={() => setIsMobileMenuOpen(false)}>
-            Derma<span>Dental360</span>
+          <Link href="/" className="brand-logo" onClick={() => setIsMobileMenuOpen(false)}>
+            <img 
+              src="/logo.png" 
+              alt="Dr. Sadaf's DermaDental 360" 
+              className="logo-img"
+            />
           </Link>
           <button className="close-btn" onClick={() => setIsMobileMenuOpen(false)}>&times;</button>
         </div>

@@ -185,18 +185,31 @@ button, input, select, textarea {
   gap: 24px;
 }
 
-.brand {
-  font-family: 'Playfair Display', serif;
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--ink);
-  letter-spacing: -0.5px;
+.brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
 }
 
-.brand span {
-  color: var(--sage);
-  font-weight: 400;
-  font-style: italic;
+.logo-img {
+  width: 280px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .logo-img {
+    width: 210px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-img {
+    width: 180px;
+  }
 }
 
 .navlinks {
