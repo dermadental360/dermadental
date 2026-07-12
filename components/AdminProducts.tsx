@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { categories, concerns, subcategoriesMap } from "@/lib/constants";
 import type { Product } from "@/lib/demo";
+import { compressImage } from "@/lib/imageCompressor";
 
 const empty = {
   name: "",
@@ -52,8 +53,9 @@ export function AdminProducts() {
       const urls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        const compressedFile = await compressImage(file, 1000, 1000, 0.75);
         const data = new FormData();
-        data.append("file", file);
+        data.append("file", compressedFile);
         const response = await fetch("/api/upload", { method: "POST", body: data });
         if (!response.ok) {
           let errorMsg = "Failed to upload image file";

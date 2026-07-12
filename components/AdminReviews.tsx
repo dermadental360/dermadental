@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { compressImage } from "@/lib/imageCompressor";
 
 interface AdminReview {
   id: string;
@@ -131,8 +132,9 @@ export function AdminReviews() {
 
     try {
       setUploading(true);
+      const compressedFile = await compressImage(file, 400, 400, 0.75); // Avatars can be smaller, e.g. 400x400
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressedFile);
 
       const res = await fetch("/api/upload", {
         method: "POST",
