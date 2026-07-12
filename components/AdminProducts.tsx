@@ -54,11 +54,21 @@ export function AdminProducts() {
         const data = new FormData();
         data.append("file", file);
         const response = await fetch("/api/upload", { method: "POST", body: data });
+        if (!response.ok) {
+          let errorMsg = "Failed to upload image file";
+          try {
+            const result = await response.json();
+            errorMsg = result.error || errorMsg;
+          } catch {
+            // Not JSON
+          }
+          throw new Error(errorMsg);
+        }
         const result = await response.json();
-        if (response.ok && result.url) {
+        if (result.url) {
           urls.push(result.url);
         } else {
-          throw new Error(result.error || "Failed to upload image file");
+          throw new Error("Failed to upload image file");
         }
       }
       if (urls.length > 0) {

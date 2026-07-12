@@ -81,9 +81,18 @@ export function AdminSettings() {
         body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to upload image");
+      if (!res.ok) {
+        let errorMsg = "Failed to upload image";
+        try {
+          const data = await res.json();
+          errorMsg = data.error || errorMsg;
+        } catch {
+          // Fallback if response is not JSON
+        }
+        throw new Error(errorMsg);
+      }
 
+      const data = await res.json();
       setter(data.url);
     } catch (err: any) {
       setError(`Image upload failed for ${field}: ` + err.message);
