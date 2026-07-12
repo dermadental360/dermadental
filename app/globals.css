@@ -1229,6 +1229,17 @@ p {
 }
 
 @media (max-width: 768px) {
+  .split {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .split aside {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
   .desktop-only {
     display: none !important;
   }
