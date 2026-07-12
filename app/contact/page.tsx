@@ -50,7 +50,7 @@ export default function ContactPage() {
 
   return (
     <main className="section page-enter">
-      <div className="container split" style={{ gridTemplateColumns: "1fr 1.2fr", gap: 56 }}>
+      <div className="container split contact-split">
         <section className="reveal" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div>
             <p className="eyebrow">Contact Details</p>

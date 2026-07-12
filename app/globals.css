@@ -701,6 +701,19 @@ p {
   top: 120px;
 }
 
+.checkout-split {
+  grid-template-columns: 1fr 380px;
+}
+
+.cart-split {
+  grid-template-columns: 1fr 360px;
+}
+
+.contact-split {
+  grid-template-columns: 1fr 1.2fr;
+  gap: 56px;
+}
+
 /* Filters Sidebar */
 .filters-title {
   font-family: 'Playfair Display', serif;
@@ -1044,7 +1057,7 @@ p {
 
 /* Responsive Overrides */
 @media (max-width: 992px) {
-  .hero-grid, .split, .admin-dashboard-split {
+  .hero-grid, .split, .admin-dashboard-split, .checkout-split, .cart-split, .contact-split {
     grid-template-columns: 1fr;
     gap: 40px;
   }
@@ -1240,7 +1253,7 @@ p {
 }
 
 @media (max-width: 768px) {
-  .split {
+  .split, .checkout-split, .cart-split, .contact-split {
     grid-template-columns: 1fr;
     gap: 32px;
   }

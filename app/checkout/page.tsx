@@ -46,7 +46,7 @@ export default function CheckoutPage() {
 
   return (
     <main className="section page-enter">
-      <div className="container split" style={{ gridTemplateColumns: "1fr 380px" }}>
+      <div className="container split checkout-split">
         <form className="card pad form reveal" onSubmit={submit}>
           <p className="eyebrow">Secure Order</p>
           <h1 style={{ marginBottom: 18 }}>Checkout Information</h1>
@@ -80,7 +80,7 @@ export default function CheckoutPage() {
             {loading ? "Processing Order..." : "Place Order on WhatsApp"}
           </button>
         </form>
-        <aside className="card pad reveal reveal-delay-1" style={{ position: "sticky", top: 120 }}>
+        <aside className="card pad reveal reveal-delay-1 shop-sidebar">
           <h3 style={{ fontSize: 20, borderBottom: "1px solid var(--line)", paddingBottom: 12, marginBottom: 16 }}>
             Order Summary
           </h3>

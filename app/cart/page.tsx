@@ -26,7 +26,7 @@ export default function CartPage() {
       <div className="container reveal">
         <p className="eyebrow">Shopping Cart</p>
         <h1 style={{ marginBottom: 32 }}>Review your routine selection</h1>
-        <div className="split" style={{ gridTemplateColumns: "1fr 360px" }}>
+        <div className="split cart-split">
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {cart.items.map((item) => (
               <div
@@ -50,45 +50,45 @@ export default function CartPage() {
                     border: "1px solid var(--line)",
                   }}
                 />
-                <div>
-                  <h3 style={{ fontSize: 18, margin: 0 }}>{item.name}</h3>
-                  <p style={{ color: "var(--sage-dark)", fontWeight: 700, marginTop: 6, fontSize: 15 }}>
-                    ₹{item.price} each
-                  </p>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
-                  <div className="quantity-selector">
+                  <div>
+                    <h3 style={{ fontSize: 18, margin: 0 }}>{item.name}</h3>
+                    <p style={{ color: "var(--sage-dark)", fontWeight: 700, marginTop: 6, fontSize: 15 }}>
+                      ₹{item.price} each
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+                    <div className="quantity-selector">
+                      <button
+                        className="quantity-btn"
+                        onClick={() => cart.update(item.productId, item.quantity - 1)}
+                      >
+                        &minus;
+                      </button>
+                      <input
+                        className="quantity-input"
+                        type="text"
+                        readOnly
+                        value={item.quantity}
+                      />
+                      <button
+                        className="quantity-btn"
+                        onClick={() => cart.update(item.productId, item.quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
                     <button
-                      className="quantity-btn"
-                      onClick={() => cart.update(item.productId, item.quantity - 1)}
+                      className="btn secondary"
+                      onClick={() => cart.remove(item.productId)}
+                      style={{ padding: "8px 14px", fontSize: 13, borderColor: "var(--error)", color: "var(--error)" }}
                     >
-                      &minus;
-                    </button>
-                    <input
-                      className="quantity-input"
-                      type="text"
-                      readOnly
-                      value={item.quantity}
-                    />
-                    <button
-                      className="quantity-btn"
-                      onClick={() => cart.update(item.productId, item.quantity + 1)}
-                    >
-                      +
+                      Remove
                     </button>
                   </div>
-                  <button
-                    className="btn secondary"
-                    onClick={() => cart.remove(item.productId)}
-                    style={{ padding: "8px 14px", fontSize: 13, borderColor: "var(--error)", color: "var(--error)" }}
-                  >
-                    Remove
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-          <aside className="card pad" style={{ position: "sticky", top: 120 }}>
+              ))}
+            </div>
+            <aside className="card pad shop-sidebar">
             <h3 style={{ fontSize: 20, borderBottom: "1px solid var(--line)", paddingBottom: 12, marginBottom: 16 }}>
               Summary
             </h3>
