@@ -44,7 +44,7 @@ export default async function HomePage() {
             <Link className="btn secondary" href="/shop">View all</Link>
           </div>
           <div className="grid cols-4">
-            {categories.slice(0, 8).map((category, index) => (
+            {categories.map((category, index) => (
               <Link
                 className={`card category-tile reveal reveal-delay-${(index % 4) + 1}`}
                 href={`/category/${slugify(category)}`}

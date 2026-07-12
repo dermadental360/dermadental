@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { categories, concerns } from "@/lib/constants";
+import { categories, concerns, subcategoriesMap } from "@/lib/constants";
 import type { Product } from "@/lib/demo";
 
 const empty = {
   name: "",
   brand: "",
   category: "Skin",
+  subcategory: "Facewash / Cleansers",
   concerns: [] as string[],
   price: 0,
   discountedPrice: 0,
@@ -200,16 +201,39 @@ export function AdminProducts() {
         <div className="grid cols-2" style={{ gap: 14 }}>
           <div className="field">
             <label>Primary Category</label>
-            <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} disabled={saving}>
+            <select 
+              className="input" 
+              value={form.category} 
+              onChange={(e) => {
+                const cat = e.target.value;
+                const subs = subcategoriesMap[cat] || [];
+                setForm({ ...form, category: cat, subcategory: subs[0] || "" });
+              }} 
+              disabled={saving}
+            >
               {categories.map((item) => <option key={item}>{item}</option>)}
             </select>
           </div>
           <div className="field">
-            <label>Concerns (Hold Ctrl to Multi-select)</label>
-            <select className="input" multiple style={{ height: 110 }} value={form.concerns} onChange={(e) => setForm({ ...form, concerns: Array.from(e.target.selectedOptions).map((option) => option.value) })} disabled={saving}>
-              {concerns.map((item) => <option key={item}>{item}</option>)}
+            <label>Subcategory</label>
+            <select 
+              className="input" 
+              value={form.subcategory || ""} 
+              onChange={(e) => setForm({ ...form, subcategory: e.target.value })} 
+              disabled={saving}
+            >
+              {(subcategoriesMap[form.category] || []).map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
             </select>
           </div>
+        </div>
+
+        <div className="field">
+          <label>Concerns (Hold Ctrl to Multi-select)</label>
+          <select className="input" multiple style={{ height: 110 }} value={form.concerns} onChange={(e) => setForm({ ...form, concerns: Array.from(e.target.selectedOptions).map((option) => option.value) })} disabled={saving}>
+            {concerns.map((item) => <option key={item}>{item}</option>)}
+          </select>
         </div>
 
         <div className="grid cols-3" style={{ gap: 14 }}>
@@ -304,7 +328,7 @@ export function AdminProducts() {
                 <div>
                   <h3 style={{ fontSize: 16, margin: 0 }}>{product.name}</h3>
                   <p style={{ fontSize: 13, color: "var(--muted)", margin: "4px 0 0 0" }}>
-                    {product.brand} · ₹{product.discountedPrice}{" "}
+                    {product.brand} · {product.category} ({product.subcategory}) · ₹{product.discountedPrice}{" "}
                     {isOutOfStock ? (
                       <span className="status-pill cancelled" style={{ fontSize: 10, padding: "1px 6px", marginLeft: 6 }}>Out of Stock</span>
                     ) : isLowStock ? (

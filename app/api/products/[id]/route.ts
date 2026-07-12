@@ -28,6 +28,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         name: updateData.name,
         brand: updateData.brand,
         category: updateData.category,
+        subcategory: updateData.subcategory,
         concerns: Array.isArray(updateData.concerns) ? updateData.concerns : undefined,
         price: updateData.price !== undefined ? Number(updateData.price) : undefined,
         discountedPrice: updateData.discountedPrice !== undefined ? Number(updateData.discountedPrice) : undefined,

@@ -12,6 +12,7 @@ model Product {
   name            String
   brand           String
   category        String
+  subcategory     String   @default("")
   concerns        Json
   price           Float
   discountedPrice Float

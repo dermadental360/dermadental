@@ -78,6 +78,8 @@ export function Header() {
             <Link href="/shop" className={isActive("/shop")}>Shop</Link>
             <Link href="/category/skin" className={isActive("/category/skin")}>Skin</Link>
             <Link href="/category/hair" className={isActive("/category/hair")}>Hair</Link>
+            <Link href="/category/supplements" className={isActive("/category/supplements")}>Supplements</Link>
+            <Link href="/category/luxe" className={isActive("/category/luxe")}>Luxe</Link>
             <Link href="/consultation" className={isActive("/consultation")}>Consultation</Link>
             <Link href="/about" className={isActive("/about")}>About</Link>
             <Link href="/contact" className={isActive("/contact")}>Contact</Link>
@@ -133,6 +135,8 @@ export function Header() {
           <Link href="/shop" className={isActive("/shop")}>Shop</Link>
           <Link href="/category/skin" className={isActive("/category/skin")}>Skin</Link>
           <Link href="/category/hair" className={isActive("/category/hair")}>Hair</Link>
+          <Link href="/category/supplements" className={isActive("/category/supplements")}>Supplements</Link>
+          <Link href="/category/luxe" className={isActive("/category/luxe")}>Luxe</Link>
           <Link href="/consultation" className={isActive("/consultation")}>Consultation</Link>
           <Link href="/about" className={isActive("/about")}>About</Link>
           <Link href="/contact" className={isActive("/contact")}>Contact</Link>

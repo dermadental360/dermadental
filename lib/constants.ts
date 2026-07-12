@@ -8,7 +8,40 @@ export const clinic = {
   email: "dermadental360@gmail.com"
 };
 
-export const categories = ["Skin", "Hair", "Supplements", "Pediatric", "Luxe", "Facewash", "Serum", "Moisturiser", "Sunscreen"];
+export const categories = ["Skin", "Hair", "Supplements", "Luxe"];
+
+export const subcategoriesMap: Record<string, string[]> = {
+  "Skin": [
+    "Facewash / Cleansers",
+    "Serums",
+    "Moisturisers",
+    "Sunscreen",
+    "Acne Care",
+    "Pigmentation Care",
+    "Anti-Aging",
+    "Other"
+  ],
+  "Hair": [
+    "Shampoo",
+    "Conditioner",
+    "Hair Treatment",
+    "Scalp Care",
+    "Other"
+  ],
+  "Supplements": [
+    "Vitamins",
+    "Collagen",
+    "Daily Nutrients",
+    "Other"
+  ],
+  "Luxe": [
+    "Premium Anti-Aging",
+    "Luxury Serums",
+    "Exclusive Oils",
+    "Other"
+  ]
+};
+
 export const concerns = ["Acne & Acne Scars", "Ageing", "Sensitive Skin", "Pigmentation", "Under Eye Concerns", "Hair Fall", "Dandruff", "Frizzy Hair", "Itchy Scalp"];
 
 export function slugify(value: string) {

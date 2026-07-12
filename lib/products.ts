@@ -25,6 +25,7 @@ function normalize(product: any): Product {
     name: product.name,
     brand: product.brand,
     category: product.category,
+    subcategory: product.subcategory || "",
     concerns: concerns,
     price: Number(product.price),
     discountedPrice: Number(product.discountedPrice),
@@ -43,6 +44,9 @@ export async function getProducts(filters: Record<string, string | undefined> = 
     const where: any = { published: true };
     if (filters.category) {
       where.category = { equals: filters.category };
+    }
+    if (filters.subcategory) {
+      where.subcategory = { equals: filters.subcategory };
     }
     if (filters.q) {
       where.OR = [
@@ -82,9 +86,10 @@ export async function getProduct(id: string) {
 function filterDemo(filters: Record<string, string | undefined>) {
   return demoProducts.filter((product) => {
     const categoryOk = !filters.category || product.category.toLowerCase() === filters.category.toLowerCase();
+    const subcategoryOk = !filters.subcategory || product.subcategory.toLowerCase() === filters.subcategory.toLowerCase();
     const concernOk = !filters.concern || product.concerns.some((concern) => concern.toLowerCase().includes(filters.concern!.toLowerCase()));
-    const qOk = !filters.q || [product.name, product.brand, product.category].some((value) => value.toLowerCase().includes(filters.q!.toLowerCase()));
+    const qOk = !filters.q || [product.name, product.brand, product.category, product.subcategory].some((value) => value && value.toLowerCase().includes(filters.q!.toLowerCase()));
     const publishedOk = product.published !== false;
-    return categoryOk && concernOk && qOk && publishedOk;
+    return categoryOk && subcategoryOk && concernOk && qOk && publishedOk;
   });
 }
