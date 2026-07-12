@@ -4,6 +4,8 @@ import { getProducts } from "@/lib/products";
 import { ShopGrid } from "@/components/ShopGrid";
 import { getAllSettings } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const featured = (await getProducts()).filter((product) => product.featured).slice(0, 4);
   const settings = await getAllSettings();

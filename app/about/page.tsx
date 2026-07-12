@@ -1,6 +1,8 @@
 import { clinic } from "@/lib/constants";
 import { getAllSettings } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
+
 export default async function AboutPage() {
   const settings = await getAllSettings();
   return (

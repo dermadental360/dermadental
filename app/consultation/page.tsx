@@ -1,6 +1,8 @@
 import { clinic } from "@/lib/constants";
 import { getAllSettings } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
+
 export default async function ConsultationPage() {
   const settings = await getAllSettings();
   const text = encodeURIComponent(`Hello ${clinic.name}, I want to book a consultation with ${clinic.doctor}.`);

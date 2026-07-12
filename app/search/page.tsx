@@ -1,6 +1,8 @@
 import { ShopGrid } from "@/components/ShopGrid";
 import { getProducts } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const params = await searchParams;
   const products = await getProducts({ q: params.q });

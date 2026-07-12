@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrderConfirmation({ searchParams }: { searchParams: Promise<{ order?: string; whatsapp?: string }> }) {
   const params = await searchParams;
   const whatsapp = params.whatsapp ? decodeURIComponent(params.whatsapp) : "";

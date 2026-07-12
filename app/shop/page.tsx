@@ -3,6 +3,8 @@ import { categories, concerns } from "@/lib/constants";
 import { getProducts } from "@/lib/products";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function ShopPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
   const products = await getProducts(params);

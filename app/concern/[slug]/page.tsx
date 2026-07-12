@@ -2,6 +2,8 @@ import { ShopGrid } from "@/components/ShopGrid";
 import { concerns, slugify } from "@/lib/constants";
 import { getProducts } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 export default async function ConcernPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const concern = concerns.find((item) => slugify(item) === slug) || "Acne & Acne Scars";

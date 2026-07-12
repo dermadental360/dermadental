@@ -4,6 +4,8 @@ import { getProduct } from "@/lib/products";
 import { ProductReviews } from "@/components/ProductReviews";
 import { ProductImages } from "@/components/ProductImages";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await getProduct(id);
