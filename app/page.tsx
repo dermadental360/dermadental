@@ -13,6 +13,10 @@ export default async function HomePage() {
   return (
     <main>
       <section className="hero">
+        <div className="hero-artwork-wrapper">
+          <div className="hero-artwork-gradient"></div>
+          <img src={settings.hero_image} alt="DermaDental 360 Artwork" className="hero-artwork-image" />
+        </div>
         <div className="container hero-grid">
           <div className="reveal">
             <p className="eyebrow">{settings.hero_eyebrow}</p>
@@ -24,9 +28,6 @@ export default async function HomePage() {
               <Link className="btn" href="/shop">Shop Products</Link>
               <Link className="btn secondary" href="/consultation">Book Consultation</Link>
             </div>
-          </div>
-          <div className="hero-card premium-hero-card reveal reveal-delay-1">
-            <img src={settings.hero_image} alt="DermaDental360 premium skincare display" />
           </div>
         </div>
       </section>
