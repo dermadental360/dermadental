@@ -141,7 +141,15 @@ export function AdminReviews() {
         body: formData,
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Upload failed with status ${res.status}`);
+      }
+
       if (!res.ok) throw new Error(data.error || "Failed to upload avatar");
 
       setFormUserAvatar(data.url);
@@ -181,7 +189,15 @@ export function AdminReviews() {
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Save failed with status ${res.status}`);
+      }
+
       if (!res.ok) throw new Error(data.error || "Failed to save review");
 
       setIsModalOpen(false);
@@ -199,8 +215,16 @@ export function AdminReviews() {
         body: JSON.stringify({ id, approved: !currentlyApproved }),
       });
 
+      let data: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Update failed with status ${res.status}`);
+      }
+
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Failed to update review status");
       }
 
@@ -220,8 +244,16 @@ export function AdminReviews() {
         method: "DELETE",
       });
 
+      let data: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Delete failed with status ${res.status}`);
+      }
+
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Failed to delete review");
       }
 

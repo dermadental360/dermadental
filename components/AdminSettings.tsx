@@ -9,6 +9,7 @@ export function AdminSettings() {
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [initialSettings, setInitialSettings] = useState<Record<string, string>>({});
 
   // Homepage Hero Form fields
   const [topBarText, setTopBarText] = useState("");
@@ -45,21 +46,39 @@ export function AdminSettings() {
       if (!res.ok) throw new Error("Failed to load settings");
       const data = await res.json();
       
-      setTopBarText(data.top_bar_text || "");
-      setHeroEyebrow(data.hero_eyebrow || "");
-      setHeroTitle(data.hero_title || "");
-      setHeroSubtitle(data.hero_subtitle || "");
-      setHeroImage(data.hero_image || "");
+      const normalizedData = {
+        top_bar_text: data.top_bar_text || "",
+        hero_eyebrow: data.hero_eyebrow || "",
+        hero_title: data.hero_title || "",
+        hero_subtitle: data.hero_subtitle || "",
+        hero_image: data.hero_image || "",
+        about_eyebrow: data.about_eyebrow || "",
+        about_title: data.about_title || "",
+        about_subtitle: data.about_subtitle || "",
+        about_image: data.about_image || "",
+        consultation_eyebrow: data.consultation_eyebrow || "",
+        consultation_title: data.consultation_title || "",
+        consultation_subtitle: data.consultation_subtitle || "",
+        consultation_image: data.consultation_image || "",
+      };
 
-      setAboutEyebrow(data.about_eyebrow || "");
-      setAboutTitle(data.about_title || "");
-      setAboutSubtitle(data.about_subtitle || "");
-      setAboutImage(data.about_image || "");
+      setInitialSettings(normalizedData);
+      
+      setTopBarText(normalizedData.top_bar_text);
+      setHeroEyebrow(normalizedData.hero_eyebrow);
+      setHeroTitle(normalizedData.hero_title);
+      setHeroSubtitle(normalizedData.hero_subtitle);
+      setHeroImage(normalizedData.hero_image);
 
-      setConsultationEyebrow(data.consultation_eyebrow || "");
-      setConsultationTitle(data.consultation_title || "");
-      setConsultationSubtitle(data.consultation_subtitle || "");
-      setConsultationImage(data.consultation_image || "");
+      setAboutEyebrow(normalizedData.about_eyebrow);
+      setAboutTitle(normalizedData.about_title);
+      setAboutSubtitle(normalizedData.about_subtitle);
+      setAboutImage(normalizedData.about_image);
+
+      setConsultationEyebrow(normalizedData.consultation_eyebrow);
+      setConsultationTitle(normalizedData.consultation_title);
+      setConsultationSubtitle(normalizedData.consultation_subtitle);
+      setConsultationImage(normalizedData.consultation_image);
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -84,18 +103,19 @@ export function AdminSettings() {
         body: formData,
       });
 
-      if (!res.ok) {
-        let errorMsg = "Failed to upload image";
-        try {
-          const data = await res.json();
-          errorMsg = data.error || errorMsg;
-        } catch {
-          // Fallback if response is not JSON
-        }
-        throw new Error(errorMsg);
+      let data: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Upload failed with status ${res.status}`);
       }
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload image");
+      }
+
       setter(data.url);
     } catch (err: any) {
       setError(`Image upload failed for ${field}: ` + err.message);
@@ -111,29 +131,56 @@ export function AdminSettings() {
       setError("");
       setSuccess(false);
 
+      const currentSettings = {
+        top_bar_text: topBarText,
+        hero_eyebrow: heroEyebrow,
+        hero_title: heroTitle,
+        hero_subtitle: heroSubtitle,
+        hero_image: heroImage,
+        about_eyebrow: aboutEyebrow,
+        about_title: aboutTitle,
+        about_subtitle: aboutSubtitle,
+        about_image: aboutImage,
+        consultation_eyebrow: consultationEyebrow,
+        consultation_title: consultationTitle,
+        consultation_subtitle: consultationSubtitle,
+        consultation_image: consultationImage,
+      };
+
+      // Dirty checking: Determine changed settings
+      const updatedFields: Record<string, string> = {};
+      let hasChanges = false;
+      for (const key of Object.keys(currentSettings) as Array<keyof typeof currentSettings>) {
+        if (currentSettings[key] !== initialSettings[key]) {
+          updatedFields[key] = currentSettings[key];
+          hasChanges = true;
+        }
+      }
+
+      if (!hasChanges) {
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+        return;
+      }
+
       const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          top_bar_text: topBarText,
-          hero_eyebrow: heroEyebrow,
-          hero_title: heroTitle,
-          hero_subtitle: heroSubtitle,
-          hero_image: heroImage,
-          about_eyebrow: aboutEyebrow,
-          about_title: aboutTitle,
-          about_subtitle: aboutSubtitle,
-          about_image: aboutImage,
-          consultation_eyebrow: consultationEyebrow,
-          consultation_title: consultationTitle,
-          consultation_subtitle: consultationSubtitle,
-          consultation_image: consultationImage,
-        }),
+        body: JSON.stringify(updatedFields),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Save failed with status ${res.status}`);
+      }
+
       if (!res.ok) throw new Error(data.error || "Failed to save settings");
 
+      setInitialSettings(currentSettings);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {

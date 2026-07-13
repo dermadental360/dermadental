@@ -57,17 +57,20 @@ export function AdminProducts() {
         const data = new FormData();
         data.append("file", compressedFile);
         const response = await fetch("/api/upload", { method: "POST", body: data });
-        if (!response.ok) {
-          let errorMsg = "Failed to upload image file";
-          try {
-            const result = await response.json();
-            errorMsg = result.error || errorMsg;
-          } catch {
-            // Not JSON
-          }
-          throw new Error(errorMsg);
+        
+        let result: any = {};
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          result = await response.json();
+        } else {
+          const text = await response.text();
+          throw new Error(text || `Upload failed with status ${response.status}`);
         }
-        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to upload image file");
+        }
+
         if (result.url) {
           urls.push(result.url);
         } else {
@@ -134,7 +137,15 @@ export function AdminProducts() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sanitizedForm)
       });
-      const data = await response.json();
+      
+      let data: any = {};
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(text || `Save failed with status ${response.status}`);
+      }
       
       if (!response.ok) {
         throw new Error(data.error || "Failed to save product details");
@@ -158,7 +169,14 @@ export function AdminProducts() {
       setSuccess("");
       try {
         const response = await fetch(`/api/products/${id}`, { method: "DELETE" });
-        const data = await response.json();
+        let data: any = {};
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          throw new Error(text || `Delete failed with status ${response.status}`);
+        }
         if (!response.ok) {
           throw new Error(data.error || "Failed to delete product");
         }

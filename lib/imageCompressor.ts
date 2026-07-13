@@ -38,16 +38,29 @@ export function compressImage(file: File, maxWidth = 1000, maxHeight = 1000, qua
           return resolve(file);
         }
 
+        // Fill canvas with white background in case source image has transparency (converting to JPEG)
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, width, height);
+
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Export as compressed blob
-        const outputType = file.type === "image/png" ? "image/png" : "image/jpeg";
+        // Export as compressed blob (always convert to JPEG to prevent large base64 data payloads)
+        const outputType = "image/jpeg";
         canvas.toBlob(
           (blob) => {
             if (!blob) {
               return resolve(file);
             }
-            const compressedFile = new File([blob], file.name, {
+            // Change file extension to .jpg
+            let newName = file.name;
+            const lastDot = newName.lastIndexOf(".");
+            if (lastDot !== -1) {
+              newName = newName.substring(0, lastDot) + ".jpg";
+            } else {
+              newName = newName + ".jpg";
+            }
+
+            const compressedFile = new File([blob], newName, {
               type: outputType,
               lastModified: Date.now(),
             });
