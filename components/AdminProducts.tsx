@@ -10,6 +10,7 @@ const empty = {
   brand: "",
   category: "Skin",
   subcategory: "Facewash / Cleansers",
+  customSubcategory: "",
   concerns: [] as string[],
   price: 0,
   discountedPrice: 0,
@@ -30,6 +31,18 @@ export function AdminProducts() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  function startEdit(product: Product) {
+    const categorySubs = subcategoriesMap[product.category] || [];
+    const isPredefined = categorySubs.includes(product.subcategory) && product.subcategory !== "Other";
+    
+    setEditing(product._id);
+    setForm({
+      ...product,
+      subcategory: isPredefined ? product.subcategory : "Other",
+      customSubcategory: isPredefined ? "" : (product.subcategory === "Other" ? "" : product.subcategory)
+    });
+  }
 
   async function load() {
     try {
@@ -119,10 +132,17 @@ export function AdminProducts() {
       const url = editing ? `/api/products/${editing}` : "/api/products";
       const method = editing ? "PUT" : "POST";
 
+      const finalSubcategory =
+        form.subcategory === "Other"
+          ? (form.customSubcategory || "").trim() || "Other"
+          : form.subcategory;
+
+      const { customSubcategory, ...restForm } = form;
       const sanitizedForm = {
-        ...form,
+        ...restForm,
         name: form.name.trim(),
         brand: form.brand.trim(),
+        subcategory: finalSubcategory,
         price: Number(form.price),
         discountedPrice: Number(form.discountedPrice),
         stock: Number(form.stock),
@@ -227,7 +247,12 @@ export function AdminProducts() {
               onChange={(e) => {
                 const cat = e.target.value;
                 const subs = subcategoriesMap[cat] || [];
-                setForm({ ...form, category: cat, subcategory: subs[0] || "" });
+                setForm({ 
+                  ...form, 
+                  category: cat, 
+                  subcategory: subs[0] || "",
+                  customSubcategory: ""
+                });
               }} 
               disabled={saving}
             >
@@ -239,7 +264,14 @@ export function AdminProducts() {
             <select 
               className="input" 
               value={form.subcategory || ""} 
-              onChange={(e) => setForm({ ...form, subcategory: e.target.value })} 
+              onChange={(e) => {
+                const sub = e.target.value;
+                setForm({ 
+                  ...form, 
+                  subcategory: sub,
+                  customSubcategory: sub === "Other" ? (form.customSubcategory || "") : ""
+                });
+              }} 
               disabled={saving}
             >
               {(subcategoriesMap[form.category] || []).map((item) => (
@@ -248,6 +280,19 @@ export function AdminProducts() {
             </select>
           </div>
         </div>
+
+        {form.subcategory === "Other" && (
+          <div className="field">
+            <label>Custom Subcategory (Optional)</label>
+            <input 
+              className="input" 
+              placeholder="Enter custom subcategory..." 
+              value={form.customSubcategory || ""} 
+              onChange={(e) => setForm({ ...form, customSubcategory: e.target.value })} 
+              disabled={saving}
+            />
+          </div>
+        )}
 
         <div className="field">
           <label>Concerns (Hold Ctrl to Multi-select)</label>
@@ -359,7 +404,7 @@ export function AdminProducts() {
                   </p>
                 </div>
                 <div className="actions" style={{ gap: 8 }}>
-                  <button className="btn secondary" style={{ padding: "8px 12px", fontSize: 12 }} onClick={() => { setEditing(product._id); setForm(product); }}>
+                  <button className="btn secondary" style={{ padding: "8px 12px", fontSize: 12 }} onClick={() => startEdit(product)}>
                     Edit
                   </button>
                   <button className="btn soft" style={{ padding: "8px 12px", fontSize: 12, color: "var(--error)" }} onClick={() => remove(product._id)}>
