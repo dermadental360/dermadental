@@ -83,8 +83,15 @@ export function RevenueChart() {
   }, []);
 
   // ─── SVG chart geometry ───────────────────────────────────────────────
-  const PAD = { top: 20, right: 24, bottom: 44, left: 64 };
-  const svgHeight = 220;
+  // On small screens narrow the left pad so the chart isn't squeezed
+  const isMobile = svgWidth < 480;
+  const PAD = {
+    top: 20,
+    right: isMobile ? 8 : 24,
+    bottom: 44,
+    left: isMobile ? 46 : 64,
+  };
+  const svgHeight = isMobile ? 180 : 220;
   const chartW = Math.max(svgWidth - PAD.left - PAD.right, 1);
   const chartH = svgHeight - PAD.top - PAD.bottom;
 
@@ -135,12 +142,15 @@ export function RevenueChart() {
   }
 
   // How many labels to show so they don't overlap
+  // On mobile be much more aggressive about thinning
   function shouldShowLabel(i: number): boolean {
     const total = labels.length;
-    if (total <= 7) return true;
-    if (total <= 14) return i % 2 === 0;
-    if (total <= 30) return i % Math.ceil(total / 7) === 0 || i === total - 1;
-    return i === 0 || i === total - 1 || i % Math.ceil(total / 5) === 0;
+    // Estimate how many pixels per label
+    const pxPerLabel = chartW / Math.max(total - 1, 1);
+    // If labels are too close, thin them out
+    const minPx = isMobile ? 36 : 48;
+    const step = Math.max(1, Math.ceil(minPx / pxPerLabel));
+    return i % step === 0 || i === total - 1;
   }
 
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
@@ -241,11 +251,13 @@ export function RevenueChart() {
         <div
           style={{
             display: "flex",
-            gap: 6,
+            gap: 4,
             background: "var(--bg-secondary)",
             padding: 4,
             borderRadius: "var(--radius-sm)",
             border: "1px solid var(--line)",
+            flexShrink: 0,
+            flexWrap: "wrap",
           }}
         >
           {PERIODS.map((p) => (
@@ -253,8 +265,8 @@ export function RevenueChart() {
               key={p}
               onClick={() => setPeriod(p)}
               style={{
-                padding: "5px 12px",
-                fontSize: 12,
+                padding: isMobile ? "5px 8px" : "5px 12px",
+                fontSize: isMobile ? 11 : 12,
                 fontWeight: 600,
                 borderRadius: "var(--radius-sm)",
                 border: "none",
@@ -264,6 +276,7 @@ export function RevenueChart() {
                   period === p ? "var(--sage-dark)" : "transparent",
                 color: period === p ? "#fff" : "var(--muted)",
                 letterSpacing: 0.3,
+                whiteSpace: "nowrap",
               }}
             >
               {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -273,7 +286,14 @@ export function RevenueChart() {
       </div>
 
       {/* ── Chart ── */}
-      <div ref={containerRef} style={{ width: "100%", position: "relative" }}>
+      <div
+        ref={containerRef}
+        style={{
+          width: "100%",
+          position: "relative",
+          overflowX: "hidden",
+        }}
+      >
         {loading ? (
           <div
             className="skeleton"
@@ -304,7 +324,7 @@ export function RevenueChart() {
             ref={svgRef}
             width={svgWidth}
             height={svgHeight}
-            style={{ display: "block", overflow: "visible", cursor: "crosshair" }}
+            style={{ display: "block", overflow: "hidden", cursor: "crosshair" }}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
           >
@@ -410,11 +430,10 @@ export function RevenueChart() {
               position: "absolute",
               pointerEvents: "none",
               left: Math.min(
-                tooltip.x,
+                Math.max(tooltip.x - 60, 0),
                 svgWidth - 130
               ),
-              top: Math.max(tooltip.y - 60, 0),
-              transform: "translateX(-50%)",
+              top: Math.max(tooltip.y - 60, 4),
               background: "var(--ink)",
               color: "#fff",
               fontSize: 12,
