@@ -398,16 +398,27 @@ button, input, select, textarea {
 /* About and Consultation Page Hero Grid */
 .page-hero-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 56px;
+  grid-template-columns: 46% 54%;
+  gap: 64px;
   align-items: center;
   position: relative;
   z-index: 2;
-  width: 100%;
 }
 
 .page-hero-grid > div {
   width: 100%;
+}
+
+.page-hero-grid > div:first-child {
+  max-width: 520px;
+}
+
+.page-hero-grid .hero-card {
+  aspect-ratio: auto;
+  width: 100%;
+  max-width: 580px;
+  height: 480px;
+  margin: 0 auto;
 }
 
 .eyebrow {
@@ -1164,6 +1175,16 @@ p {
   .admin-side {
     border-right: none;
     border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .page-hero-grid > div:first-child {
+    max-width: 100%;
+  }
+
+  .page-hero-grid .hero-card {
+    aspect-ratio: 4 / 3.2;
+    height: auto;
+    max-width: 100%;
   }
 }
 
