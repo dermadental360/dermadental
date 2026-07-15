@@ -4,10 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { clinic } from "@/lib/constants";
 
+function getGreeting(date: Date): string {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) return "Good Morning";
+  if (hour >= 12 && hour < 17) return "Good Afternoon";
+  if (hour >= 17 && hour < 24) return "Good Evening";
+  return "Good Night";
+}
+
 export function AdminDashboard() {
   const [metrics, setMetrics] = useState<any>(null);
   const [visitors, setVisitors] = useState<number>(1);
   const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState<string>("");
 
   // Fetch metrics and live analytics
   const loadData = async () => {
@@ -32,10 +41,18 @@ export function AdminDashboard() {
   };
 
   useEffect(() => {
+    // Set initial greeting based on current local time
+    setGreeting(getGreeting(new Date()));
+
+    // Update greeting every minute so it stays accurate during long sessions
+    const greetingInterval = setInterval(() => {
+      setGreeting(getGreeting(new Date()));
+    }, 60000);
+
     loadData();
 
     // Set interval to update active visitor counts every 15 seconds
-    const interval = setInterval(async () => {
+    const visitorInterval = setInterval(async () => {
       try {
         const resAnalytics = await fetch("/api/admin/analytics");
         if (resAnalytics.ok) {
@@ -47,7 +64,10 @@ export function AdminDashboard() {
       }
     }, 15000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(greetingInterval);
+      clearInterval(visitorInterval);
+    };
   }, []);
 
   const formatCurrency = (val: number) => {
@@ -98,6 +118,59 @@ export function AdminDashboard() {
 
   return (
     <div className="page-enter" style={{ display: "grid", gap: 32 }}>
+
+      {/* Dynamic Time-Based Greeting Banner */}
+      {greeting && (
+        <div
+          className="admin-greeting-banner"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "16px 22px",
+            borderRadius: "var(--radius-md)",
+            background: "linear-gradient(135deg, var(--sage-light) 0%, var(--blush-light) 100%)",
+            border: "1px solid var(--line)",
+            boxShadow: "var(--shadow-sm)",
+            animation: "fadeInUp 0.45s ease forwards"
+          }}
+        >
+          <span
+            style={{
+              fontSize: 28,
+              lineHeight: 1,
+              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.08))"
+            }}
+          >
+            👋
+          </span>
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 700,
+                color: "var(--sage-dark)",
+                letterSpacing: "-0.3px",
+                lineHeight: 1.2
+              }}
+            >
+              {greeting}, {clinic.doctor}
+            </p>
+            <p
+              style={{
+                margin: "3px 0 0 0",
+                fontSize: 13,
+                color: "var(--muted)",
+                fontWeight: 500
+              }}
+            >
+              Welcome back to your dashboard · {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Dashboard Top Header Brand & Clinic Card */}
       <div style={{ display: "flex", justifyContent: "space-between", gap: 28, flexWrap: "wrap", alignItems: "start" }}>
         <div style={{ animation: "fadeInUp 0.5s ease forwards" }}>
