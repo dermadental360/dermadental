@@ -395,6 +395,21 @@ button, input, select, textarea {
   width: 100%;
 }
 
+/* About and Consultation Page Hero Grid */
+.page-hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 56px;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.page-hero-grid > div {
+  width: 100%;
+}
+
 .eyebrow {
   color: var(--sage);
   text-transform: uppercase;
@@ -1097,7 +1112,7 @@ p {
 
 /* Responsive Overrides */
 @media (max-width: 992px) {
-  .hero-grid, .split, .admin-dashboard-split, .checkout-split, .cart-split, .contact-split {
+  .page-hero-grid, .hero-grid, .split, .admin-dashboard-split, .checkout-split, .cart-split, .contact-split {
     grid-template-columns: 1fr;
     gap: 40px;
   }
@@ -1124,11 +1139,11 @@ p {
     );
   }
 
-  .hero-grid {
+  .page-hero-grid, .hero-grid {
     align-items: flex-start !important;
   }
 
-  .hero-grid > div {
+  .page-hero-grid > div, .hero-grid > div {
     max-width: 100%;
   }
 
@@ -1330,6 +1345,10 @@ p {
 
   .hero-artwork-wrapper {
     height: 280px;
+  }
+
+  .page-hero-grid {
+    gap: 24px;
   }
 
   .split, .checkout-split, .cart-split, .contact-split {

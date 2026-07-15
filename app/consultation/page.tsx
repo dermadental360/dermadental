@@ -8,7 +8,7 @@ export default async function ConsultationPage() {
   const text = encodeURIComponent(`Hello ${clinic.name}, I want to book a consultation with ${clinic.doctor}.`);
   return (
     <main className="section page-enter">
-      <div className="container hero-grid reveal">
+      <div className="container page-hero-grid reveal">
         <div>
           <p className="eyebrow">{settings.consultation_eyebrow}</p>
           <h1>{settings.consultation_title}</h1>
