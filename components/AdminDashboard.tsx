@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { clinic } from "@/lib/constants";
+import { RevenueChart } from "./RevenueChart";
 
 function getGreeting(date: Date): string {
   const hour = date.getHours();
@@ -303,6 +304,9 @@ export function AdminDashboard() {
         </div>
 
       </div>
+
+      {/* Revenue Overview Chart */}
+      <RevenueChart />
 
       {/* Recent Activity Layout Split Grid */}
       <div className="split admin-dashboard-split">
