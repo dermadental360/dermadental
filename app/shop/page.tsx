@@ -1,5 +1,5 @@
 import { ShopGrid } from "@/components/ShopGrid";
-import { categories, concerns } from "@/lib/constants";
+import { ShopFilters } from "@/components/ShopFilters";
 import { getProducts } from "@/lib/products";
 import Link from "next/link";
 
@@ -11,40 +11,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   return (
     <main className="section page-enter">
       <div className="container split">
-        <aside className="card pad reveal shop-sidebar">
-          <h2 className="filters-title">Filter Catalog</h2>
-          <form className="form" method="GET" action="/shop">
-            <div className="filters-group">
-              <label className="filters-group-title">Search Key</label>
-              <input className="input" name="q" placeholder="Type keywords..." defaultValue={params.q || ""} />
-            </div>
-            
-            <div className="filters-group">
-              <label className="filters-group-title">Category</label>
-              <select className="input" name="category" defaultValue={params.category || ""}>
-                <option value="">All Categories</option>
-                {categories.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </div>
-
-            <div className="filters-group">
-              <label className="filters-group-title">Concern</label>
-              <select className="input" name="concern" defaultValue={params.concern || ""}>
-                <option value="">All Concerns</option>
-                {concerns.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, marginTop: 14 }}>
-              <button className="btn" type="submit" style={{ width: "100%" }}>Filter</button>
-              {(params.q || params.category || params.concern) && (
-                <Link className="btn secondary" href="/shop" style={{ padding: "12px 16px", display: "grid", placeItems: "center" }} title="Reset Filters">
-                  &times;
-                </Link>
-              )}
-            </div>
-          </form>
-        </aside>
+        <ShopFilters initialQ={params.q} initialCategory={params.category} initialConcern={params.concern} />
         <section className="reveal reveal-delay-1">
           <div className="section-head">
             <div>

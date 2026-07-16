@@ -81,6 +81,7 @@ export function Header() {
           <div className="navlinks desktop-only">
             <Link href="/shop" className={isActive("/shop")}>Shop</Link>
             <Link href="/category/skin" className={isActive("/category/skin")}>Skin</Link>
+            <Link href="/category/oral-care" className={isActive("/category/oral-care")}>Oral Care</Link>
             <Link href="/category/hair" className={isActive("/category/hair")}>Hair</Link>
             <Link href="/category/supplements" className={isActive("/category/supplements")}>Supplements</Link>
             <Link href="/category/luxe" className={isActive("/category/luxe")}>Luxe</Link>
@@ -142,6 +143,7 @@ export function Header() {
         <div className="drawer-links">
           <Link href="/shop" className={isActive("/shop")}>Shop</Link>
           <Link href="/category/skin" className={isActive("/category/skin")}>Skin</Link>
+          <Link href="/category/oral-care" className={isActive("/category/oral-care")}>Oral Care</Link>
           <Link href="/category/hair" className={isActive("/category/hair")}>Hair</Link>
           <Link href="/category/supplements" className={isActive("/category/supplements")}>Supplements</Link>
           <Link href="/category/luxe" className={isActive("/category/luxe")}>Luxe</Link>

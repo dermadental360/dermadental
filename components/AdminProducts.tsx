@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { categories, concerns, subcategoriesMap } from "@/lib/constants";
+import { categories, concerns, subcategoriesMap, skincareConcerns, oralCareConcerns, hairConcerns } from "@/lib/constants";
 import type { Product } from "@/lib/demo";
 import { compressImage } from "@/lib/imageCompressor";
 
@@ -31,6 +31,15 @@ export function AdminProducts() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const getConcernsForCategory = (category: string) => {
+    if (category === "Skin") return skincareConcerns;
+    if (category === "Oral Care") return oralCareConcerns;
+    if (category === "Hair") return hairConcerns;
+    return concerns; // Default to all concerns for Supplements, Luxe, etc.
+  };
+
+  const currentConcernsList = getConcernsForCategory(form.category);
 
   function startEdit(product: Product) {
     const categorySubs = subcategoriesMap[product.category] || [];
@@ -251,7 +260,8 @@ export function AdminProducts() {
                   ...form, 
                   category: cat, 
                   subcategory: subs[0] || "",
-                  customSubcategory: ""
+                  customSubcategory: "",
+                  concerns: [] // reset concerns on category switch to avoid mixup
                 });
               }} 
               disabled={saving}
@@ -297,7 +307,7 @@ export function AdminProducts() {
         <div className="field">
           <label>Concerns (Hold Ctrl to Multi-select)</label>
           <select className="input" multiple style={{ height: 110 }} value={form.concerns} onChange={(e) => setForm({ ...form, concerns: Array.from(e.target.selectedOptions).map((option) => option.value) })} disabled={saving}>
-            {concerns.map((item) => <option key={item}>{item}</option>)}
+            {currentConcernsList.map((item) => <option key={item}>{item}</option>)}
           </select>
         </div>
 
