@@ -12,7 +12,20 @@ export function ProductImages({ images, name }: ProductImagesProps) {
 
   if (!images || images.length === 0) {
     return (
-      <div className="product-image card" style={{ aspectRatio: "1/1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-secondary)" }}>
+      <div 
+        className="product-image-square-container" 
+        style={{ 
+          aspectRatio: "1/1", 
+          width: "100%", 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center", 
+          backgroundColor: "#fff",
+          border: "1px solid var(--line)",
+          borderRadius: "16px",
+          padding: "32px"
+        }}
+      >
         <span style={{ color: "var(--muted)" }}>No image available</span>
       </div>
     );
@@ -29,27 +42,19 @@ export function ProductImages({ images, name }: ProductImagesProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%" }}>
       {/* Main Image View */}
-      <div 
-        className="product-image card" 
-        style={{ 
-          aspectRatio: "1/1", 
-          width: "100%", 
-          position: "relative", 
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#fff"
-        }}
-      >
+      <div className="product-image-square-container">
         <img 
           src={images[activeIndex]} 
           alt={`${name} - View ${activeIndex + 1}`}
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transition: "all 0.3s ease-in-out"
+            maxWidth: "100%",
+            maxHeight: "100%",
+            width: "auto",
+            height: "auto",
+            objectFit: "contain",
+            display: "block",
+            margin: "auto",
+            transition: "transform 0.4s ease"
           }}
         />
 
@@ -60,15 +65,15 @@ export function ProductImages({ images, name }: ProductImagesProps) {
               onClick={handlePrev}
               style={{
                 position: "absolute",
-                left: 12,
+                left: 16,
                 top: "50%",
                 transform: "translateY(-50%)",
-                background: "rgba(255, 255, 255, 0.75)",
+                background: "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(4px)",
                 border: "1px solid var(--line)",
                 borderRadius: "50%",
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -84,7 +89,7 @@ export function ProductImages({ images, name }: ProductImagesProps) {
                 e.currentTarget.style.transform = "translateY(-50%) scale(1.05)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.75)";
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)";
                 e.currentTarget.style.transform = "translateY(-50%) scale(1)";
               }}
             >
@@ -98,15 +103,15 @@ export function ProductImages({ images, name }: ProductImagesProps) {
               onClick={handleNext}
               style={{
                 position: "absolute",
-                right: 12,
+                right: 16,
                 top: "50%",
                 transform: "translateY(-50%)",
-                background: "rgba(255, 255, 255, 0.75)",
+                background: "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(4px)",
                 border: "1px solid var(--line)",
                 borderRadius: "50%",
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -122,7 +127,7 @@ export function ProductImages({ images, name }: ProductImagesProps) {
                 e.currentTarget.style.transform = "translateY(-50%) scale(1.05)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.75)";
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)";
                 e.currentTarget.style.transform = "translateY(-50%) scale(1)";
               }}
             >
@@ -135,14 +140,14 @@ export function ProductImages({ images, name }: ProductImagesProps) {
             <div
               style={{
                 position: "absolute",
-                bottom: 12,
-                right: 12,
+                bottom: 16,
+                right: 16,
                 background: "rgba(26, 37, 34, 0.65)",
                 color: "var(--white)",
-                padding: "4px 8px",
+                padding: "4px 10px",
                 borderRadius: 99,
                 fontSize: 12,
-                fontWeight: 500,
+                fontWeight: 600,
                 backdropFilter: "blur(4px)",
                 pointerEvents: "none"
               }}
@@ -161,14 +166,17 @@ export function ProductImages({ images, name }: ProductImagesProps) {
               key={idx}
               onClick={() => setActiveIndex(idx)}
               style={{
-                width: 64,
-                height: 64,
-                borderRadius: "var(--radius-sm)",
+                width: 72,
+                height: 72,
+                borderRadius: "12px",
                 overflow: "hidden",
                 border: idx === activeIndex ? "2px solid var(--sage)" : "1px solid var(--line)",
                 cursor: "pointer",
-                padding: 0,
+                padding: 8,
                 backgroundColor: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 transition: "var(--transition-smooth)",
                 flexShrink: 0,
                 outline: "none"
@@ -178,7 +186,12 @@ export function ProductImages({ images, name }: ProductImagesProps) {
               <img 
                 src={img} 
                 alt={`${name} thumbnail ${idx + 1}`}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{ 
+                  maxWidth: "100%", 
+                  maxHeight: "100%", 
+                  objectFit: "contain",
+                  margin: "auto"
+                }}
               />
             </button>
           ))}
