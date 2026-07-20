@@ -12,6 +12,7 @@ const empty = {
   subcategory: "Facewash / Cleansers",
   customSubcategory: "",
   concerns: [] as string[],
+  customConcern: "",
   price: 0,
   discountedPrice: 0,
   stock: 0,
@@ -45,11 +46,24 @@ export function AdminProducts() {
     const categorySubs = subcategoriesMap[product.category] || [];
     const isPredefined = categorySubs.includes(product.subcategory) && product.subcategory !== "Other";
     
+    const categoryConcerns = getConcernsForCategory(product.category);
+    const concernsArray = Array.isArray(product.concerns) ? (product.concerns as string[]) : [];
+    
+    const customConcernsList = concernsArray.filter(c => !categoryConcerns.includes(c));
+    const hasCustom = customConcernsList.length > 0;
+    
+    const selectedConcerns = concernsArray.filter(c => categoryConcerns.includes(c));
+    if (hasCustom && !selectedConcerns.includes("Other")) {
+      selectedConcerns.push("Other");
+    }
+
     setEditing(product._id);
     setForm({
       ...product,
       subcategory: isPredefined ? product.subcategory : "Other",
-      customSubcategory: isPredefined ? "" : (product.subcategory === "Other" ? "" : product.subcategory)
+      customSubcategory: isPredefined ? "" : (product.subcategory === "Other" ? "" : product.subcategory),
+      concerns: selectedConcerns,
+      customConcern: customConcernsList.join(", ")
     });
   }
 
@@ -146,7 +160,17 @@ export function AdminProducts() {
           ? (form.customSubcategory || "").trim() || "Other"
           : form.subcategory;
 
-      const { customSubcategory, ...restForm } = form;
+      let finalConcerns = Array.isArray(form.concerns) ? [...form.concerns] : [];
+      if (finalConcerns.includes("Other")) {
+        finalConcerns = finalConcerns.filter((c: string) => c !== "Other");
+        const trimmedCustom = (form.customConcern || "").trim();
+        if (trimmedCustom) {
+          const customItems = trimmedCustom.split(",").map((c: string) => c.trim()).filter(Boolean);
+          finalConcerns.push(...customItems);
+        }
+      }
+
+      const { customSubcategory, customConcern, ...restForm } = form;
       const sanitizedForm = {
         ...restForm,
         name: form.name.trim(),
@@ -155,7 +179,7 @@ export function AdminProducts() {
         price: Number(form.price),
         discountedPrice: Number(form.discountedPrice),
         stock: Number(form.stock),
-        concerns: Array.isArray(form.concerns) ? form.concerns : [],
+        concerns: finalConcerns,
         published: Boolean(form.published),
         featured: Boolean(form.featured),
         images: Array.isArray(form.images) ? form.images : []
@@ -310,6 +334,19 @@ export function AdminProducts() {
             {currentConcernsList.map((item) => <option key={item}>{item}</option>)}
           </select>
         </div>
+
+        {form.concerns && form.concerns.includes("Other") && (
+          <div className="field">
+            <label>Custom Concern(s) (Optional, separate with commas)</label>
+            <input 
+              className="input" 
+              placeholder="Enter custom concern(s)..." 
+              value={form.customConcern || ""} 
+              onChange={(e) => setForm({ ...form, customConcern: e.target.value })} 
+              disabled={saving}
+            />
+          </div>
+        )}
 
         <div className="grid cols-3" style={{ gap: 14 }}>
           <div className="field">

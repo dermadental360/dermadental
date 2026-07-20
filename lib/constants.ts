@@ -63,14 +63,16 @@ export const skincareConcerns = [
   "Ageing",
   "Sensitive Skin",
   "Pigmentation",
-  "Under Eye Concerns"
+  "Under Eye Concerns",
+  "Other"
 ];
 
 export const hairConcerns = [
   "Hair Fall",
   "Dandruff",
   "Frizzy Hair",
-  "Itchy Scalp"
+  "Itchy Scalp",
+  "Other"
 ];
 
 export const oralCareConcerns = [
