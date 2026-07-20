@@ -11,14 +11,30 @@ import { ProductCard } from "./ProductCard";
 interface ProductDetailPageClientProps {
   product: Product;
   relatedProducts: Product[];
+  shippingHighlightsStr?: string;
 }
 
-export function ProductDetailPageClient({ product, relatedProducts }: ProductDetailPageClientProps) {
+export function ProductDetailPageClient({ product, relatedProducts, shippingHighlightsStr }: ProductDetailPageClientProps) {
   const cart = useCart();
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [inWishlist, setInWishlist] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | null>("description");
+
+  // Parse shipping highlights or fallback to default
+  let shippingHighlights = [
+    { icon: "🚚", title: "Free Express Shipping", text: "On orders above ₹499. Same day dispatch." },
+    { icon: "📦", title: "Secure Delivery", text: "Standard delivery in 3 to 5 business days." },
+    { icon: "🛡️", title: "Authentic Clinic Sourced", text: "Directly selected and recommended by our medical experts." }
+  ];
+
+  if (shippingHighlightsStr) {
+    try {
+      shippingHighlights = JSON.parse(shippingHighlightsStr);
+    } catch (e) {
+      console.error("Failed to parse shipping highlights", e);
+    }
+  }
 
   const isOutOfStock = product.stock <= 0;
   const isLowStock = product.stock > 0 && product.stock < 10;
@@ -233,41 +249,31 @@ export function ProductDetailPageClient({ product, relatedProducts }: ProductDet
           </div>
 
           {/* Delivery Information */}
-          <div 
-            style={{ 
-              marginTop: 20, 
-              padding: 16, 
-              borderRadius: 12, 
-              border: "1px solid var(--line)", 
-              backgroundColor: "var(--bg-secondary)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              fontSize: 13.5
-            }}
-          >
-            <div style={{ display: "flex", gap: 10 }}>
-              <span>🚚</span>
-              <div>
-                <strong>Free Express Shipping</strong>
-                <p style={{ margin: "2px 0 0 0", color: "var(--muted)" }}>On orders above ₹499. Same day dispatch.</p>
-              </div>
+          {shippingHighlights && shippingHighlights.length > 0 && (
+            <div 
+              style={{ 
+                marginTop: 20, 
+                padding: 16, 
+                borderRadius: 12, 
+                border: "1px solid var(--line)", 
+                backgroundColor: "var(--bg-secondary)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                fontSize: 13.5
+              }}
+            >
+              {shippingHighlights.map((highlight, index) => (
+                <div key={index} style={{ display: "flex", gap: 10 }}>
+                  <span style={{ fontSize: 16 }}>{highlight.icon}</span>
+                  <div>
+                    <strong>{highlight.title}</strong>
+                    <p style={{ margin: "2px 0 0 0", color: "var(--muted)" }}>{highlight.text}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <span>📦</span>
-              <div>
-                <strong>Secure Delivery</strong>
-                <p style={{ margin: "2px 0 0 0", color: "var(--muted)" }}>Standard delivery in 3 to 5 business days.</p>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <span>🛡️</span>
-              <div>
-                <strong>Authentic Clinic Sourced</strong>
-                <p style={{ margin: "2px 0 0 0", color: "var(--muted)" }}>Directly selected and recommended by our medical experts.</p>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Product Highlights */}
           <div style={{ marginTop: 8 }}>

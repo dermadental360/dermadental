@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getProduct, getProducts } from "@/lib/products";
 import { ProductDetailPageClient } from "@/components/ProductDetailPageClient";
+import { getAllSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,15 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     .filter((p) => p._id !== product._id)
     .slice(0, 4);
 
+  const settings = await getAllSettings();
+
   return (
     <main className="section page-enter">
-      <ProductDetailPageClient product={product} relatedProducts={relatedProducts} />
+      <ProductDetailPageClient 
+        product={product} 
+        relatedProducts={relatedProducts} 
+        shippingHighlightsStr={settings.shipping_highlights}
+      />
     </main>
   );
 }

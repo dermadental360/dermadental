@@ -15,6 +15,11 @@ export const DEFAULT_SETTINGS = {
   consultation_title: "Book clinic guidance",
   consultation_subtitle: "Schedule an appointment for a personalized, dermatologist-led skin or hair assessment. Visit us at Khar West, Mumbai. Timings are 12:00 PM to 7:00 PM, Sunday Closed.",
   consultation_image: "/api/placeholder?label=Skin%20Consultation",
+  shipping_highlights: JSON.stringify([
+    { icon: "🚚", title: "Free Express Shipping", text: "On orders above ₹499. Same day dispatch." },
+    { icon: "📦", title: "Secure Delivery", text: "Standard delivery in 3 to 5 business days." },
+    { icon: "🛡️", title: "Authentic Clinic Sourced", text: "Directly selected and recommended by our medical experts." }
+  ]),
 };
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

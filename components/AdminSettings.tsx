@@ -30,6 +30,24 @@ export function AdminSettings() {
   const [consultationSubtitle, setConsultationSubtitle] = useState("");
   const [consultationImage, setConsultationImage] = useState("");
 
+  const [shippingHighlights, setShippingHighlights] = useState<Array<{icon: string, title: string, text: string}>>([]);
+
+  const handleHighlightChange = (index: number, field: 'icon' | 'title' | 'text', value: string) => {
+    setShippingHighlights(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleAddHighlight = () => {
+    setShippingHighlights(prev => [...prev, { icon: "🚚", title: "New Highlight", text: "Highlight description text." }]);
+  };
+
+  const handleDeleteHighlight = (index: number) => {
+    setShippingHighlights(prev => prev.filter((_, i) => i !== index));
+  };
+
   const heroFileInputRef = useRef<HTMLInputElement>(null);
   const aboutFileInputRef = useRef<HTMLInputElement>(null);
   const consultationFileInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +78,11 @@ export function AdminSettings() {
         consultation_title: data.consultation_title || "",
         consultation_subtitle: data.consultation_subtitle || "",
         consultation_image: data.consultation_image || "",
+        shipping_highlights: data.shipping_highlights || JSON.stringify([
+          { icon: "🚚", title: "Free Express Shipping", text: "On orders above ₹499. Same day dispatch." },
+          { icon: "📦", title: "Secure Delivery", text: "Standard delivery in 3 to 5 business days." },
+          { icon: "🛡️", title: "Authentic Clinic Sourced", text: "Directly selected and recommended by our medical experts." }
+        ]),
       };
 
       setInitialSettings(normalizedData);
@@ -79,6 +102,12 @@ export function AdminSettings() {
       setConsultationTitle(normalizedData.consultation_title);
       setConsultationSubtitle(normalizedData.consultation_subtitle);
       setConsultationImage(normalizedData.consultation_image);
+
+      try {
+        setShippingHighlights(JSON.parse(normalizedData.shipping_highlights));
+      } catch (e) {
+        setShippingHighlights([]);
+      }
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -145,6 +174,7 @@ export function AdminSettings() {
         consultation_title: consultationTitle,
         consultation_subtitle: consultationSubtitle,
         consultation_image: consultationImage,
+        shipping_highlights: JSON.stringify(shippingHighlights),
       };
 
       // Dirty checking: Determine changed settings
@@ -558,6 +588,119 @@ export function AdminSettings() {
               </div>
             </div>
           </div>
+        </div>
+
+        <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />
+        
+        <h3 style={{ fontSize: 18, color: "var(--sage-dark)" }}>Product Details Highlights (Shipping, Trust & Badges)</h3>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginTop: -15, marginBottom: 10 }}>
+          Manage the delivery & authentication highlights listed below the "Buy Now" button on the product details page.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {shippingHighlights.map((highlight, index) => (
+            <div 
+              key={index} 
+              className="card" 
+              style={{ 
+                padding: 16, 
+                border: "1px solid var(--line)", 
+                borderRadius: 8, 
+                background: "var(--bg-secondary, #faf9f6)", 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: 12,
+                position: "relative"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--sage-dark)" }}>Highlight #{index + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteHighlight(index)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--error, #dc2626)",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: "4px 8px",
+                  }}
+                >
+                  ✕ Delete Highlight
+                </button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600 }}>Icon/Emoji</label>
+                  <input
+                    type="text"
+                    value={highlight.icon}
+                    onChange={(e) => handleHighlightChange(index, "icon", e.target.value)}
+                    style={{
+                      padding: "8px 10px",
+                      border: "1px solid var(--line)",
+                      borderRadius: 6,
+                      background: "var(--white)",
+                      fontSize: 14,
+                      textAlign: "center"
+                    }}
+                    required
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600 }}>Title</label>
+                  <input
+                    type="text"
+                    value={highlight.title}
+                    onChange={(e) => handleHighlightChange(index, "title", e.target.value)}
+                    style={{
+                      padding: "8px 10px",
+                      border: "1px solid var(--line)",
+                      borderRadius: 6,
+                      background: "var(--white)",
+                      fontSize: 14,
+                    }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 600 }}>Description Text</label>
+                <input
+                  type="text"
+                  value={highlight.text}
+                  onChange={(e) => handleHighlightChange(index, "text", e.target.value)}
+                  style={{
+                    padding: "8px 10px",
+                    border: "1px solid var(--line)",
+                    borderRadius: 6,
+                    background: "var(--white)",
+                    fontSize: 14,
+                  }}
+                  required
+                />
+              </div>
+            </div>
+          ))}
+
+          {shippingHighlights.length === 0 && (
+            <div style={{ padding: "20px", textAlign: "center", border: "1px dashed var(--line)", borderRadius: 8, color: "var(--muted)" }}>
+              No highlights added yet. Click below to add one.
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={handleAddHighlight}
+            style={{ alignSelf: "flex-start", borderRadius: 6, fontSize: 13, padding: "8px 16px" }}
+          >
+            ➕ Add Highlight Card
+          </button>
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
