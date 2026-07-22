@@ -1,11 +1,13 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/lib/demo";
 import { useCart } from "./CartProvider";
 
-export function ProductCard({ product }: { product: Product }) {
+export const ProductCard = React.memo(function ProductCard({ product }: { product: Product }) {
   const cart = useCart();
   const router = useRouter();
   const isOutOfStock = product.stock <= 0;
@@ -17,7 +19,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="card" style={{ opacity: isOutOfStock ? 0.8 : 1, display: "flex", flexDirection: "column", height: "100%" }}>
-      <Link href={`/product/${product._id}`} className="product-image">
+      <Link href={`/product/${product._id}`} className="product-image" style={{ position: "relative", width: "100%", height: "240px", display: "block" }}>
         <div className="badge-container">
           {hasDiscount && <span className="badge discount">{discountPercent}% OFF</span>}
           {isOutOfStock ? (
@@ -28,7 +30,13 @@ export function ProductCard({ product }: { product: Product }) {
             <span className="badge stock">In Stock</span>
           )}
         </div>
-        <img src={product.images[0]} alt={product.name} />
+        <Image
+          src={product.images[0]}
+          alt={product.name}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+          style={{ objectFit: "contain" }}
+        />
       </Link>
       <div className="pad" style={{ display: "flex", flexDirection: "column", flexGrow: 1, minHeight: "220px", justifyContent: "space-between" }}>
         <div style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
@@ -71,5 +79,6 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
     </article>
   );
-}
+});
+
 

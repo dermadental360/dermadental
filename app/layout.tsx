@@ -6,6 +6,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { VisitorTracker } from "@/components/VisitorTracker";
 import { FloatingCallWidget } from "@/components/FloatingCallWidget";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.dd360health.com"),
@@ -42,14 +43,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="page-enter">
       <body>
-        <ScrollReveal />
-        <VisitorTracker />
-        <CartProvider>
-          <Header />
-          {children}
-          <Footer />
-        </CartProvider>
-        <FloatingCallWidget />
+        <ThemeProvider>
+          <ScrollReveal />
+          <VisitorTracker />
+          <CartProvider>
+            <Header />
+            {children}
+            <Footer />
+          </CartProvider>
+          <FloatingCallWidget />
+        </ThemeProvider>
       </body>
     </html>
   );
