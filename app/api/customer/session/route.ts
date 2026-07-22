@@ -4,7 +4,10 @@ import { getCustomer } from "@/lib/auth";
 export async function GET() {
   const customer = await getCustomer();
   if (!customer) {
-    return NextResponse.json(null, { status: 401 });
+    return NextResponse.json({ authenticated: false, customer: null });
   }
-  return NextResponse.json(customer);
+  return NextResponse.json({ authenticated: true, customer });
 }
+
+export const dynamic = "force-dynamic";
+

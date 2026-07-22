@@ -15,7 +15,7 @@ export default function CheckoutPage() {
     fetch("/api/customer/session")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data) setCustomer(data);
+        if (data?.customer) setCustomer(data.customer);
       })
       .catch(() => setCustomer(null));
   }, []);

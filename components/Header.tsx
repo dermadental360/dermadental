@@ -29,7 +29,7 @@ export function Header() {
   useEffect(() => {
     fetch("/api/customer/session")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setCustomer(data))
+      .then((data) => setCustomer(data?.customer || (data?.email ? data : null)))
       .catch(() => setCustomer(null));
     
     // Close mobile menu on path transition
