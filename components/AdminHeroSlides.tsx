@@ -356,7 +356,7 @@ export function AdminHeroSlides() {
                       <input
                         type="file"
                         accept="image/*"
-                        ref={(el) => (fileInputRefs.current[fieldKeyDesktop] = el)}
+                        ref={(el) => { fileInputRefs.current[fieldKeyDesktop] = el; }}
                         onChange={(e) => handleFileUpload(e, index, "desktopImage")}
                         style={{ display: "none" }}
                       />
@@ -386,7 +386,7 @@ export function AdminHeroSlides() {
                       <input
                         type="file"
                         accept="image/*"
-                        ref={(el) => (fileInputRefs.current[fieldKeyMobile] = el)}
+                        ref={(el) => { fileInputRefs.current[fieldKeyMobile] = el; }}
                         onChange={(e) => handleFileUpload(e, index, "mobileImage")}
                         style={{ display: "none" }}
                       />
