@@ -2,38 +2,19 @@ import Link from "next/link";
 import { categories, clinic, concerns, slugify } from "@/lib/constants";
 import { getProducts } from "@/lib/products";
 import { ShopGrid } from "@/components/ShopGrid";
-import { getAllSettings } from "@/lib/settings";
+import { HeroSlider } from "@/components/HeroSlider";
+import { getSlides } from "@/lib/slides";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const featured = (await getProducts()).filter((product) => product.featured).slice(0, 4);
-  const settings = await getAllSettings();
+  const slides = await getSlides();
 
   return (
     <main>
-      <section className="hero">
-        <div className="hero-artwork-wrapper">
-          <div className="hero-artwork-gradient"></div>
-          <img src={settings.hero_image} alt="DermaDental 360 Artwork" className="hero-artwork-image" />
-        </div>
-        <div className="container hero-grid">
-          <div className="reveal">
-            <p className="eyebrow">{settings.hero_eyebrow}</p>
-            <h1>{settings.hero_title}</h1>
-            <p style={{ fontSize: 18, marginBottom: 28 }}>
-              {settings.hero_subtitle}
-            </p>
-            <div className="actions" style={{ flexWrap: "wrap", gap: 14 }}>
-              <Link className="btn" href="/shop">Shop Products</Link>
-              <Link className="btn secondary" href="/consultation">Book Consultation</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-
+      {/* Luxury Skincare Hero Slider */}
+      <HeroSlider slides={slides} />
 
       <section className="section reveal">
         <div className="container">

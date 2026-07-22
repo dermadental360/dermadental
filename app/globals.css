@@ -1888,3 +1888,299 @@ p {
   }
 }
 
+/* ==========================================================================
+   ULTRA-LUXURY HERO SLIDER COMPONENT STYLES
+   ========================================================================== */
+.luxury-hero-container {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  height: 90vh;
+  min-height: 580px;
+  max-height: 950px;
+  overflow: hidden;
+  background-color: #151e1b;
+  color: var(--white);
+  user-select: none;
+}
+
+.luxury-hero-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.luxury-hero-bg-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.luxury-hero-bg-inner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.luxury-hero-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Decorative Sunlight & Leaf Shadow Overlays */
+.luxury-hero-sunlight-beam {
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 60%;
+  height: 140%;
+  background: radial-gradient(ellipse at center, rgba(255, 253, 240, 0.12) 0%, rgba(255, 253, 240, 0) 70%);
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+
+.luxury-hero-leaf-shadow {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 45%;
+  height: 60%;
+  background: radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.luxury-hero-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.luxury-hero-content-wrapper {
+  position: relative;
+  z-index: 10;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.luxury-hero-content {
+  max-width: 650px;
+  pointer-events: auto;
+  padding: 40px 0;
+}
+
+.luxury-hero-eyebrow-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.luxury-hero-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--gold);
+}
+
+.luxury-hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin-bottom: 18px;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.luxury-hero-description {
+  font-size: clamp(15px, 1.8vw, 18px);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+  margin-bottom: 32px;
+  font-weight: 300;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.luxury-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.luxury-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  border-radius: 50px;
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-hero-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--sage-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+}
+
+.luxury-hero-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 16px;
+  border-radius: 30px;
+  backdrop-filter: blur(8px);
+}
+
+/* Arrow Controls */
+.luxury-hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.3s ease;
+}
+
+.luxury-hero-arrow.prev {
+  left: 30px;
+}
+
+.luxury-hero-arrow.next {
+  right: 30px;
+}
+
+.luxury-hero-arrow:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  transform: translateY(-50%) scale(1.08);
+}
+
+/* Navigation Dots */
+.luxury-hero-dots {
+  position: absolute;
+  bottom: 35px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 20;
+}
+
+.luxury-hero-dot-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.dot-track {
+  display: block;
+  width: 32px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  position: relative;
+  transition: width 0.3s ease;
+}
+
+.luxury-hero-dot-btn.active .dot-track {
+  width: 50px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.dot-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: #ffffff;
+  border-radius: 4px;
+}
+
+/* Media Responsive Rules */
+@media (max-width: 900px) {
+  .luxury-hero-container {
+    height: 80vh;
+    min-height: 520px;
+  }
+  .luxury-hero-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .luxury-hero-container {
+    height: 85vh;
+    min-height: 480px;
+  }
+  .luxury-hero-content {
+    padding: 20px 0;
+  }
+  .luxury-hero-eyebrow-chip {
+    font-size: 11px;
+    padding: 4px 10px;
+    margin-bottom: 12px;
+  }
+  .luxury-hero-actions {
+    gap: 12px;
+  }
+  .luxury-hero-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 24px;
+  }
+}
+
+

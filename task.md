@@ -3,7 +3,7 @@
 - [x] Database Schema Update (Site settings key-value store)
   - [x] Add `Setting` model in `prisma/schema.prisma`
   - [x] Apply database changes via `npx prisma db push`
-- [x] Settings Library & APIs
+- [/] Settings Library & APIs
   - [x] Create settings helpers `lib/settings.ts`
   - [x] Create public settings endpoint `app/api/settings/route.ts`
   - [x] Create admin settings endpoint `app/api/admin/settings/route.ts`
