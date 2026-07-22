@@ -330,12 +330,12 @@ export function RevenueChart() {
           >
             <defs>
               <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3a5047" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="#3a5047" stopOpacity="0.01" />
+                <stop offset="0%" stopColor="#0F7F8F" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#0F7F8F" stopOpacity="0.01" />
               </linearGradient>
               <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#7f9b8f" />
-                <stop offset="100%" stopColor="#3a5047" />
+                <stop offset="0%" stopColor="#14B8C4" />
+                <stop offset="100%" stopColor="#0F7F8F" />
               </linearGradient>
             </defs>
 
@@ -414,7 +414,7 @@ export function RevenueChart() {
                   cx={tooltip.x}
                   cy={tooltip.y}
                   r={5}
-                  fill="#3a5047"
+                  fill="#0F7F8F"
                   stroke="#fff"
                   strokeWidth={2}
                 />
