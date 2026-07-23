@@ -72,14 +72,24 @@ export const getFeaturedProducts = cache(async function getFeaturedProducts(limi
   }
 });
 
+const CATEGORY_MAP: Record<string, string> = {
+  "skin": "Skin",
+  "oral-care": "Oral Care",
+  "oral care": "Oral Care",
+  "hair": "Hair",
+  "supplements": "Supplements",
+};
+
 export const getProducts = cache(async function getProducts(filters: Record<string, string | undefined> = {}) {
   try {
     const where: any = { published: true };
     if (filters.category) {
-      where.category = { equals: filters.category };
+      const rawCat = filters.category.toLowerCase();
+      const mappedCat = CATEGORY_MAP[rawCat] || filters.category;
+      where.category = { contains: mappedCat };
     }
     if (filters.subcategory) {
-      where.subcategory = { equals: filters.subcategory };
+      where.subcategory = { contains: filters.subcategory };
     }
     if (filters.q) {
       where.OR = [
