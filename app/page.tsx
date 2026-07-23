@@ -1,15 +1,18 @@
 import Link from "next/link";
+import Image from "next/image";
 import { categories, clinic, concerns, slugify } from "@/lib/constants";
-import { getProducts } from "@/lib/products";
+import { getFeaturedProducts } from "@/lib/products";
 import { ShopGrid } from "@/components/ShopGrid";
 import { HeroSlider } from "@/components/HeroSlider";
 import { getSlides } from "@/lib/slides";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const featured = (await getProducts()).filter((product) => product.featured).slice(0, 4);
-  const slides = await getSlides();
+  const [featured, slides] = await Promise.all([
+    getFeaturedProducts(4),
+    getSlides()
+  ]);
 
   return (
     <main>
@@ -32,8 +35,16 @@ export default async function HomePage() {
                 href={`/category/${slugify(category)}`}
                 key={category}
               >
-                <div className="category-image">
-                  <img src={`/category/${slugify(category)}.png`} alt={category} />
+                <div className="category-image" style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", overflow: "hidden" }}>
+                  <Image
+                    src={`/category/${slugify(category)}.webp`}
+                    alt={category}
+                    width={400}
+                    height={400}
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    loading="lazy"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
                 </div>
                 <div className="category-info pad">
                   <p className="eyebrow">{category}</p>

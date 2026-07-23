@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "./prisma";
 
 export interface HeroSlide {
@@ -25,8 +26,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
     subtitle: "Experience clinical-grade serums and creams designed to restore natural barrier health under expert care.",
     ctaText: "Explore Essentials",
     ctaUrl: "/shop",
-    desktopImage: "/hero/slide-1.jpg",
-    mobileImage: "/hero/slide-1.jpg",
+    desktopImage: "/hero/slide-1.webp",
+    mobileImage: "/hero/slide-1.webp",
     altText: "Premium glass serum bottle with natural sunlight",
     overlayOpacity: 0.25,
     enabled: true,
@@ -39,8 +40,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
     subtitle: "Guided by Dr. Sadaf Yamin, receive custom routine recommendations tailored to your unique skin biology.",
     ctaText: "Book Guidance",
     ctaUrl: "/consultation",
-    desktopImage: "/hero/slide-2.jpg",
-    mobileImage: "/hero/slide-2.jpg",
+    desktopImage: "/hero/slide-2.webp",
+    mobileImage: "/hero/slide-2.webp",
     altText: "Modern luxury medical spa consultation room",
     overlayOpacity: 0.3,
     enabled: true,
@@ -53,8 +54,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
     subtitle: "Precision formulations that hydrate deeply, calm inflammation, and restore youthful elasticity.",
     ctaText: "View Clinical Range",
     ctaUrl: "/shop",
-    desktopImage: "/hero/slide-3.jpg",
-    mobileImage: "/hero/slide-3.jpg",
+    desktopImage: "/hero/slide-3.webp",
+    mobileImage: "/hero/slide-3.webp",
     altText: "Macro glistening hydra-serum droplet on radiant skin",
     overlayOpacity: 0.2,
     enabled: true,
@@ -67,8 +68,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
     subtitle: "Elevate your morning routine with light, fast-absorbing botanical formulations that protect all day.",
     ctaText: "Discover Routines",
     ctaUrl: "/category/serums",
-    desktopImage: "/hero/slide-4.jpg",
-    mobileImage: "/hero/slide-4.jpg",
+    desktopImage: "/hero/slide-4.webp",
+    mobileImage: "/hero/slide-4.webp",
     altText: "Luxury cosmetic product collection on travertine pedestal",
     overlayOpacity: 0.25,
     enabled: true,
@@ -81,8 +82,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
     subtitle: "Order directly through WhatsApp with direct prescription verification and seamless clinic support.",
     ctaText: "WhatsApp Assistant",
     ctaUrl: "https://wa.me/919999999999",
-    desktopImage: "/hero/slide-5.jpg",
-    mobileImage: "/hero/slide-5.jpg",
+    desktopImage: "/hero/slide-5.webp",
+    mobileImage: "/hero/slide-5.webp",
     altText: "Dermatologist doctor holding clinical skincare bottle",
     overlayOpacity: 0.3,
     enabled: true,
@@ -90,7 +91,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
   },
 ];
 
-export async function getSlides(): Promise<HeroSlide[]> {
+export const getSlides = cache(async function getSlides(): Promise<HeroSlide[]> {
   try {
     const setting = await prisma.setting.findUnique({
       where: { key: "hero_slides_v2" },
@@ -105,7 +106,7 @@ export async function getSlides(): Promise<HeroSlide[]> {
     console.warn("Prisma failed fetching hero slides, falling back to defaults:", err);
   }
   return DEFAULT_HERO_SLIDES;
-}
+});
 
 export async function saveSlides(slides: HeroSlide[]): Promise<boolean> {
   try {

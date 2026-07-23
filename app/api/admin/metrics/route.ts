@@ -40,7 +40,8 @@ export async function GET() {
     }));
 
     const allNonCancelled = await prisma.order.findMany({
-      where: { status: { not: "Cancelled" } }
+      where: { status: { not: "Cancelled" } },
+      select: { total: true, createdAt: true, status: true }
     });
 
     const totalRevenue = allNonCancelled.reduce((sum, o) => sum + (o.total || 0), 0);

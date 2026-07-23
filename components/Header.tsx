@@ -6,31 +6,30 @@ import { useEffect, useState } from "react";
 import { useCart } from "./CartProvider";
 import { clinic } from "@/lib/constants";
 
+let cachedCustomerSession: any = undefined;
+
 export function Header() {
   const pathname = usePathname();
   const cart = useCart();
   const [customer, setCustomer] = useState<any>(null);
   const [pulse, setPulse] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [topBarText, setTopbarText] = useState("Book clinic guidance with " + clinic.doctor + " - " + clinic.timing);
+  const topBarText = "Book clinic guidance with " + clinic.doctor + " - " + clinic.timing;
 
+  // Fetch session status once and cache across client route transitions
   useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && data.top_bar_text) {
-          setTopbarText(data.top_bar_text);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  // Fetch session status whenever the path changes
-  useEffect(() => {
-    fetch("/api/customer/session")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setCustomer(data?.customer || (data?.email ? data : null)))
-      .catch(() => setCustomer(null));
+    if (cachedCustomerSession !== undefined) {
+      setCustomer(cachedCustomerSession);
+    } else {
+      fetch("/api/customer/session")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const sess = data?.customer || (data?.email ? data : null);
+          cachedCustomerSession = sess;
+          setCustomer(sess);
+        })
+        .catch(() => setCustomer(null));
+    }
     
     // Close mobile menu on path transition
     setIsMobileMenuOpen(false);
@@ -71,9 +70,11 @@ export function Header() {
         <nav className="container nav">
           <Link href="/" className="brand-logo">
             <img 
-              src="/logo.png" 
+              src="/logo.webp" 
               alt="Dr. Sadaf's DermaDental 360" 
               className="logo-img"
+              width={220}
+              height={50}
             />
           </Link>
 
@@ -133,9 +134,11 @@ export function Header() {
         <div className="drawer-header">
           <Link href="/" className="brand-logo" onClick={() => setIsMobileMenuOpen(false)}>
             <img 
-              src="/logo.png" 
+              src="/logo.webp" 
               alt="Dr. Sadaf's DermaDental 360" 
               className="logo-img"
+              width={220}
+              height={50}
             />
           </Link>
           <button className="close-btn" onClick={() => setIsMobileMenuOpen(false)}>&times;</button>

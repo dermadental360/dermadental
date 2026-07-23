@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { clinic } from "@/lib/constants";
-import { RevenueChart } from "./RevenueChart";
+
+const RevenueChart = dynamic(
+  () => import("./RevenueChart").then((mod) => mod.RevenueChart),
+  {
+    loading: () => <div className="card pad skeleton" style={{ height: 280 }} />,
+    ssr: false
+  }
+);
 
 function getGreeting(date: Date): string {
   const hour = date.getHours();
@@ -52,7 +60,7 @@ export function AdminDashboard() {
 
     loadData();
 
-    // Set interval to update active visitor counts every 15 seconds
+    // Set interval to update active visitor counts every 60 seconds
     const visitorInterval = setInterval(async () => {
       try {
         const resAnalytics = await fetch("/api/admin/analytics");
@@ -63,7 +71,7 @@ export function AdminDashboard() {
       } catch (err) {
         // Fail silently
       }
-    }, 15000);
+    }, 60000);
 
     return () => {
       clearInterval(greetingInterval);

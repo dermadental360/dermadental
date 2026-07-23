@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import type { Product } from "@/lib/demo";
 import { useCart } from "./CartProvider";
 import { ProductImages } from "./ProductImages";
-import { ProductReviews } from "./ProductReviews";
 import { ProductCard } from "./ProductCard";
+
+const ProductReviews = dynamic(
+  () => import("./ProductReviews").then((mod) => mod.ProductReviews),
+  {
+    loading: () => <div className="card pad skeleton" style={{ height: 200, marginTop: 48 }} />
+  }
+);
 
 interface ProductDetailPageClientProps {
   product: Product;

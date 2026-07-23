@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "./prisma";
 
 // Default settings matching current website defaults
@@ -5,7 +6,7 @@ export const DEFAULT_SETTINGS = {
   hero_eyebrow: "Dermatology-led care in Khar West",
   hero_title: "Skin and hair routines chosen with clinical calm.",
   hero_subtitle: "Shop dermatologist-curated skincare, book guidance with Dr. Sadaf Yamin, and place orders directly through WhatsApp without payment complications.",
-  hero_image: "/hero/dermadental-hero.png",
+  hero_image: "/hero/dermadental-hero.webp",
   top_bar_text: "Book clinic guidance with Dr. Sadaf Yamin - 12:00 PM to 7:00 PM, Sunday Closed",
   about_eyebrow: "Dermatologist-led Care",
   about_title: "About DermaDental360",
@@ -24,7 +25,7 @@ export const DEFAULT_SETTINGS = {
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;
 
-export async function getSetting(key: SettingKey): Promise<string> {
+export const getSetting = cache(async function getSetting(key: SettingKey): Promise<string> {
   try {
     const setting = await prisma.setting.findUnique({
       where: { key },
@@ -34,9 +35,9 @@ export async function getSetting(key: SettingKey): Promise<string> {
     console.warn(`Prisma failed fetching setting "${key}":`, err);
     return DEFAULT_SETTINGS[key];
   }
-}
+});
 
-export async function getAllSettings() {
+export const getAllSettings = cache(async function getAllSettings() {
   const result: Record<string, string> = { ...DEFAULT_SETTINGS };
   try {
     const settings = await prisma.setting.findMany();
@@ -47,7 +48,7 @@ export async function getAllSettings() {
     console.warn("Prisma failed to fetch settings:", err);
   }
   return result;
-}
+});
 
 export async function setSetting(key: SettingKey, value: string) {
   return prisma.setting.upsert({

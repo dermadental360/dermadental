@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Outfit, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -7,6 +8,18 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import { VisitorTracker } from "@/components/VisitorTracker";
 import { FloatingCallWidget } from "@/components/FloatingCallWidget";
 import { ThemeProvider } from "@/components/ThemeProvider";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.dd360health.com"),
@@ -41,7 +54,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="page-enter">
+    <html lang="en" className={`page-enter ${outfit.variable} ${playfair.variable}`}>
       <body>
         <ThemeProvider>
           <ScrollReveal />

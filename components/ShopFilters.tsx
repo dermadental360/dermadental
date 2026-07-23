@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { categories, concerns, skincareConcerns, oralCareConcerns, hairConcerns } from "@/lib/constants";
 import Link from "next/link";
 
@@ -10,7 +10,7 @@ interface ShopFiltersProps {
   initialConcern?: string;
 }
 
-export function ShopFilters({ initialQ = "", initialCategory = "", initialConcern = "" }: ShopFiltersProps) {
+export const ShopFilters = React.memo(function ShopFilters({ initialQ = "", initialCategory = "", initialConcern = "" }: ShopFiltersProps) {
   const [category, setCategory] = useState(initialCategory);
   const [concern, setConcern] = useState(initialConcern);
   const [q, setQ] = useState(initialQ);
@@ -88,4 +88,4 @@ export function ShopFilters({ initialQ = "", initialCategory = "", initialConcer
       </form>
     </aside>
   );
-}
+});

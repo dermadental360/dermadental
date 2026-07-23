@@ -1,5 +1,23 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
-import { demoProducts, Product } from "./demo";
+import { Product } from "./demo";
+
+const LEAN_PRODUCT_SELECT = {
+  id: true,
+  name: true,
+  brand: true,
+  category: true,
+  subcategory: true,
+  concerns: true,
+  price: true,
+  discountedPrice: true,
+  stock: true,
+  images: true,
+  published: true,
+  featured: true,
+  createdAt: true,
+};
 
 function normalize(product: any): Product {
   let concerns: string[] = [];
@@ -39,7 +57,22 @@ function normalize(product: any): Product {
   };
 }
 
-export async function getProducts(filters: Record<string, string | undefined> = {}) {
+export const getFeaturedProducts = cache(async function getFeaturedProducts(limit = 4) {
+  try {
+    const products = await prisma.product.findMany({
+      where: { published: true, featured: true },
+      take: limit,
+      select: LEAN_PRODUCT_SELECT,
+      orderBy: { createdAt: "desc" }
+    });
+    return products.map(normalize);
+  } catch (error) {
+    console.error("Prisma getFeaturedProducts failed:", error);
+    return [];
+  }
+});
+
+export const getProducts = cache(async function getProducts(filters: Record<string, string | undefined> = {}) {
   try {
     const where: any = { published: true };
     if (filters.category) {
@@ -56,6 +89,7 @@ export async function getProducts(filters: Record<string, string | undefined> = 
     }
     const products = await prisma.product.findMany({
       where,
+      select: LEAN_PRODUCT_SELECT,
       orderBy: { createdAt: "desc" }
     });
     
@@ -67,29 +101,20 @@ export async function getProducts(filters: Record<string, string | undefined> = 
     return results;
   } catch (error) {
     console.error("Prisma getProducts failed:", error);
-    return filterDemo(filters);
+    return [];
   }
-}
+});
 
-export async function getProduct(id: string) {
+export const getProduct = cache(async function getProduct(id: string) {
   try {
     const product = await prisma.product.findUnique({
       where: { id }
     });
-    return product ? normalize(product) : demoProducts.find((item) => item._id === id);
+    return product ? normalize(product) : null;
   } catch (error) {
     console.error("Prisma getProduct failed:", error);
-    return demoProducts.find((product) => product._id === id);
+    return null;
   }
-}
+});
 
-function filterDemo(filters: Record<string, string | undefined>) {
-  return demoProducts.filter((product) => {
-    const categoryOk = !filters.category || product.category.toLowerCase() === filters.category.toLowerCase();
-    const subcategoryOk = !filters.subcategory || product.subcategory.toLowerCase() === filters.subcategory.toLowerCase();
-    const concernOk = !filters.concern || product.concerns.some((concern) => concern.toLowerCase().includes(filters.concern!.toLowerCase()));
-    const qOk = !filters.q || [product.name, product.brand, product.category, product.subcategory].some((value) => value && value.toLowerCase().includes(filters.q!.toLowerCase()));
-    const publishedOk = product.published !== false;
-    return categoryOk && subcategoryOk && concernOk && qOk && publishedOk;
-  });
-}
+

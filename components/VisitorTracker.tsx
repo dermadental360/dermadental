@@ -26,13 +26,16 @@ export function VisitorTracker() {
       }
     };
 
-    // Send heartbeat immediately on page load/navigation
-    sendHeartbeat();
+    // Defer heartbeat ping by 2 seconds to avoid blocking main thread during initial page load
+    const timer = setTimeout(sendHeartbeat, 2000);
 
-    // Setup recurring heartbeat pings every 25 seconds
-    const interval = setInterval(sendHeartbeat, 25000);
+    // Setup recurring heartbeat pings every 120 seconds
+    const interval = setInterval(sendHeartbeat, 120000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, [pathname]);
 
   return null;

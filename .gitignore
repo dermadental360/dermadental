@@ -1,4 +1,4 @@
-﻿node_modules
+node_modules
 .next
 .env
 .env*.local
@@ -6,3 +6,5 @@ tsconfig.tsbuildinfo
 public/uploads/products/*
 !public/uploads/products/.gitkeep
 .vercel
+scratch/
+*.sql
