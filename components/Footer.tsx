@@ -24,6 +24,11 @@ export function Footer() {
           <h3>Quick Links</h3>
           <p><Link href="/faq">FAQ</Link> - <Link href="/track-order">Track Order</Link> - <Link href="/contact">Contact</Link></p>
           <p><a href={`https://wa.me/${clinic.whatsapp}`}>WhatsApp {clinic.phone}</a></p>
+          <p style={{ marginTop: 12 }}>
+            <Link href="/privacy-policy" style={{ fontSize: 13 }}>Privacy Policy</Link>
+            {" — "}
+            <Link href="/terms-and-conditions" style={{ fontSize: 13 }}>Terms &amp; Conditions</Link>
+          </p>
         </div>
       </div>
     </footer>

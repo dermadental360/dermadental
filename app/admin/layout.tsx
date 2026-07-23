@@ -51,6 +51,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/hero-slides" className={isActive("/admin/hero-slides")}>
             🖼️ Hero Slider
           </Link>
+          <Link href="/admin/legal" className={pathname.startsWith("/admin/legal") ? "active" : ""}>
+            📄 Legal Pages
+          </Link>
           <Link href="/admin/change-password" className={isActive("/admin/change-password")}>
             🔑 Change Password
           </Link>
