@@ -32,7 +32,6 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
-    // Group setup
     const mainGroup = new THREE.Group();
     scene.add(mainGroup);
 
@@ -51,24 +50,37 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     mainGroup.add(logoMesh);
 
     // Glass backdrop plate behind logo
-    const plateGeo = new THREE.PlaneGeometry(3.5, 0.9);
+    const plateGeo = new THREE.PlaneGeometry(3.6, 0.95);
     const plateMat = new THREE.MeshBasicMaterial({
       color: 0x14b8c4,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.15,
       side: THREE.DoubleSide,
     });
     const plateMesh = new THREE.Mesh(plateGeo, plateMat);
     plateMesh.position.z = -0.05;
     mainGroup.add(plateMesh);
 
-    // 2. Holographic Data Sphere Particles (2,500+ particles)
-    const particleCount = 2500;
+    // Expanding Energy Pulse Ring
+    const pulseGeo = new THREE.RingGeometry(0.1, 0.3, 32);
+    const pulseMat = new THREE.MeshBasicMaterial({
+      color: 0x38d9e6,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+    });
+    const pulseMesh = new THREE.Mesh(pulseGeo, pulseMat);
+    pulseMesh.position.z = -0.02;
+    mainGroup.add(pulseMesh);
+
+    // 2. High-Density 10,000 Particle Explosion System
+    const particleCount = 10000;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
     const originalPositions = new Float32Array(particleCount * 3);
     const velocities = new Float32Array(particleCount * 3);
+    const targetPositions = new Float32Array(particleCount * 3);
 
     const radius = 3.6;
     const colorWhite = new THREE.Color(0xffffff);
@@ -80,7 +92,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * v - 1.0);
-      const r = radius + (Math.random() - 0.5) * 0.4;
+      const r = radius + (Math.random() - 0.5) * 0.5;
 
       const x = r * Math.sin(phi) * Math.cos(theta);
       const y = r * Math.sin(phi) * Math.sin(theta);
@@ -94,12 +106,33 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
       originalPositions[i * 3 + 1] = y;
       originalPositions[i * 3 + 2] = z;
 
-      velocities[i * 3] = (Math.random() - 0.5) * 0.08;
-      velocities[i * 3 + 1] = (Math.random() - 0.5) * 0.08;
-      velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.08;
+      // Radial velocities + turbulence swirl
+      const speed = 0.08 + Math.random() * 0.14;
+      const norm = Math.sqrt(x * x + y * y + z * z) || 1;
+      velocities[i * 3] = (x / norm) * speed + (Math.random() - 0.5) * 0.04;
+      velocities[i * 3 + 1] = (y / norm) * speed + (Math.random() - 0.5) * 0.04;
+      velocities[i * 3 + 2] = (z / norm) * speed + (Math.random() - 0.5) * 0.04;
+
+      // Morph targets (Logo top-left, Header top, Hero center)
+      if (i % 3 === 0) {
+        // Logo top-left (-5, +4)
+        targetPositions[i * 3] = -5.5 + (Math.random() - 0.5) * 2;
+        targetPositions[i * 3 + 1] = 4.2 + (Math.random() - 0.5) * 1;
+        targetPositions[i * 3 + 2] = 0;
+      } else if (i % 3 === 1) {
+        // Navigation top (0, +4)
+        targetPositions[i * 3] = (Math.random() - 0.5) * 8;
+        targetPositions[i * 3 + 1] = 4.0 + (Math.random() - 0.5) * 0.5;
+        targetPositions[i * 3 + 2] = 0;
+      } else {
+        // Hero center image bounds
+        targetPositions[i * 3] = (Math.random() - 0.5) * 6;
+        targetPositions[i * 3 + 1] = (Math.random() - 0.5) * 4;
+        targetPositions[i * 3 + 2] = 0;
+      }
 
       const randColor = Math.random();
-      const c = randColor > 0.6 ? colorWhite : randColor > 0.3 ? colorTurquoise : colorCyan;
+      const c = randColor > 0.5 ? colorWhite : randColor > 0.25 ? colorTurquoise : colorCyan;
       colors[i * 3] = c.r;
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
@@ -109,7 +142,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     particleGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     const particleMat = new THREE.PointsMaterial({
-      size: 0.045,
+      size: 0.048,
       vertexColors: true,
       transparent: true,
       opacity: 0.85,
@@ -119,13 +152,13 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     mainGroup.add(particleSystem);
 
     // 3. Concentric Orbital Rings
-    const ringMat1 = new THREE.LineBasicMaterial({ color: 0x14b8c4, transparent: true, opacity: 0.45 });
-    const ringMat2 = new THREE.LineBasicMaterial({ color: 0x38d9e6, transparent: true, opacity: 0.35 });
-    const ringMat3 = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+    const ringMat1 = new THREE.LineBasicMaterial({ color: 0x14b8c4, transparent: true, opacity: 0.5 });
+    const ringMat2 = new THREE.LineBasicMaterial({ color: 0x38d9e6, transparent: true, opacity: 0.4 });
+    const ringMat3 = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 });
 
     const createRing = (r: number, mat: THREE.LineBasicMaterial, rotX: number, rotY: number) => {
       const curve = new THREE.EllipseCurve(0, 0, r, r, 0, 2 * Math.PI, false, 0);
-      const points = curve.getPoints(64);
+      const points = curve.getPoints(96);
       const geo = new THREE.BufferGeometry().setFromPoints(
         points.map((p) => new THREE.Vector3(p.x, p.y, 0))
       );
@@ -142,7 +175,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     mainGroup.add(ring2);
     mainGroup.add(ring3);
 
-    // Interaction & Inertia Drag State
+    // Interaction & Drag State
     let isDragging = false;
     let previousMouseX = 0;
     let previousMouseY = 0;
@@ -150,8 +183,6 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     let velY = 0;
     let targetRotationX = 0;
     let targetRotationY = 0;
-    let mouseX = 0;
-    let mouseY = 0;
 
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true;
@@ -160,9 +191,6 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-      mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
-
       if (!isDragging) return;
       const deltaX = e.clientX - previousMouseX;
       const deltaY = e.clientY - previousMouseY;
@@ -185,66 +213,122 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
 
-    // Animation Loop
+    // Animation & Phase Sequence Logic
     let clock = new THREE.Clock();
     let animId: number;
-    let dissolving = false;
-    let dissolveProgress = 0;
+    let phase = 0; // 0: idle, 1: charge (0-0.5s), 2: explosion (0.5-1.4s), 3: morph (1.4-2.2s)
+    let phaseTimer = 0;
 
     const animate = () => {
+      const delta = clock.getDelta();
       const elapsedTime = clock.getElapsedTime();
 
-      if (!isDragging) {
-        // Inertia friction decay
-        velX *= 0.95;
-        velY *= 0.95;
-        targetRotationY += velX + 0.002;
-        targetRotationX += velY;
-      }
+      // Idle Rotation
+      if (phase === 0) {
+        if (!isDragging) {
+          velX *= 0.95;
+          velY *= 0.95;
+          targetRotationY += velX + 0.002;
+          targetRotationX += velY;
+        }
 
-      // Smooth Group Rotation & Tilt
-      mainGroup.rotation.y += (targetRotationY - mainGroup.rotation.y) * 0.08;
-      mainGroup.rotation.x += (targetRotationX - mainGroup.rotation.x) * 0.08;
+        mainGroup.rotation.y += (targetRotationY - mainGroup.rotation.y) * 0.08;
+        mainGroup.rotation.x += (targetRotationX - mainGroup.rotation.x) * 0.08;
 
-      // Orbital Rings Rotation
-      ring1.rotation.z = elapsedTime * 0.15;
-      ring2.rotation.z = -elapsedTime * 0.2;
-      ring3.rotation.z = elapsedTime * 0.1;
+        ring1.rotation.z = elapsedTime * 0.15;
+        ring2.rotation.z = -elapsedTime * 0.2;
+        ring3.rotation.z = elapsedTime * 0.1;
 
-      // Breathing Scale & Camera Drift
-      if (!dissolving) {
         const breath = 1 + Math.sin(elapsedTime * 1.5) * 0.02;
         mainGroup.scale.set(breath, breath, breath);
-        camera.position.x = Math.sin(elapsedTime * 0.5) * 0.3 + mouseX * 0.4;
-        camera.position.y = Math.cos(elapsedTime * 0.5) * 0.3 - mouseY * 0.4;
-        camera.lookAt(0, 0, 0);
       }
 
-      // Dissolve Burst Transition Logic
-      if (dissolving) {
-        dissolveProgress += 0.025;
-        const posAttr = particleGeo.attributes.position as THREE.BufferAttribute;
-        const posArray = posAttr.array as Float32Array;
+      // Trigger phase transition when isTriggered becomes true
+      if (isTriggered && phase === 0) {
+        phase = 1;
+        phaseTimer = 0;
+      }
 
-        for (let i = 0; i < particleCount; i++) {
-          posArray[i * 3] += velocities[i * 3] * (1 + dissolveProgress * 5);
-          posArray[i * 3 + 1] += velocities[i * 3 + 1] * (1 + dissolveProgress * 5);
-          posArray[i * 3 + 2] += velocities[i * 3 + 2] * (1 + dissolveProgress * 5);
+      if (phase > 0) {
+        phaseTimer += delta;
+
+        // Phase 1: Energy Charge (0 to 0.5s)
+        if (phase === 1) {
+          const t = phaseTimer / 0.5;
+          // Accelerate ring rotation 4x
+          ring1.rotation.z += 0.08;
+          ring2.rotation.z -= 0.1;
+          ring3.rotation.z += 0.06;
+
+          // Camera Dolly Forward
+          camera.position.z = 12 - t * 1.5;
+
+          // Energy Pulse Expansion
+          pulseMat.opacity = Math.sin(t * Math.PI) * 0.8;
+          pulseMesh.scale.set(t * 15, t * 15, 1);
+
+          // Brighten logo and particles
+          particleMat.size = 0.048 + t * 0.03;
+          logoMat.opacity = 0.95 + t * 0.05;
+
+          if (phaseTimer >= 0.5) {
+            phase = 2;
+            phaseTimer = 0;
+          }
         }
-        posAttr.needsUpdate = true;
+        // Phase 2: Particle Shatter & Explosion (0.5 to 1.4s)
+        else if (phase === 2) {
+          const t = phaseTimer / 0.9;
+          const posAttr = particleGeo.attributes.position as THREE.BufferAttribute;
+          const posArray = posAttr.array as Float32Array;
 
-        particleMat.opacity = Math.max(0, 0.85 - dissolveProgress * 0.8);
-        logoMat.opacity = Math.max(0, 0.95 - dissolveProgress);
-        plateMat.opacity = Math.max(0, 0.12 - dissolveProgress * 0.2);
-        ringMat1.opacity = Math.max(0, 0.45 - dissolveProgress);
-        ringMat2.opacity = Math.max(0, 0.35 - dissolveProgress);
-        ringMat3.opacity = Math.max(0, 0.3 - dissolveProgress);
+          // Camera Micro-Shake
+          camera.position.x = (Math.random() - 0.5) * 0.08;
+          camera.position.y = (Math.random() - 0.5) * 0.08;
 
-        mainGroup.scale.multiplyScalar(1.015);
+          for (let i = 0; i < particleCount; i++) {
+            // Swirl turbulence vector
+            const swirlX = Math.sin(elapsedTime * 2 + i) * 0.02;
+            const swirlY = Math.cos(elapsedTime * 2 + i) * 0.02;
 
-        if (dissolveProgress >= 1.2 && !dissolveTriggeredRef.current) {
-          dissolveTriggeredRef.current = true;
-          onComplete();
+            posArray[i * 3] += (velocities[i * 3] + swirlX) * (1 + t * 4);
+            posArray[i * 3 + 1] += (velocities[i * 3 + 1] + swirlY) * (1 + t * 4);
+            posArray[i * 3 + 2] += velocities[i * 3 + 2] * (1 + t * 4);
+          }
+          posAttr.needsUpdate = true;
+
+          // Dissolve rings and logo
+          logoMat.opacity = Math.max(0, 1 - t * 1.5);
+          plateMat.opacity = Math.max(0, 0.15 - t * 0.2);
+          ringMat1.opacity = Math.max(0, 0.5 - t * 0.8);
+          ringMat2.opacity = Math.max(0, 0.4 - t * 0.8);
+          ringMat3.opacity = Math.max(0, 0.35 - t * 0.8);
+
+          if (phaseTimer >= 0.9) {
+            phase = 3;
+            phaseTimer = 0;
+          }
+        }
+        // Phase 3: Morph & Homepage Convergence (1.4 to 2.2s)
+        else if (phase === 3) {
+          const t = Math.min(1, phaseTimer / 0.8);
+          const posAttr = particleGeo.attributes.position as THREE.BufferAttribute;
+          const posArray = posAttr.array as Float32Array;
+
+          for (let i = 0; i < particleCount; i++) {
+            // Lerp towards target screen coordinates
+            posArray[i * 3] += (targetPositions[i * 3] - posArray[i * 3]) * 0.12;
+            posArray[i * 3 + 1] += (targetPositions[i * 3 + 1] - posArray[i * 3 + 1]) * 0.12;
+            posArray[i * 3 + 2] += (targetPositions[i * 3 + 2] - posArray[i * 3 + 2]) * 0.12;
+          }
+          posAttr.needsUpdate = true;
+
+          particleMat.opacity = Math.max(0, 0.85 - t);
+
+          if (phaseTimer >= 0.8 && !dissolveTriggeredRef.current) {
+            dissolveTriggeredRef.current = true;
+            onComplete();
+          }
         }
       }
 
@@ -263,7 +347,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     };
     window.addEventListener("resize", onResize);
 
-    // Cleanup & GPU resource disposal
+    // Complete GPU Cleanup & Resource Disposal
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("mousedown", onMouseDown);
@@ -275,6 +359,8 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
       logoMat.dispose();
       plateGeo.dispose();
       plateMat.dispose();
+      pulseGeo.dispose();
+      pulseMat.dispose();
       particleGeo.dispose();
       particleMat.dispose();
       ringMat1.dispose();
@@ -287,15 +373,14 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
         container.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [isTriggered]);
 
-  // Trigger dissolve when triggered prop changes
   useEffect(() => {
     if (isTriggered && !dissolveTriggeredRef.current) {
-      dissolveTriggeredRef.current = true;
       const timer = setTimeout(() => {
+        dissolveTriggeredRef.current = true;
         onComplete();
-      }, 900);
+      }, 2200);
       return () => clearTimeout(timer);
     }
   }, [isTriggered, onComplete]);

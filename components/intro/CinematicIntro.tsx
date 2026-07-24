@@ -26,7 +26,7 @@ export function CinematicIntro() {
     });
   }, [showIntro]);
 
-  // Skip Button Fade-In (after 2.5s) & 8-10s Automatic Fallback Safety Timer
+  // Skip Button Fade-In (after 2.5s) & 9s Automatic Fallback Safety Timer
   useEffect(() => {
     if (!showIntro) return;
 
@@ -53,12 +53,12 @@ export function CinematicIntro() {
 
     setTimeout(() => {
       completeIntro();
-    }, 900);
+    }, 2200);
   };
 
   return (
     <div
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-between bg-[#0B0F12] text-white overflow-hidden transition-opacity duration-1000 ease-out select-none ${
+      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-between bg-[#0B0F12] text-white overflow-hidden transition-opacity duration-[1800ms] ease-out select-none ${
         isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
       onClick={handleTriggerTransition}
