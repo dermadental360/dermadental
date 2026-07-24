@@ -8,8 +8,11 @@ export function Footer() {
   const pathname = usePathname();
   if (pathname.startsWith("/admin")) return null;
   return (
-    <footer className="footer">
-      <div className="container grid cols-3">
+    <footer className="footer relative overflow-hidden">
+      {/* Soft ambient gradient glow */}
+      <div className="pointer-events-none absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-teal-400 via-transparent to-transparent" />
+
+      <div className="container grid cols-3 reveal relative z-10">
         <div>
           <h3>{clinic.name}</h3>
           <p>Skin, hair and dental-focused wellness guided by {clinic.doctor}.</p>
@@ -34,4 +37,3 @@ export function Footer() {
     </footer>
   );
 }
-

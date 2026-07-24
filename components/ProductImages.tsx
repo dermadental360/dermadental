@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Tilt3DCard } from "./motion/Tilt3DCard";
 
 interface ProductImagesProps {
   images: string[];
@@ -42,121 +43,107 @@ export function ProductImages({ images, name }: ProductImagesProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%" }}>
       {/* Main Image View */}
-      <div className="product-image-square-container">
-        <img 
-          src={images[activeIndex]} 
-          alt={`${name} - View ${activeIndex + 1}`}
-          style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
-            width: "auto",
-            height: "auto",
-            objectFit: "contain",
-            display: "block",
-            margin: "auto",
-            transition: "transform 0.4s ease"
-          }}
-        />
+      <Tilt3DCard className="w-full">
+        <div className="product-image-square-container relative">
+          <img 
+            src={images[activeIndex]} 
+            alt={`${name} - View ${activeIndex + 1}`}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "100%",
+              width: "auto",
+              height: "auto",
+              objectFit: "contain",
+              display: "block",
+              margin: "auto",
+              transition: "transform 0.4s ease"
+            }}
+          />
 
-        {images.length > 1 && (
-          <>
-            {/* Prev Button */}
-            <button
-              onClick={handlePrev}
-              style={{
-                position: "absolute",
-                left: 16,
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "rgba(255, 255, 255, 0.9)",
-                backdropFilter: "blur(4px)",
-                border: "1px solid var(--line)",
-                borderRadius: "50%",
-                width: 44,
-                height: 44,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                boxShadow: "var(--shadow-sm)",
-                transition: "var(--transition-smooth)",
-                color: "var(--ink)",
-                zIndex: 2,
-              }}
-              aria-label="Previous image"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--white)";
-                e.currentTarget.style.transform = "translateY(-50%) scale(1.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)";
-                e.currentTarget.style.transform = "translateY(-50%) scale(1)";
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
+          {images.length > 1 && (
+            <>
+              {/* Prev Button */}
+              <button
+                onClick={handlePrev}
+                style={{
+                  position: "absolute",
+                  left: 16,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "rgba(255, 255, 255, 0.9)",
+                  backdropFilter: "blur(4px)",
+                  border: "1px solid var(--line)",
+                  borderRadius: "50%",
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "var(--shadow-sm)",
+                  transition: "var(--transition-smooth)",
+                  color: "var(--ink)",
+                  zIndex: 2,
+                }}
+                aria-label="Previous image"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
 
-            {/* Next Button */}
-            <button
-              onClick={handleNext}
-              style={{
-                position: "absolute",
-                right: 16,
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "rgba(255, 255, 255, 0.9)",
-                backdropFilter: "blur(4px)",
-                border: "1px solid var(--line)",
-                borderRadius: "50%",
-                width: 44,
-                height: 44,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                boxShadow: "var(--shadow-sm)",
-                transition: "var(--transition-smooth)",
-                color: "var(--ink)",
-                zIndex: 2,
-              }}
-              aria-label="Next image"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--white)";
-                e.currentTarget.style.transform = "translateY(-50%) scale(1.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)";
-                e.currentTarget.style.transform = "translateY(-50%) scale(1)";
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
+              {/* Next Button */}
+              <button
+                onClick={handleNext}
+                style={{
+                  position: "absolute",
+                  right: 16,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "rgba(255, 255, 255, 0.9)",
+                  backdropFilter: "blur(4px)",
+                  border: "1px solid var(--line)",
+                  borderRadius: "50%",
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "var(--shadow-sm)",
+                  transition: "var(--transition-smooth)",
+                  color: "var(--ink)",
+                  zIndex: 2,
+                }}
+                aria-label="Next image"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
 
-            {/* Image Indicator Overlay */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: 16,
-                right: 16,
-                background: "rgba(26, 37, 34, 0.65)",
-                color: "var(--white)",
-                padding: "4px 10px",
-                borderRadius: 99,
-                fontSize: 12,
-                fontWeight: 600,
-                backdropFilter: "blur(4px)",
-                pointerEvents: "none"
-              }}
-            >
-              {activeIndex + 1} / {images.length}
-            </div>
-          </>
-        )}
-      </div>
+              {/* Image Indicator Overlay */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 16,
+                  right: 16,
+                  background: "rgba(26, 37, 34, 0.65)",
+                  color: "var(--white)",
+                  padding: "4px 10px",
+                  borderRadius: 99,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  backdropFilter: "blur(4px)",
+                  pointerEvents: "none"
+                }}
+              >
+                {activeIndex + 1} / {images.length}
+              </div>
+            </>
+          )}
+        </div>
+      </Tilt3DCard>
 
       {/* Thumbnails list */}
       {images.length > 1 && (
