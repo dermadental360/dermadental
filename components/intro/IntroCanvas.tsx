@@ -17,28 +17,31 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     const container = containerRef.current;
     const width = window.innerWidth;
     const height = window.innerHeight;
+    const isMobile = width < 768;
 
     // Scene, Camera, Renderer
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-    camera.position.z = 12;
+    const camera = new THREE.PerspectiveCamera(isMobile ? 65 : 50, width / height, 0.1, 100);
+    camera.position.z = isMobile ? 15 : 12;
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
       powerPreference: "high-performance",
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
     const mainGroup = new THREE.Group();
     scene.add(mainGroup);
 
-    // 1. Central Illuminated Logo Emblem
+    // 1. Central Illuminated Logo Emblem (Scaled for mobile / desktop)
     const textureLoader = new THREE.TextureLoader();
     const logoTexture = textureLoader.load("/logo.webp");
-    const logoGeo = new THREE.PlaneGeometry(3.2, 0.72);
+    const logoWidth = isMobile ? 2.4 : 3.2;
+    const logoHeight = isMobile ? 0.54 : 0.72;
+    const logoGeo = new THREE.PlaneGeometry(logoWidth, logoHeight);
     const logoMat = new THREE.MeshBasicMaterial({
       map: logoTexture,
       transparent: true,
@@ -50,7 +53,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     mainGroup.add(logoMesh);
 
     // Glass backdrop plate behind logo
-    const plateGeo = new THREE.PlaneGeometry(3.6, 0.95);
+    const plateGeo = new THREE.PlaneGeometry(logoWidth + 0.3, logoHeight + 0.2);
     const plateMat = new THREE.MeshBasicMaterial({
       color: 0x14b8c4,
       transparent: true,
@@ -73,8 +76,8 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     pulseMesh.position.z = -0.02;
     mainGroup.add(pulseMesh);
 
-    // 2. High-Density 10,000 Particle Explosion System
-    const particleCount = 10000;
+    // 2. High-Density Particle Explosion System (4,000 on mobile, 10,000 on desktop)
+    const particleCount = isMobile ? 4000 : 10000;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
@@ -82,7 +85,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     const velocities = new Float32Array(particleCount * 3);
     const targetPositions = new Float32Array(particleCount * 3);
 
-    const radius = 3.6;
+    const radius = isMobile ? 3.0 : 3.6;
     const colorWhite = new THREE.Color(0xffffff);
     const colorTurquoise = new THREE.Color(0x14b8c4);
     const colorCyan = new THREE.Color(0x38d9e6);
@@ -115,19 +118,16 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
 
       // Morph targets (Logo top-left, Header top, Hero center)
       if (i % 3 === 0) {
-        // Logo top-left (-5, +4)
-        targetPositions[i * 3] = -5.5 + (Math.random() - 0.5) * 2;
-        targetPositions[i * 3 + 1] = 4.2 + (Math.random() - 0.5) * 1;
+        targetPositions[i * 3] = -4.0 + (Math.random() - 0.5) * 2;
+        targetPositions[i * 3 + 1] = 4.5 + (Math.random() - 0.5) * 1;
         targetPositions[i * 3 + 2] = 0;
       } else if (i % 3 === 1) {
-        // Navigation top (0, +4)
-        targetPositions[i * 3] = (Math.random() - 0.5) * 8;
+        targetPositions[i * 3] = (Math.random() - 0.5) * 6;
         targetPositions[i * 3 + 1] = 4.0 + (Math.random() - 0.5) * 0.5;
         targetPositions[i * 3 + 2] = 0;
       } else {
-        // Hero center image bounds
-        targetPositions[i * 3] = (Math.random() - 0.5) * 6;
-        targetPositions[i * 3 + 1] = (Math.random() - 0.5) * 4;
+        targetPositions[i * 3] = (Math.random() - 0.5) * 4;
+        targetPositions[i * 3 + 1] = (Math.random() - 0.5) * 3;
         targetPositions[i * 3 + 2] = 0;
       }
 
@@ -142,7 +142,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     particleGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     const particleMat = new THREE.PointsMaterial({
-      size: 0.048,
+      size: isMobile ? 0.06 : 0.048,
       vertexColors: true,
       transparent: true,
       opacity: 0.85,
@@ -158,7 +158,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
 
     const createRing = (r: number, mat: THREE.LineBasicMaterial, rotX: number, rotY: number) => {
       const curve = new THREE.EllipseCurve(0, 0, r, r, 0, 2 * Math.PI, false, 0);
-      const points = curve.getPoints(96);
+      const points = curve.getPoints(64);
       const geo = new THREE.BufferGeometry().setFromPoints(
         points.map((p) => new THREE.Vector3(p.x, p.y, 0))
       );
@@ -168,55 +168,78 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
       return ring;
     };
 
-    const ring1 = createRing(4.0, ringMat1, Math.PI / 3, Math.PI / 6);
-    const ring2 = createRing(4.3, ringMat2, -Math.PI / 4, Math.PI / 4);
-    const ring3 = createRing(4.6, ringMat3, Math.PI / 6, -Math.PI / 3);
+    const ringRadius = isMobile ? 3.3 : 4.0;
+    const ring1 = createRing(ringRadius, ringMat1, Math.PI / 3, Math.PI / 6);
+    const ring2 = createRing(ringRadius + 0.3, ringMat2, -Math.PI / 4, Math.PI / 4);
+    const ring3 = createRing(ringRadius + 0.6, ringMat3, Math.PI / 6, -Math.PI / 3);
     mainGroup.add(ring1);
     mainGroup.add(ring2);
     mainGroup.add(ring3);
 
-    // Interaction & Drag State
+    // Mouse & Touch Drag State Handlers
     let isDragging = false;
-    let previousMouseX = 0;
-    let previousMouseY = 0;
+    let previousX = 0;
+    let previousY = 0;
     let velX = 0;
     let velY = 0;
     let targetRotationX = 0;
     let targetRotationY = 0;
 
-    const onMouseDown = (e: MouseEvent) => {
+    const onPointerDown = (clientX: number, clientY: number) => {
       isDragging = true;
-      previousMouseX = e.clientX;
-      previousMouseY = e.clientY;
+      previousX = clientX;
+      previousY = clientY;
     };
 
-    const onMouseMove = (e: MouseEvent) => {
+    const onPointerMove = (clientX: number, clientY: number) => {
       if (!isDragging) return;
-      const deltaX = e.clientX - previousMouseX;
-      const deltaY = e.clientY - previousMouseY;
+      const deltaX = clientX - previousX;
+      const deltaY = clientY - previousY;
 
-      velX = deltaX * 0.005;
-      velY = deltaY * 0.005;
+      velX = deltaX * 0.006;
+      velY = deltaY * 0.006;
 
       targetRotationY += velX;
       targetRotationX += velY;
 
-      previousMouseX = e.clientX;
-      previousMouseY = e.clientY;
+      previousX = clientX;
+      previousY = clientY;
     };
 
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       isDragging = false;
     };
 
-    window.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
+    // Mouse Events
+    const handleMouseDown = (e: MouseEvent) => onPointerDown(e.clientX, e.clientY);
+    const handleMouseMove = (e: MouseEvent) => onPointerMove(e.clientX, e.clientY);
+    const handleMouseUp = () => onPointerUp();
+
+    // Touch Events for Mobile Responsiveness
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        onPointerDown(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+    const handleTouchEnd = () => onPointerUp();
+
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd);
 
     // Animation & Phase Sequence Logic
     let clock = new THREE.Clock();
     let animId: number;
-    let phase = 0; // 0: idle, 1: charge (0-0.5s), 2: explosion (0.5-1.4s), 3: morph (1.4-2.2s)
+    let phase = 0; // 0: idle, 1: charge, 2: explosion, 3: morph
     let phaseTimer = 0;
 
     const animate = () => {
@@ -243,7 +266,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
         mainGroup.scale.set(breath, breath, breath);
       }
 
-      // Trigger phase transition when isTriggered becomes true
+      // Trigger phase transition
       if (isTriggered && phase === 0) {
         phase = 1;
         phaseTimer = 0;
@@ -255,20 +278,16 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
         // Phase 1: Energy Charge (0 to 0.5s)
         if (phase === 1) {
           const t = phaseTimer / 0.5;
-          // Accelerate ring rotation 4x
           ring1.rotation.z += 0.08;
           ring2.rotation.z -= 0.1;
           ring3.rotation.z += 0.06;
 
-          // Camera Dolly Forward
-          camera.position.z = 12 - t * 1.5;
+          camera.position.z = (isMobile ? 15 : 12) - t * 1.5;
 
-          // Energy Pulse Expansion
           pulseMat.opacity = Math.sin(t * Math.PI) * 0.8;
           pulseMesh.scale.set(t * 15, t * 15, 1);
 
-          // Brighten logo and particles
-          particleMat.size = 0.048 + t * 0.03;
+          particleMat.size = (isMobile ? 0.06 : 0.048) + t * 0.03;
           logoMat.opacity = 0.95 + t * 0.05;
 
           if (phaseTimer >= 0.5) {
@@ -282,12 +301,10 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
           const posAttr = particleGeo.attributes.position as THREE.BufferAttribute;
           const posArray = posAttr.array as Float32Array;
 
-          // Camera Micro-Shake
           camera.position.x = (Math.random() - 0.5) * 0.08;
           camera.position.y = (Math.random() - 0.5) * 0.08;
 
           for (let i = 0; i < particleCount; i++) {
-            // Swirl turbulence vector
             const swirlX = Math.sin(elapsedTime * 2 + i) * 0.02;
             const swirlY = Math.cos(elapsedTime * 2 + i) * 0.02;
 
@@ -297,7 +314,6 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
           }
           posAttr.needsUpdate = true;
 
-          // Dissolve rings and logo
           logoMat.opacity = Math.max(0, 1 - t * 1.5);
           plateMat.opacity = Math.max(0, 0.15 - t * 0.2);
           ringMat1.opacity = Math.max(0, 0.5 - t * 0.8);
@@ -316,7 +332,6 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
           const posArray = posAttr.array as Float32Array;
 
           for (let i = 0; i < particleCount; i++) {
-            // Lerp towards target screen coordinates
             posArray[i * 3] += (targetPositions[i * 3] - posArray[i * 3]) * 0.12;
             posArray[i * 3 + 1] += (targetPositions[i * 3 + 1] - posArray[i * 3 + 1]) * 0.12;
             posArray[i * 3 + 2] += (targetPositions[i * 3 + 2] - posArray[i * 3 + 2]) * 0.12;
@@ -341,7 +356,10 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     const onResize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      const isMob = w < 768;
+      camera.fov = isMob ? 65 : 50;
       camera.aspect = w / h;
+      camera.position.z = isMob ? 15 : 12;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
@@ -350,9 +368,12 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
     // Complete GPU Cleanup & Resource Disposal
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
       window.removeEventListener("resize", onResize);
 
       logoGeo.dispose();
@@ -388,7 +409,7 @@ export function IntroCanvas({ onComplete, isTriggered }: IntroCanvasProps) {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
+      className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-none"
     />
   );
 }

@@ -33,13 +33,6 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Mobile / Touch check
-    const isMobile = window.innerWidth < 768 || "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    if (isMobile) {
-      setShowIntro(false);
-      return;
-    }
-
     // Session isolation: check if already seen in current browser session
     try {
       const hasSeen = sessionStorage.getItem("hasSeen3DIntro_v1");
