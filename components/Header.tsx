@@ -5,16 +5,49 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "./CartProvider";
 import { clinic } from "@/lib/constants";
+import { useMotion } from "./motion/MotionProvider";
 
 let cachedCustomerSession: any = undefined;
 
 export function Header() {
   const pathname = usePathname();
   const cart = useCart();
+  const { isReducedMotion } = useMotion();
   const [customer, setCustomer] = useState<any>(null);
   const [pulse, setPulse] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+
   const topBarText = "Book clinic guidance with " + clinic.doctor + " - " + clinic.timing;
+
+  // Header scroll handler (Auto-hide on scroll down, reveal on scroll up, glass blur)
+  useEffect(() => {
+    if (isReducedMotion || pathname?.startsWith("/admin")) return;
+
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > 40) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+
+      if (currentScrollY > 150 && currentScrollY > lastScrollY && !isMobileMenuOpen) {
+        setIsHidden(true);
+      } else {
+        setIsHidden(false);
+      }
+
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isReducedMotion, pathname, isMobileMenuOpen]);
 
   // Fetch session status once and cache across client route transitions
   useEffect(() => {
@@ -30,7 +63,7 @@ export function Header() {
         })
         .catch(() => setCustomer(null));
     }
-    
+
     // Close mobile menu on path transition
     setIsMobileMenuOpen(false);
   }, [pathname]);
@@ -66,7 +99,12 @@ export function Header() {
         {topBarText}
       </div>
 
-      <header className="header">
+      <header
+        className={`header transition-all duration-300 ease-out ${
+          isScrolled ? "header-scrolled shadow-md backdrop-blur-md bg-white/85 dark:bg-slate-950/85" : ""
+        } ${isHidden ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`}
+        style={{ willChange: "transform, opacity" }}
+      >
         <nav className="container nav">
           <Link href="/" className="brand-logo">
             <img 
@@ -165,4 +203,3 @@ export function Header() {
     </>
   );
 }
-

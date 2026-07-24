@@ -5,17 +5,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { LazyMotion, domMax, m, AnimatePresence } from "framer-motion";
 import { HeroSlide } from "@/lib/slides";
+import { TextReveal } from "./motion/TextReveal";
+import { MagneticButton } from "./motion/MagneticButton";
+import { useMotion } from "./motion/MotionProvider";
 
 interface HeroSliderProps {
   slides?: HeroSlide[];
 }
 
 export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
+  const { isDesktop, isReducedMotion } = useMotion();
   const [slides, setSlides] = useState<HeroSlide[]>(initialSlides || []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
@@ -41,6 +47,15 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Mouse Parallax for Desktop Hero
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDesktop || isReducedMotion) return;
+    const { clientX, clientY } = e;
+    const x = (clientX / window.innerWidth - 0.5) * 20;
+    const y = (clientY / window.innerHeight - 0.5) * 20;
+    setMouseOffset({ x, y });
+  };
 
   // Preload NEXT slide image in background after initial page paint is complete
   useEffect(() => {
@@ -109,25 +124,13 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
 
   const currentSlide = activeSlides[currentIndex] || activeSlides[0];
 
-  const currentMediaSrc = isMobile
-    ? currentSlide.mobileImage || currentSlide.desktopImage
-    : currentSlide.desktopImage;
-
-  const currentVideoSrc = isMobile
-    ? currentSlide.mobileVideoUrl || currentSlide.videoUrl
-    : currentSlide.videoUrl;
-
-  // First slide preloading link
-  const firstSlideSrc = activeSlides[0]
-    ? isMobile ? activeSlides[0].mobileImage || activeSlides[0].desktopImage : activeSlides[0].desktopImage
-    : "";
-
   return (
     <LazyMotion features={domMax}>
       <section
-        className="luxury-hero-container"
+        className="luxury-hero-container relative overflow-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
+        onMouseMove={handleMouseMove}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -153,6 +156,7 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
                   zIndex: isCurrent ? 2 : 1,
                   pointerEvents: isCurrent ? "auto" : "none",
                   willChange: "opacity, transform",
+                  transform: `translate3d(${mouseOffset.x * 0.2}px, ${mouseOffset.y * 0.2}px, 0)`,
                 }}
               >
                 <m.div
@@ -205,7 +209,7 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
           })}
         </div>
 
-        {/* Luxury Animated Text & Content Grid (Staggered Crossfade) */}
+        {/* Luxury Animated Text & Content Grid */}
         <AnimatePresence mode="wait">
           <m.div
             key={currentSlide.id}
@@ -214,7 +218,10 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            style={{ zIndex: 10 }}
+            style={{
+              zIndex: 10,
+              transform: `translate3d(${mouseOffset.x * 0.4}px, ${mouseOffset.y * 0.4}px, 0)`,
+            }}
           >
             <div className="container luxury-hero-content-wrapper">
               <div className="luxury-hero-content">
@@ -226,23 +233,25 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
 
                 {/* Title */}
                 <h1 className="luxury-hero-title">
-                  {currentSlide.title}
+                  <TextReveal type="character">{currentSlide.title}</TextReveal>
                 </h1>
 
                 {/* Description */}
-                <p className="luxury-hero-description">
-                  {currentSlide.subtitle}
-                </p>
+                <div className="luxury-hero-description">
+                  <TextReveal type="word" delay={200}>{currentSlide.subtitle}</TextReveal>
+                </div>
 
                 {/* CTA Button & Highlights */}
                 <div className="luxury-hero-actions">
-                  <Link href={currentSlide.ctaUrl || "/shop"} className="luxury-hero-btn">
-                    <span>{currentSlide.ctaText || "Discover Collection"}</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                      <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                  </Link>
+                  <MagneticButton>
+                    <Link href={currentSlide.ctaUrl || "/shop"} className="luxury-hero-btn">
+                      <span>{currentSlide.ctaText || "Discover Collection"}</span>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                      </svg>
+                    </Link>
+                  </MagneticButton>
 
                   <div className="luxury-hero-badge">
                     <span className="badge-icon">🌿</span>

@@ -8,6 +8,11 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import { VisitorTracker } from "@/components/VisitorTracker";
 import { FloatingCallWidget } from "@/components/FloatingCallWidget";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { MotionProvider } from "@/components/motion/MotionProvider";
+import { LenisProvider } from "@/components/motion/LenisProvider";
+import { CustomCursor } from "@/components/motion/CustomCursor";
+import { ScrollProgress } from "@/components/motion/ScrollProgress";
+import { AmbientBackground } from "@/components/motion/AmbientBackground";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -57,14 +62,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`page-enter ${outfit.variable} ${playfair.variable}`}>
       <body>
         <ThemeProvider>
-          <ScrollReveal />
-          <VisitorTracker />
-          <CartProvider>
-            <Header />
-            {children}
-            <Footer />
-          </CartProvider>
-          <FloatingCallWidget />
+          <MotionProvider>
+            <LenisProvider>
+              <ScrollProgress />
+              <CustomCursor />
+              <AmbientBackground />
+              <ScrollReveal />
+              <VisitorTracker />
+              <CartProvider>
+                <Header />
+                {children}
+                <Footer />
+              </CartProvider>
+              <FloatingCallWidget />
+            </LenisProvider>
+          </MotionProvider>
         </ThemeProvider>
       </body>
     </html>
