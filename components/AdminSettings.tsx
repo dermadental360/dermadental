@@ -30,6 +30,13 @@ export function AdminSettings() {
   const [consultationSubtitle, setConsultationSubtitle] = useState("");
   const [consultationImage, setConsultationImage] = useState("");
 
+  // Business & Compliance fields
+  const [legalEntityName, setLegalEntityName] = useState("");
+  const [gstin, setGstin] = useState("");
+  const [registeredAddress, setRegisteredAddress] = useState("");
+  const [supportEmail, setSupportEmail] = useState("");
+  const [supportPhone, setSupportPhone] = useState("");
+
   const [shippingHighlights, setShippingHighlights] = useState<Array<{icon: string, title: string, text: string}>>([]);
 
   const handleHighlightChange = (index: number, field: 'icon' | 'title' | 'text', value: string) => {
@@ -83,6 +90,11 @@ export function AdminSettings() {
           { icon: "📦", title: "Secure Delivery", text: "Standard delivery in 3 to 5 business days." },
           { icon: "🛡️", title: "Authentic Clinic Sourced", text: "Directly selected and recommended by our medical experts." }
         ]),
+        legal_entity_name: data.legal_entity_name || "Moeen International",
+        gstin: data.gstin || "27AHTPG5622L2ZU",
+        registered_address: data.registered_address || "502, Villa Rosa, 24 & 30 Road, Bandra West, Mumbai, Maharashtra 400050",
+        support_email: data.support_email || "moeenint@gmail.com",
+        support_phone: data.support_phone || "9833699887",
       };
 
       setInitialSettings(normalizedData);
@@ -102,6 +114,12 @@ export function AdminSettings() {
       setConsultationTitle(normalizedData.consultation_title);
       setConsultationSubtitle(normalizedData.consultation_subtitle);
       setConsultationImage(normalizedData.consultation_image);
+
+      setLegalEntityName(normalizedData.legal_entity_name);
+      setGstin(normalizedData.gstin);
+      setRegisteredAddress(normalizedData.registered_address);
+      setSupportEmail(normalizedData.support_email);
+      setSupportPhone(normalizedData.support_phone);
 
       try {
         setShippingHighlights(JSON.parse(normalizedData.shipping_highlights));
@@ -175,6 +193,11 @@ export function AdminSettings() {
         consultation_subtitle: consultationSubtitle,
         consultation_image: consultationImage,
         shipping_highlights: JSON.stringify(shippingHighlights),
+        legal_entity_name: legalEntityName,
+        gstin: gstin,
+        registered_address: registeredAddress,
+        support_email: supportEmail,
+        support_phone: supportPhone,
       };
 
       // Dirty checking: Determine changed settings
@@ -588,6 +611,109 @@ export function AdminSettings() {
               </div>
             </div>
           </div>
+        </div>
+
+        <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />
+        
+        <h3 style={{ fontSize: 18, color: "var(--sage-dark)" }}>🏛️ Business & Merchant Compliance Details</h3>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginTop: -15, marginBottom: 10 }}>
+          Manage official legal entity name, GSTIN, registered address, and support contact details required by payment gateways.
+        </p>
+
+        {/* Legal Entity Name */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <label style={{ fontSize: 14, fontWeight: 600 }}>Legal Entity Name</label>
+          <input
+            type="text"
+            value={legalEntityName}
+            onChange={(e) => setLegalEntityName(e.target.value)}
+            placeholder="e.g. Moeen International"
+            style={{
+              padding: "10px 14px",
+              border: "1px solid var(--line)",
+              borderRadius: 6,
+              background: "var(--white)",
+              fontSize: 14,
+            }}
+            required
+          />
+        </div>
+
+        {/* GSTIN */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <label style={{ fontSize: 14, fontWeight: 600 }}>GSTIN Registration Number</label>
+          <input
+            type="text"
+            value={gstin}
+            onChange={(e) => setGstin(e.target.value)}
+            placeholder="e.g. 27AHTPG5622L2ZU"
+            style={{
+              padding: "10px 14px",
+              border: "1px solid var(--line)",
+              borderRadius: 6,
+              background: "var(--white)",
+              fontSize: 14,
+            }}
+            required
+          />
+        </div>
+
+        {/* Registered Address */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <label style={{ fontSize: 14, fontWeight: 600 }}>Registered Business Address</label>
+          <textarea
+            value={registeredAddress}
+            onChange={(e) => setRegisteredAddress(e.target.value)}
+            rows={2}
+            placeholder="e.g. 502, Villa Rosa, 24 & 30 Road, Bandra West, Mumbai 400050"
+            style={{
+              padding: "10px 14px",
+              border: "1px solid var(--line)",
+              borderRadius: 6,
+              background: "var(--white)",
+              fontSize: 14,
+              resize: "vertical",
+            }}
+            required
+          />
+        </div>
+
+        {/* Support Email */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <label style={{ fontSize: 14, fontWeight: 600 }}>Official Support Email</label>
+          <input
+            type="email"
+            value={supportEmail}
+            onChange={(e) => setSupportEmail(e.target.value)}
+            placeholder="e.g. moeenint@gmail.com"
+            style={{
+              padding: "10px 14px",
+              border: "1px solid var(--line)",
+              borderRadius: 6,
+              background: "var(--white)",
+              fontSize: 14,
+            }}
+            required
+          />
+        </div>
+
+        {/* Support Phone */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <label style={{ fontSize: 14, fontWeight: 600 }}>Official Support Phone / WhatsApp</label>
+          <input
+            type="text"
+            value={supportPhone}
+            onChange={(e) => setSupportPhone(e.target.value)}
+            placeholder="e.g. 9833699887"
+            style={{
+              padding: "10px 14px",
+              border: "1px solid var(--line)",
+              borderRadius: 6,
+              background: "var(--white)",
+              fontSize: 14,
+            }}
+            required
+          />
         </div>
 
         <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />

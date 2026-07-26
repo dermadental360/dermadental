@@ -21,6 +21,11 @@ export const DEFAULT_SETTINGS = {
     { icon: "📦", title: "Secure Delivery", text: "Standard delivery in 3 to 5 business days." },
     { icon: "🛡️", title: "Authentic Clinic Sourced", text: "Directly selected and recommended by our medical experts." }
   ]),
+  legal_entity_name: "Moeen International",
+  gstin: "27AHTPG5622L2ZU",
+  registered_address: "502, Villa Rosa, 24 & 30 Road, Bandra West, Mumbai, Maharashtra 400050",
+  support_email: "moeenint@gmail.com",
+  support_phone: "9833699887",
 };
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

@@ -62,9 +62,13 @@ export default function ContactPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="card pad" style={{ background: "var(--blush-light)" }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>CLINIC LOCATION</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>REGISTERED OFFICE & CLINIC LOCATION</span>
               <h3 style={{ fontSize: 18, marginTop: 4 }}>{clinic.name}</h3>
-              <p style={{ fontSize: 15, color: "var(--muted)", margin: "4px 0 0 0" }}>{clinic.address}</p>
+              <p style={{ fontSize: 14, color: "var(--muted)", margin: "4px 0 0 0", lineHeight: 1.5 }}>
+                <strong>Legal Entity:</strong> {clinic.legalEntityName}<br />
+                <strong>GSTIN:</strong> {clinic.gstin}<br />
+                <strong>Address:</strong> {clinic.address}
+              </p>
             </div>
 
             <div className="card pad">

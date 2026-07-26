@@ -1,11 +1,13 @@
 export const clinic = {
   name: "DermaDental360",
+  legalEntityName: "Moeen International",
+  gstin: "27AHTPG5622L2ZU",
   doctor: "Dr. Sadaf Yamin",
   phone: "9833699887",
   whatsapp: "919833699887",
-  address: "Flat No 10, New Ambe Bhavan, Rd Number 24, Khar W, Mumbai, Maharashtra 400052",
+  address: "502, Villa Rosa, 24 & 30 Road, Bandra West, Mumbai, Maharashtra 400050",
   timing: "12:00 PM to 7:00 PM, Sunday closed",
-  email: "dermadental360@gmail.com"
+  email: "moeenint@gmail.com"
 };
 
 export const categories = ["Skin", "Oral Care", "Hair", "Supplements", "Luxe"];
