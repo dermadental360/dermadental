@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { logAction } from "./auditLogger";
 import { clinic, calculateShippingDetails } from "./constants";
 
@@ -51,7 +52,31 @@ export interface AdminOrderEmailData {
 }
 
 /**
- * Generate modular HTML Email for Customer Order Lifecycles
+ * Creates Nodemailer Transporter if SMTP credentials exist in environment.
+ */
+function getEmailTransporter() {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = parseInt(process.env.SMTP_PORT || "465", 10);
+  const user = process.env.SMTP_USER || process.env.ADMIN_EMAIL;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+}
+
+/**
+ * Generate HTML Email for Customer Order Lifecycles
  */
 export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): string {
   const stage = data.stage || "ORDER_CONFIRMED";
@@ -296,6 +321,116 @@ export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): st
 }
 
 /**
+ * Generate HTML Email for Admin Order Alerts
+ */
+export function generateAdminOrderEmailHtml(data: AdminOrderEmailData): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com";
+  const itemsSubtotal = data.subtotal || data.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const shippingInfo = calculateShippingDetails(itemsSubtotal);
+  const finalShippingCharge = data.shippingCharge !== undefined ? data.shippingCharge : shippingInfo.shippingCharge;
+  const shippingDisplay = finalShippingCharge === 0 ? "FREE" : `₹${finalShippingCharge}`;
+
+  const itemsHtml = data.items
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding: 10px 14px; font-size: 14px; color: #1e293b; border-bottom: 1px solid #f1f5f9;">
+        <strong>${item.name}</strong>
+      </td>
+      <td style="padding: 10px 14px; font-size: 14px; color: #475569; border-bottom: 1px solid #f1f5f9; text-align: center;">
+        ${item.quantity}
+      </td>
+      <td style="padding: 10px 14px; font-size: 14px; color: #1e293b; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">
+        ₹${(item.price * item.quantity).toLocaleString("en-IN")}
+      </td>
+    </tr>
+  `
+    )
+    .join("");
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛒 New Paid Order Received - #${data.orderId}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          
+          <td style="background-color: #0f172a; padding: 20px; text-align: center;">
+            <h1 style="color: #4ade80; margin: 0; font-size: 20px; font-weight: 800;">
+              🛒 NEW PAID ORDER RECEIVED
+            </h1>
+            <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 13px;">
+              DermaDental 360 Admin Alert
+            </p>
+          </td>
+
+          <tr>
+            <td style="padding: 20px 24px;">
+              <p style="font-size: 16px; margin: 0 0 16px 0;">
+                A new order of <strong>₹${data.total.toLocaleString("en-IN")}</strong> has been successfully paid and verified.
+              </p>
+
+              <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; color: #64748b;">Customer Information</h3>
+                <p style="margin: 4px 0; font-size: 14px;"><strong>Name:</strong> ${data.customerName}</p>
+                <p style="margin: 4px 0; font-size: 14px;"><strong>Phone:</strong> ${data.customerPhone}</p>
+                <p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> ${data.customerEmail || "Not provided"}</p>
+                <p style="margin: 4px 0; font-size: 14px;"><strong>Address:</strong> ${data.customerAddress}</p>
+              </div>
+
+              <h3 style="margin: 0 0 10px 0; font-size: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px;">Items Purchased</h3>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; margin-bottom: 16px;">
+                <thead>
+                  <tr style="background-color: #f8fafc;">
+                    <th align="left" style="padding: 8px 12px; font-size: 12px; color: #64748b;">ITEM</th>
+                    <th align="center" style="padding: 8px 12px; font-size: 12px; color: #64748b;">QTY</th>
+                    <th align="right" style="padding: 8px 12px; font-size: 12px; color: #64748b;">TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsHtml}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="2" align="left" style="padding: 8px 12px; font-size: 13px; color: #64748b;">Subtotal:</td>
+                    <td align="right" style="padding: 8px 12px; font-size: 13px; font-weight: 600;">₹${itemsSubtotal.toLocaleString("en-IN")}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" align="left" style="padding: 8px 12px; font-size: 13px; color: #64748b;">Shipping:</td>
+                    <td align="right" style="padding: 8px 12px; font-size: 13px; font-weight: 700; color: ${finalShippingCharge === 0 ? "#16a34a" : "#0f172a"};">${shippingDisplay}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" align="left" style="padding: 12px; font-size: 15px; font-weight: 700; border-top: 2px solid #e2e8f0;">Grand Total Paid:</td>
+                    <td align="right" style="padding: 12px; font-size: 16px; font-weight: 800; color: #2d5a27; border-top: 2px solid #e2e8f0;">₹${data.total.toLocaleString("en-IN")}</td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              <div style="text-align: center; margin-top: 24px;">
+                <a href="${appUrl}/admin/orders?search=${data.orderId}" style="display: inline-block; background-color: #2d5a27; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;">
+                  View Order in Admin Dashboard →
+                </a>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+}
+
+/**
  * Asynchronously dispatches Customer Order Confirmation Email without blocking payment thread.
  */
 export async function sendCustomerOrderEmail(data: CustomerOrderEmailData): Promise<boolean> {
@@ -308,12 +443,25 @@ export async function sendCustomerOrderEmail(data: CustomerOrderEmailData): Prom
   const htmlContent = generateCustomerOrderEmailHtml(data);
 
   try {
+    const transporter = getEmailTransporter();
+    if (transporter) {
+      const fromAddress = process.env.SMTP_USER || process.env.ADMIN_EMAIL || "dd360health@gmail.com";
+      await transporter.sendMail({
+        from: `"DermaDental 360" <${fromAddress}>`,
+        to: data.customerEmail,
+        subject: `🎉 Your Dermadental 360 Order is Confirmed - Order #${data.orderId}`,
+        html: htmlContent,
+      });
+      console.log(`[CUSTOMER EMAIL SENT VIA SMTP] Sent to ${data.customerEmail}`);
+    } else {
+      console.log(`[CUSTOMER EMAIL DISPATCH LOG] To ${data.customerEmail} (SMTP_PASS not set in env)\nSubject: 🎉 Your Dermadental 360 Order is Confirmed - #${data.orderId}\nHTML length: ${htmlContent.length} bytes`);
+    }
+
     await logAction(
       "Customer Order Email Dispatched",
       `Order #${data.orderId} (${stage}) confirmation email sent to ${data.customerEmail}. Total: ₹${data.total}`
     );
 
-    console.log(`[CUSTOMER EMAIL DISPATCH to ${data.customerEmail}]\nSubject: 🎉 Your Dermadental 360 Order is Confirmed - #${data.orderId}\nSent HTML email template (${htmlContent.length} bytes)`);
     return true;
   } catch (err: any) {
     console.error(`[CUSTOMER EMAIL ERROR] Failed to send email to ${data.customerEmail}:`, err?.message || err);
@@ -326,54 +474,32 @@ export async function sendCustomerOrderEmail(data: CustomerOrderEmailData): Prom
  */
 export async function sendAdminOrderEmail(data: AdminOrderEmailData): Promise<boolean> {
   const adminEmail = process.env.ADMIN_EMAIL || "dd360health@gmail.com";
-  
-  const itemsText = data.items
-    .map((item) => `- ${item.quantity}x ${item.name} @ ₹${item.price}`)
-    .join("\n");
-
-  const itemsSubtotal = data.subtotal || data.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const shippingInfo = calculateShippingDetails(itemsSubtotal);
-  const shippingCharge = data.shippingCharge !== undefined ? data.shippingCharge : shippingInfo.shippingCharge;
-  const shippingText = shippingCharge === 0 ? "FREE" : `Rs ${shippingCharge}`;
-
+  const htmlContent = generateAdminOrderEmailHtml(data);
   const emailSubject = `🛒 NEW PAID ORDER: #${data.orderId} - ₹${data.total} by ${data.customerName}`;
 
-  const emailBody = `
-==================================================
-🛒 NEW ORDER RECEIVED & VERIFIED (DermaDental 360)
-==================================================
+  try {
+    const transporter = getEmailTransporter();
+    if (transporter) {
+      const fromAddress = process.env.SMTP_USER || adminEmail;
+      await transporter.sendMail({
+        from: `"DermaDental 360 Alerts" <${fromAddress}>`,
+        to: adminEmail,
+        subject: emailSubject,
+        html: htmlContent,
+      });
+      console.log(`[ADMIN EMAIL SENT VIA SMTP] Sent to ${adminEmail}`);
+    } else {
+      console.log(`[ADMIN EMAIL DISPATCH LOG] To ${adminEmail} (SMTP_PASS not set in env)\nSubject: ${emailSubject}\nHTML length: ${htmlContent.length} bytes`);
+    }
 
-Order ID: ${data.orderId}
-Payment Status: ${data.paymentStatus}
-Payment ID: ${data.paymentId || "N/A"}
-Payment Date/Time: ${data.paymentTime}
+    await logAction(
+      "Admin Order Email Triggered",
+      `Order #${data.orderId} email notification dispatched for ${adminEmail}. Grand Total: ₹${data.total}`
+    );
 
-CUSTOMER DETAILS:
-- Name: ${data.customerName}
-- Phone: ${data.customerPhone}
-- Email: ${data.customerEmail || "Not provided"}
-- Shipping Address: ${data.customerAddress}
-
-ITEMS PURCHASED:
-${itemsText}
-
-PRICE BREAKDOWN:
-- Subtotal: Rs ${itemsSubtotal}
-- Shipping Charge: ${shippingText}
-- Grand Total Paid: Rs ${data.total}
-
-VIEW ORDER DETAILS IN ADMIN DASHBOARD:
-${process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com"}/admin/orders?search=${data.orderId}
-
-==================================================
-`;
-
-  await logAction(
-    "Admin Order Email Triggered",
-    `Order #${data.orderId} email notification dispatched for ${adminEmail}. Subtotal: ₹${itemsSubtotal}, Shipping: ${shippingText}, Grand Total: ₹${data.total}`
-  );
-
-  console.log(`[ADMIN EMAIL DISPATCH to ${adminEmail}]\nSubject: ${emailSubject}\n${emailBody}`);
-
-  return true;
+    return true;
+  } catch (err: any) {
+    console.error(`[ADMIN EMAIL ERROR] Failed to send admin alert email to ${adminEmail}:`, err?.message || err);
+    return false;
+  }
 }
