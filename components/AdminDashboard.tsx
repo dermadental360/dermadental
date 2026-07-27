@@ -60,6 +60,17 @@ export function AdminDashboard() {
 
     loadData();
 
+    // Real-Time SSE Stream Listener to reload metrics on any shop activity
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource("/api/admin/stream");
+      eventSource.onmessage = () => {
+        loadData();
+      };
+    } catch (err) {
+      console.warn("Dashboard SSE failed:", err);
+    }
+
     // Set interval to update active visitor counts every 60 seconds
     const visitorInterval = setInterval(async () => {
       try {
@@ -74,6 +85,7 @@ export function AdminDashboard() {
     }, 60000);
 
     return () => {
+      if (eventSource) eventSource.close();
       clearInterval(greetingInterval);
       clearInterval(visitorInterval);
     };

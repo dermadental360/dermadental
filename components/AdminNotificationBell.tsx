@@ -88,8 +88,70 @@ export function AdminNotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000); // 10s polling for real-time order alerts
-    return () => clearInterval(interval);
+
+    // Request browser native notification permission on client mount
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+
+    // Real-Time SSE Stream Subscription
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource("/api/admin/stream");
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "NOTIFICATION_NEW" && data.payload) {
+            const newNotif: NotificationItem = {
+              id: data.payload.id || "notif-" + Date.now(),
+              title: data.payload.title || "New Notification",
+              message: data.payload.message || "",
+              type: data.payload.type || "SYSTEM",
+              orderId: data.payload.orderId || null,
+              isRead: false,
+              createdAt: data.payload.createdAt || new Date().toISOString()
+            };
+
+            playNotificationChime();
+
+            // Native Browser Desktop Popup Notification
+            if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+              try {
+                new Notification(newNotif.title, {
+                  body: newNotif.message,
+                  icon: "/favicon.ico"
+                });
+              } catch {}
+            }
+
+            setToastNotification(newNotif);
+            setTimeout(() => setToastNotification(null), 6000);
+
+            setNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== newNotif.id)]);
+            setUnreadCount((prev) => prev + 1);
+          } else {
+            // Fetch updated unread badge counts on any event
+            fetchNotifications();
+          }
+        } catch (err) {
+          console.error("Error parsing SSE event:", err);
+        }
+      };
+
+      eventSource.onerror = () => {
+        // Fallback polling if SSE drops out
+      };
+    } catch (err) {
+      console.warn("SSE not available, falling back to polling:", err);
+    }
+
+    const interval = setInterval(fetchNotifications, 15000); // Polling backup
+
+    return () => {
+      if (eventSource) eventSource.close();
+      clearInterval(interval);
+    };
   }, []);
 
   // Close dropdown on click outside

@@ -60,6 +60,28 @@ export async function POST(request: NextRequest) {
     });
 
 
+    // Create DB Notification & Broadcast real-time event
+    try {
+      const notification = await prisma.notification.create({
+        data: {
+          title: "⭐ New Product Review",
+          message: `New ${parsedRating}-star review submitted by ${userName} for product #${productId}.`,
+          type: "SYSTEM",
+          isRead: false
+        }
+      });
+
+      const { broadcastAdminEvent } = await import("@/lib/eventBus");
+      broadcastAdminEvent("REVIEW_NEW", review);
+      broadcastAdminEvent("NOTIFICATION_NEW", notification);
+    } catch (err) {
+      console.warn("Failed to create notification/event for review:", err);
+      try {
+        const { broadcastAdminEvent } = await import("@/lib/eventBus");
+        broadcastAdminEvent("REVIEW_NEW", review);
+      } catch {}
+    }
+
     return NextResponse.json({
       success: true,
       message: "Review submitted successfully and is pending approval.",

@@ -25,6 +25,33 @@ export function AdminOrders() {
 
   useEffect(() => {
     load();
+
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource("/api/admin/stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "ORDER_NEW" && data.payload) {
+            const newOrder = data.payload;
+            setOrders((prev) => [
+              newOrder,
+              ...prev.filter((o) => String(o._id) !== String(newOrder._id))
+            ]);
+          } else if (data.type === "PAYMENT_SUCCESS" || data.type === "ORDER_STATUS_UPDATED") {
+            load();
+          }
+        } catch (err) {
+          console.error("AdminOrders SSE error:", err);
+        }
+      };
+    } catch (err) {
+      console.warn("AdminOrders SSE failed:", err);
+    }
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
   }, []);
 
   useEffect(() => {

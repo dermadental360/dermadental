@@ -22,6 +22,31 @@ export function AdminInquiries() {
 
   useEffect(() => {
     load();
+
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource("/api/admin/stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "INQUIRY_NEW" && data.payload) {
+            const newInquiry = data.payload;
+            setInquiries((prev) => [
+              newInquiry,
+              ...prev.filter((i) => String(i._id) !== String(newInquiry._id))
+            ]);
+          }
+        } catch (err) {
+          console.error("AdminInquiries SSE error:", err);
+        }
+      };
+    } catch (err) {
+      console.warn("AdminInquiries SSE failed:", err);
+    }
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
   }, []);
 
   async function deleteInquiry(id: string) {

@@ -50,6 +50,31 @@ export function AdminReviews() {
   useEffect(() => {
     fetchReviews();
     fetchProducts();
+
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource("/api/admin/stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "REVIEW_NEW" && data.payload) {
+            const newReview = data.payload;
+            setReviews((prev) => [
+              newReview,
+              ...prev.filter((r) => String(r.id) !== String(newReview.id))
+            ]);
+          }
+        } catch (err) {
+          console.error("AdminReviews SSE error:", err);
+        }
+      };
+    } catch (err) {
+      console.warn("AdminReviews SSE failed:", err);
+    }
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
   }, []);
 
   const fetchReviews = async () => {

@@ -81,6 +81,28 @@ export async function POST(request: NextRequest) {
 
     await logAction("Create Inquiry", `Inquiry ID "${saved._id}" submitted by "${name}" (${email}).`);
 
+    // Create DB Notification & Broadcast real-time event
+    try {
+      const notification = await prisma.notification.create({
+        data: {
+          title: "📬 New Customer Inquiry",
+          message: `Inquiry received from ${name} (${email}): "${message.slice(0, 60)}${message.length > 60 ? "..." : ""}"`,
+          type: "SYSTEM",
+          isRead: false
+        }
+      });
+
+      const { broadcastAdminEvent } = await import("@/lib/eventBus");
+      broadcastAdminEvent("INQUIRY_NEW", saved);
+      broadcastAdminEvent("NOTIFICATION_NEW", notification);
+    } catch (err) {
+      console.warn("Failed to create notification/event for inquiry:", err);
+      try {
+        const { broadcastAdminEvent } = await import("@/lib/eventBus");
+        broadcastAdminEvent("INQUIRY_NEW", saved);
+      } catch {}
+    }
+
     return NextResponse.json({ success: true, inquiry: saved });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });

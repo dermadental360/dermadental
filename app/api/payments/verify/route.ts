@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     const paymentTimeString = new Date().toLocaleString();
 
     try {
-      await prisma.notification.create({
+      const notification = await prisma.notification.create({
         data: {
           title: "🛒 New Order Received",
           message: `Order #${orderId} received from ${customerName} for ₹${totalAmount}.`,
@@ -162,8 +162,16 @@ export async function POST(request: NextRequest) {
           isRead: false
         }
       });
+
+      const { broadcastAdminEvent } = await import("@/lib/eventBus");
+      broadcastAdminEvent("PAYMENT_SUCCESS", { orderId, amount: totalAmount, customerName });
+      broadcastAdminEvent("NOTIFICATION_NEW", notification);
     } catch (notifErr: any) {
       console.warn("Could not create DB notification entry:", notifErr?.message || notifErr);
+      try {
+        const { broadcastAdminEvent } = await import("@/lib/eventBus");
+        broadcastAdminEvent("PAYMENT_SUCCESS", { orderId, amount: totalAmount, customerName });
+      } catch {}
     }
 
     // Non-blocking Admin Email dispatch
