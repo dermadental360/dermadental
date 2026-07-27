@@ -34,71 +34,142 @@ export function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 p-4 sm:p-6 text-slate-100">
-      <div className="w-full max-w-md flex flex-col gap-6">
+    <div
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#0f172a",
+        padding: "24px",
+        color: "#ffffff",
+        boxSizing: "border-box"
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 24 }}>
         
         {/* Animated welcome header info */}
-        <div className="text-center animate-fadeInUp">
-          <div className="w-14 h-14 rounded-full bg-[var(--sage,#14B8C4)] flex items-center justify-center font-bold text-white text-xl mx-auto mb-3 shadow-lg shadow-cyan-500/20">
+        <div style={{ textAlign: "center", animation: "fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              backgroundColor: "var(--sage, #14B8C4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 800,
+              color: "#ffffff",
+              fontSize: 20,
+              margin: "0 auto 14px auto",
+              boxShadow: "0 10px 25px rgba(20,184,196,0.3)"
+            }}
+          >
             DD
           </div>
-          <p className="text-xs uppercase tracking-widest text-[var(--primary,#38D9E6)] font-bold mb-1">
+          <p className="eyebrow" style={{ color: "var(--accent, #38D9E6)", fontWeight: 700, margin: 0, letterSpacing: 2 }}>
             DermaDental360 Clinic
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold font-playfair text-white mb-2">
+          <h1 style={{ fontSize: "clamp(24px, 4.5vw, 34px)", margin: "6px 0 8px 0", fontFamily: "'Playfair Display', serif", color: "#ffffff" }}>
             Admin Portal Access
           </h1>
-          <p className="text-sm text-slate-400 leading-relaxed">
+          <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.5, margin: 0 }}>
             Authorized portal for Dr. Sadaf Yamin and clinic management.
           </p>
         </div>
 
         {/* Login form card */}
         <form
-          className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl flex flex-col gap-5 animate-fadeInUp"
           onSubmit={submit}
+          style={{
+            animation: "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            backgroundColor: "#1e293b",
+            border: "1px solid #334155",
+            borderRadius: "16px",
+            padding: "32px 28px",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 20
+          }}
           autoComplete="off"
         >
-          <div className="border-b border-slate-800 pb-3">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Authentication</p>
-            <h2 className="text-lg font-bold text-white">Sign In to Dashboard</h2>
+          <div style={{ borderBottom: "1px solid #334155", paddingBottom: 12 }}>
+            <p className="eyebrow" style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>Authentication</p>
+            <h2 style={{ fontSize: 20, margin: "2px 0 0 0", fontWeight: 700, color: "#ffffff" }}>Sign In to Dashboard</h2>
           </div>
           
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs sm:text-sm p-3.5 rounded-xl">
+            <div style={{ backgroundColor: "rgba(244, 63, 94, 0.12)", border: "1px solid rgba(244, 63, 94, 0.3)", color: "#fda4af", fontSize: 13, padding: "12px 16px", borderRadius: "10px" }}>
               {error}
             </div>
           )}
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-slate-300">Email Address</label>
+          <div className="field">
+            <label style={{ fontSize: 13, fontWeight: 600, color: "#cbd5e1" }}>Email Address</label>
             <input
-              className="w-full bg-slate-950 border border-slate-800 focus:border-[var(--primary,#38D9E6)] rounded-xl px-4 py-3 text-sm text-white outline-none transition-all min-h-[48px]"
+              className="input"
               name="email"
               type="email"
               placeholder="admin@dermadental360.com"
               defaultValue=""
               autoComplete="new-email"
               required
+              style={{
+                backgroundColor: "#0f172a",
+                border: "1px solid #334155",
+                color: "#ffffff",
+                borderRadius: "10px",
+                padding: "14px 16px",
+                fontSize: 14,
+                minHeight: 48,
+                width: "100%",
+                boxSizing: "border-box"
+              }}
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-slate-300">Password</label>
-            <div className="relative">
+          <div className="field">
+            <label style={{ fontSize: 13, fontWeight: 600, color: "#cbd5e1" }}>Password</label>
+            <div style={{ position: "relative", width: "100%" }}>
               <input
-                className="w-full bg-slate-950 border border-slate-800 focus:border-[var(--primary,#38D9E6)] rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all min-h-[48px]"
+                className="input"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••••••"
                 defaultValue=""
                 autoComplete="new-password"
                 required
+                style={{
+                  backgroundColor: "#0f172a",
+                  border: "1px solid #334155",
+                  color: "#ffffff",
+                  borderRadius: "10px",
+                  padding: "14px 48px 14px 16px",
+                  fontSize: 14,
+                  minHeight: 48,
+                  width: "100%",
+                  boxSizing: "border-box"
+                }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-2"
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  display: "grid",
+                  placeItems: "center",
+                  padding: 4
+                }}
                 title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "👁️" : "🙈"}
@@ -107,20 +178,27 @@ export function AdminLogin() {
           </div>
 
           <button
-            className="w-full bg-[var(--sage-dark,#0F7F8F)] hover:bg-[var(--sage,#14B8C4)] text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-lg min-h-[48px] flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+            className="btn"
+            style={{
+              width: "100%",
+              marginTop: 8,
+              backgroundColor: "var(--sage-dark, #0F7F8F)",
+              color: "#ffffff",
+              padding: "14px",
+              fontSize: 15,
+              fontWeight: 700,
+              borderRadius: "10px",
+              minHeight: 48,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              border: "none",
+              cursor: loading ? "not-allowed" : "pointer"
+            }}
             disabled={loading}
           >
-            {loading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                <span>Verifying Credentials...</span>
-              </>
-            ) : (
-              <span>Access Dashboard →</span>
-            )}
+            {loading ? "Verifying Credentials..." : "Access Dashboard →"}
           </button>
         </form>
       </div>

@@ -43,8 +43,6 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
     };
   }, [isMobileMenuOpen]);
 
-  const isActive = (path: string) => (pathname === path ? "active" : "");
-
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/logout", { method: "POST" });
@@ -87,53 +85,91 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
   ];
 
   return (
-    <div className="admin-shell min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col md:flex-row overflow-x-hidden">
+    <div className="admin-shell" style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8fafc" }}>
       <NotificationToastContainer />
 
-      {/* Desktop Sidebar (>1024px) */}
-      <aside className="admin-side hidden lg:flex flex-col w-[280px] bg-[#161e1b] text-slate-200 p-6 border-r border-white/10 shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto">
-        <div className="flex items-center gap-3 pb-4 mb-4 border-b border-white/10">
-          <div className="w-9 h-9 rounded-full bg-[var(--sage,#14B8C4)] flex items-center justify-center font-bold text-white shadow">
+      {/* Desktop Permanent Sidebar */}
+      <aside
+        className="admin-side desktop-only"
+        style={{
+          width: 260,
+          backgroundColor: "#161e1b",
+          color: "#e2e8f0",
+          padding: "32px 24px",
+          borderRight: "1px solid rgba(255,255,255,0.05)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 28,
+          flexShrink: 0
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "var(--sage, #14B8C4)", color: "#ffffff", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
             DD
           </div>
           <div>
-            <h2 className="font-playfair text-lg font-bold text-white leading-tight">DermaDental360</h2>
-            <p className="text-xs text-slate-400">Admin Control Center</p>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", color: "#ffffff", fontSize: 18, margin: 0, padding: 0, border: "none" }}>
+              DermaDental360
+            </h2>
+            <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>Dr. Sadaf Yamin Clinic</p>
           </div>
         </div>
 
-        <nav className="admin-menu flex flex-col gap-1.5 flex-1">
+        <nav className="admin-menu" style={{ display: "flex", flexDirection: "column", gap: 6, flexGrow: 1 }}>
           {navLinks.map((link) => {
             const active = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-[var(--sage-dark,#0F7F8F)] text-white font-semibold shadow-sm"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white"
-                }`}
+                className={active ? "active" : ""}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 14px",
+                  borderRadius: "var(--radius-sm)",
+                  color: active ? "#ffffff" : "#cbd5e1",
+                  backgroundColor: active ? "var(--sage, #14B8C4)" : "transparent",
+                  fontWeight: active ? 600 : 500,
+                  fontSize: 14,
+                  transition: "all 0.2s ease"
+                }}
               >
-                <span className="text-base">{link.icon}</span>
+                <span>{link.icon}</span>
                 <span>{link.label}</span>
               </Link>
             );
           })}
 
-          <div className="mt-auto pt-4 border-t border-white/10 flex flex-col gap-2">
+          <div style={{ marginTop: "auto", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
             <Link
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+              style={{ fontSize: 13, color: "#94a3b8", display: "flex", alignItems: "center", gap: 8, padding: "8px 12px" }}
             >
-              <span>🌐</span> View Public Website
+              <span>🌐</span> View Public Site
             </Link>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-rose-300 hover:bg-rose-500/10 hover:text-rose-200 w-full transition-colors text-left"
+              className="admin-logout-btn"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#f87171",
+                textAlign: "left",
+                padding: "10px 14px",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                borderRadius: "var(--radius-sm)"
+              }}
             >
               <span>🚪</span> Log Out
             </button>
@@ -141,41 +177,63 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
         </nav>
       </aside>
 
-      {/* Mobile Slide-in Drawer Overlay */}
+      {/* Mobile Slide-in Drawer Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[10000] transition-opacity duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            zIndex: 10000
+          }}
           aria-hidden="true"
         />
       )}
 
-      {/* Mobile Slide-in Drawer (<1024px) */}
+      {/* Mobile Slide-in Drawer */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 w-[300px] max-w-[85vw] bg-[#161e1b] text-slate-200 p-6 z-[10001] shadow-2xl flex flex-col transition-transform duration-300 ease-out lg:hidden overflow-y-auto ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: 280,
+          maxWidth: "85vw",
+          backgroundColor: "#161e1b",
+          color: "#e2e8f0",
+          padding: "24px 20px",
+          zIndex: 10001,
+          boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+          display: "flex",
+          flexDirection: "column",
+          transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          transform: isMobileMenuOpen ? "translateX(0)" : "translateX(-100%)",
+          overflowY: "auto"
+        }}
         role="dialog"
         aria-modal="true"
-        aria-label="Admin Navigation Drawer"
+        aria-label="Admin Menu"
       >
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[var(--sage,#14B8C4)] flex items-center justify-center font-bold text-white text-xs">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16, marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--sage, #14B8C4)", color: "#ffffff", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
               DD
             </div>
-            <h2 className="font-playfair text-base font-bold text-white">DermaDental360</h2>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 16, color: "#ffffff" }}>DermaDental360</span>
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-            aria-label="Close Navigation Menu"
+            style={{ background: "none", border: "none", color: "#94a3b8", fontSize: 20, cursor: "pointer", padding: 4 }}
+            aria-label="Close menu"
           >
             ✕
           </button>
         </div>
 
-        <nav className="flex flex-col gap-1.5 flex-1">
+        <nav style={{ display: "flex", flexDirection: "column", gap: 6, flexGrow: 1 }}>
           {navLinks.map((link) => {
             const active = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
             return (
@@ -183,27 +241,33 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-[var(--sage-dark,#0F7F8F)] text-white font-semibold"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white"
-                }`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "12px 14px",
+                  borderRadius: "var(--radius-sm)",
+                  color: active ? "#ffffff" : "#cbd5e1",
+                  backgroundColor: active ? "var(--sage, #14B8C4)" : "transparent",
+                  fontWeight: active ? 600 : 500,
+                  fontSize: 14
+                }}
               >
-                <span className="text-base">{link.icon}</span>
+                <span>{link.icon}</span>
                 <span>{link.label}</span>
               </Link>
             );
           })}
 
-          <div className="mt-auto pt-4 border-t border-white/10 flex flex-col gap-2">
+          <div style={{ marginTop: "auto", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
             <Link
               href="/"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5"
+              style={{ fontSize: 13, color: "#94a3b8", display: "flex", alignItems: "center", gap: 8, padding: "8px 12px" }}
             >
-              <span>🌐</span> View Public Website
+              <span>🌐</span> View Public Site
             </Link>
 
             <button
@@ -211,7 +275,21 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
                 setIsMobileMenuOpen(false);
                 handleLogout();
               }}
-              className="flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium text-rose-300 hover:bg-rose-500/10 hover:text-rose-200 w-full text-left"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#f87171",
+                textAlign: "left",
+                padding: "10px 14px",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                borderRadius: "var(--radius-sm)"
+              }}
             >
               <span>🚪</span> Log Out
             </button>
@@ -220,63 +298,61 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <main className="admin-main" style={{ flexGrow: 1, minWidth: 0, padding: 0, backgroundColor: "#faf9f6" }}>
         {/* Sticky Top Header */}
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Button for Mobile/Tablet */}
+        <header
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 90,
+            backgroundColor: "#ffffff",
+            borderBottom: "1px solid var(--line, #e2e8f0)",
+            padding: "14px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-              aria-label="Open Navigation Menu"
+              className="mobile-actions"
+              style={{
+                background: "none",
+                border: "1px solid var(--line)",
+                borderRadius: "8px",
+                padding: "8px 12px",
+                cursor: "pointer",
+                fontSize: 18,
+                color: "var(--ink)"
+              }}
+              aria-label="Open menu"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
+              ☰
             </button>
 
             <div>
-              <h1 className="font-playfair text-lg md:text-xl font-bold text-slate-900 leading-tight">
+              <h1 style={{ margin: 0, fontSize: 20, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: "var(--ink)" }}>
                 {getPageTitle(pathname)}
               </h1>
-              <p className="text-xs text-slate-500 hidden sm:block">Dr. Sadaf Yamin Clinic Management</p>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Dr. Sadaf Yamin Clinic</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <AdminNotificationBell />
-            
-            <div className="h-6 w-[1px] bg-slate-200 hidden sm:block" />
-
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center border border-slate-200">
+            <div style={{ height: 24, width: 1, backgroundColor: "var(--line)" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#1e293b", color: "#ffffff", fontWeight: 700, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 SY
               </div>
-              <span className="text-xs font-semibold text-slate-700 hidden sm:inline-block">Dr. Sadaf Yamin</span>
             </div>
-
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-              title="Log Out"
-              aria-label="Log Out"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="p-4 md:p-8 flex-1 max-w-7xl w-full mx-auto">
-          {children}
-        </main>
-      </div>
+        <div style={{ padding: "28px" }}>{children}</div>
+      </main>
     </div>
   );
 }
