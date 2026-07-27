@@ -23,6 +23,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const update: any = {};
     if (body.status) update.status = body.status;
+    if (body.paymentStatus) update.paymentStatus = body.paymentStatus;
+    if (typeof body.trackingNumber === "string") update.trackingNumber = body.trackingNumber;
     if (typeof body.whatsappSent === "boolean") update.whatsappSent = body.whatsappSent;
 
     const order = await prisma.order.update({
@@ -30,7 +32,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: update
     });
 
-    await logAction("Update Order", `Order ID "${id}" status updated to "${body.status || 'Updated'}".`);
+    const { broadcastAdminEvent } = await import("@/lib/eventBus");
+    broadcastAdminEvent("ORDER_STATUS_UPDATED", order);
+
+    await logAction("Update Order", `Order ID "${id}" updated (Status: ${body.status || 'Unchanged'}, Payment: ${body.paymentStatus || 'Unchanged'}).`);
     
     return NextResponse.json({
       ...order,

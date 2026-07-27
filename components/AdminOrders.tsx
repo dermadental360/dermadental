@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { OrderTimeline } from "@/components/OrderTimeline";
 
 export function AdminOrders() {
   const searchParams = useSearchParams();
@@ -10,12 +11,14 @@ export function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterText, setFilterText] = useState(searchId || "");
+  const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
 
   async function load() {
     setLoading(true);
     try {
       const response = await fetch("/api/orders");
-      setOrders(await response.json());
+      const data = await response.json();
+      setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -60,11 +63,11 @@ export function AdminOrders() {
     }
   }, [searchId]);
 
-  async function updateStatus(id: string, status: string) {
+  async function updateOrderDetails(id: string, updates: { status?: string; paymentStatus?: string; trackingNumber?: string }) {
     await fetch(`/api/orders/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
+      body: JSON.stringify(updates)
     });
     load();
   }
@@ -79,7 +82,7 @@ export function AdminOrders() {
   const filteredOrders = filterText
     ? orders.filter(
         (o) =>
-          String(o._id).toLowerCase().includes(filterText.toLowerCase()) ||
+          String(o._id || o.id).toLowerCase().includes(filterText.toLowerCase()) ||
           o.customer?.name?.toLowerCase().includes(filterText.toLowerCase()) ||
           o.customer?.phone?.includes(filterText) ||
           o.customer?.email?.toLowerCase().includes(filterText.toLowerCase())
@@ -89,7 +92,7 @@ export function AdminOrders() {
   if (loading && orders.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: 48 }}>
-        <h3>Loading orders...</h3>
+        <h3>Loading customer orders...</h3>
       </div>
     );
   }
@@ -128,11 +131,16 @@ export function AdminOrders() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {filteredOrders.map((order) => {
-            const isHighlighted = searchId && String(order._id) === String(searchId);
+            const orderIdStr = String(order._id || order.id);
+            const isHighlighted = searchId && orderIdStr === String(searchId);
+            const isCod = order.paymentMethod === "COD";
+            const isPaid = order.paymentStatus === "PAID";
+            const isPlaced = (order.status || "PLACED").toUpperCase() === "PLACED";
+
             return (
               <div
                 className="card pad"
-                key={String(order._id)}
+                key={orderIdStr}
                 style={{
                   display: "grid",
                   gap: 14,
@@ -142,35 +150,70 @@ export function AdminOrders() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", alignItems: "start", gap: 14 }}>
                   <div>
-                    <span style={{ fontSize: 13, color: "var(--muted)", display: "block" }}>Order Reference</span>
-                    <span style={{ fontWeight: 700, fontSize: 16 }}>{order._id}</span>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>ORDER REFERENCE</span>
+                    <span style={{ fontWeight: 700, fontSize: 16 }}>#{orderIdStr}</span>
+                    <span style={{ fontSize: 11, color: "var(--muted)", display: "block", marginTop: 2 }}>
+                      {new Date(order.createdAt).toLocaleString()}
+                    </span>
                   </div>
+
                   <div>
-                    <span style={{ fontSize: 13, color: "var(--muted)", display: "block" }}>Customer Details</span>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>CUSTOMER DETAILS</span>
                     <span style={{ fontWeight: 600, display: "block" }}>{order.customer?.name}</span>
                     <span style={{ fontSize: 13, color: "var(--muted)" }}>
                       {order.customer?.phone} {order.customer?.email ? `· ${order.customer.email}` : ""}
                     </span>
                   </div>
+
                   <div>
-                    <span style={{ fontSize: 13, color: "var(--muted)", display: "block" }}>Shipping Address</span>
-                    <span style={{ fontSize: 14 }}>{order.customer?.address}</span>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 13, color: "var(--muted)", display: "block" }}>Status Badge</span>
-                    <span className={`status-pill ${(order.status || "New").toLowerCase()}`}>{order.status || "New"}</span>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 13, color: "var(--muted)", display: "block" }}>Payment Breakdown</span>
-                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>
-                      Subtotal: ₹{order.subtotal || order.items?.reduce((s: number, i: any) => s + i.price * i.quantity, 0) || order.total}
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>PAYMENT METHOD</span>
+                    <span style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      background: isCod ? "#fef3c7" : "#e0f2fe",
+                      color: isCod ? "#92400e" : "#0369a1",
+                      display: "inline-block",
+                      marginTop: 2
+                    }}>
+                      {isCod ? "📦 CASH ON DELIVERY" : "💳 RAZORPAY ONLINE"}
                     </span>
-                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>
-                      Shipping: {order.shippingCharge === 0 || (order.subtotal || order.total) >= 1499 ? "FREE" : `₹${order.shippingCharge || 99}`}
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>PAYMENT STATUS</span>
+                    <span style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      background: isPaid ? "#dcfce7" : "#fee2e2",
+                      color: isPaid ? "#15803d" : "#991b1b",
+                      display: "inline-block",
+                      marginTop: 2
+                    }}>
+                      {isPaid ? "🟢 PAID" : "🟡 PENDING"}
                     </span>
-                    <span style={{ fontWeight: 800, fontSize: 16, color: "var(--sage-dark)" }}>Grand Total: ₹{order.total}</span>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>ORDER TOTAL</span>
+                    <span style={{ fontWeight: 800, fontSize: 16, color: "var(--sage-dark)" }}>₹{order.total}</span>
+                    {order.codFee > 0 && (
+                      <span style={{ fontSize: 11, color: "var(--muted)", display: "block" }}>
+                        (Includes ₹{order.codFee} COD Fee)
+                      </span>
+                    )}
                   </div>
                 </div>
+
+                {/* Step-by-Step Visual Timeline */}
+                <OrderTimeline
+                  status={order.status || "PLACED"}
+                  paymentMethod={order.paymentMethod}
+                  paymentStatus={order.paymentStatus}
+                />
 
                 {order.customer?.notes && (
                   <div style={{ backgroundColor: "var(--bg-secondary)", padding: "10px 14px", borderRadius: "6px", fontSize: 14 }}>
@@ -179,8 +222,8 @@ export function AdminOrders() {
                 )}
 
                 <div style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-                  <h4 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--muted)", marginBottom: 8 }}>
-                    Items Ordered
+                  <h4 style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--muted)", marginBottom: 8 }}>
+                    Items Ordered ({order.items?.length || 0})
                   </h4>
                   <ul style={{ listStyle: "none", display: "grid", gap: 6 }}>
                     {order.items?.map((item: any, idx: number) => (
@@ -194,31 +237,85 @@ export function AdminOrders() {
                   </ul>
                 </div>
 
-                <div className="admin-order-footer">
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>Update Status:</span>
+                {/* Admin Quick Control Toolbar */}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  background: "#f8fafc",
+                  padding: "12px 16px",
+                  borderRadius: 8,
+                  border: "1px solid var(--line)"
+                }}>
+                  {/* Status Advancement Actions */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700 }}>Workflow Status:</span>
                     <select
                       className="input"
-                      value={order.status || "New"}
-                      onChange={(event) => updateStatus(order._id, event.target.value)}
-                      style={{ padding: "8px 12px", width: 140, fontSize: 13 }}
+                      value={(order.status || "PLACED").toUpperCase()}
+                      onChange={(e) => updateOrderDetails(orderIdStr, { status: e.target.value })}
+                      style={{ padding: "6px 10px", width: 160, fontSize: 13, fontWeight: 600 }}
                     >
-                      <option>PENDING</option>
-                      <option>PAID</option>
-                      <option>New</option>
-                      <option>Confirmed</option>
-                      <option>Packed</option>
-                      <option>Completed</option>
-                      <option>Cancelled</option>
+                      <option value="PLACED">1. PLACED</option>
+                      <option value="CONFIRMED">2. CONFIRMED</option>
+                      <option value="PROCESSING">3. PROCESSING</option>
+                      <option value="PACKED">4. PACKED</option>
+                      <option value="SHIPPED">5. SHIPPED</option>
+                      <option value="OUT_FOR_DELIVERY">6. OUT FOR DELIVERY</option>
+                      <option value="DELIVERED">7. DELIVERED</option>
+                      <option value="CANCELLED">❌ CANCELLED</option>
                     </select>
+
+                    {/* Quick Confirm Button for New COD Orders */}
+                    {isPlaced && (
+                      <button
+                        className="btn"
+                        style={{ padding: "6px 12px", fontSize: 12, backgroundColor: "#16a34a", borderColor: "#16a34a", color: "white" }}
+                        onClick={() => updateOrderDetails(orderIdStr, { status: "CONFIRMED" })}
+                      >
+                        ✓ Confirm Order
+                      </button>
+                    )}
+
+                    {/* Quick Mark Paid Button */}
+                    {!isPaid && (
+                      <button
+                        className="btn soft"
+                        style={{ padding: "6px 12px", fontSize: 12, color: "#15803d", borderColor: "#86efac" }}
+                        onClick={() => updateOrderDetails(orderIdStr, { paymentStatus: "PAID" })}
+                      >
+                        💰 Mark as Paid
+                      </button>
+                    )}
                   </div>
-                  <button
-                    className="btn soft"
-                    style={{ padding: "8px 14px", fontSize: 13, color: "var(--error)" }}
-                    onClick={() => remove(order._id)}
-                  >
-                    Delete Record
-                  </button>
+
+                  {/* Tracking Number Input & Actions */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="Tracking #"
+                      defaultValue={order.trackingNumber || ""}
+                      onChange={(e) => setTrackingInputs((prev) => ({ ...prev, [orderIdStr]: e.target.value }))}
+                      style={{ padding: "6px 10px", fontSize: 13, width: 140 }}
+                    />
+                    <button
+                      className="btn soft"
+                      style={{ padding: "6px 12px", fontSize: 12 }}
+                      onClick={() => updateOrderDetails(orderIdStr, { trackingNumber: trackingInputs[orderIdStr] || order.trackingNumber })}
+                    >
+                      Save Tracking
+                    </button>
+                    <button
+                      className="btn soft"
+                      style={{ padding: "6px 12px", fontSize: 12, color: "var(--error)" }}
+                      onClick={() => remove(orderIdStr)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -228,3 +325,4 @@ export function AdminOrders() {
     </div>
   );
 }
+

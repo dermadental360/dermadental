@@ -37,6 +37,13 @@ export function AdminSettings() {
   const [supportEmail, setSupportEmail] = useState("");
   const [supportPhone, setSupportPhone] = useState("");
 
+  // Cash on Delivery (COD) Business Rules fields
+  const [codEnabled, setCodEnabled] = useState(true);
+  const [codMinAmount, setCodMinAmount] = useState("500");
+  const [codMaxAmount, setCodMaxAmount] = useState("5000");
+  const [codFeeEnabled, setCodFeeEnabled] = useState(false);
+  const [codFeeAmount, setCodFeeAmount] = useState("0");
+
   const [shippingHighlights, setShippingHighlights] = useState<Array<{icon: string, title: string, text: string}>>([]);
 
   const handleHighlightChange = (index: number, field: 'icon' | 'title' | 'text', value: string) => {
@@ -92,9 +99,14 @@ export function AdminSettings() {
         ]),
         legal_entity_name: data.legal_entity_name || "Moeen International",
         gstin: data.gstin || "27AHTPG5622L2ZU",
-        registered_address: data.registered_address || "502, Villa Rosa, 24 & 30 Road, Bandra West, Mumbai, Maharashtra 400050",
-        support_email: data.support_email || "moeenint@gmail.com",
+        registered_address: data.registered_address || "Flat No 10, New Ambe Bhavan, Rd Number 24, Khar W, Mumbai, Maharashtra 400052",
+        support_email: data.support_email || "dd360health@gmail.com",
         support_phone: data.support_phone || "9833699887",
+        cod_enabled: data.cod_enabled || "true",
+        cod_min_amount: data.cod_min_amount || "500",
+        cod_max_amount: data.cod_max_amount || "5000",
+        cod_fee_enabled: data.cod_fee_enabled || "false",
+        cod_fee_amount: data.cod_fee_amount || "0",
       };
 
       setInitialSettings(normalizedData);
@@ -120,6 +132,12 @@ export function AdminSettings() {
       setRegisteredAddress(normalizedData.registered_address);
       setSupportEmail(normalizedData.support_email);
       setSupportPhone(normalizedData.support_phone);
+
+      setCodEnabled(normalizedData.cod_enabled === "true");
+      setCodMinAmount(normalizedData.cod_min_amount);
+      setCodMaxAmount(normalizedData.cod_max_amount);
+      setCodFeeEnabled(normalizedData.cod_fee_enabled === "true");
+      setCodFeeAmount(normalizedData.cod_fee_amount);
 
       try {
         setShippingHighlights(JSON.parse(normalizedData.shipping_highlights));
@@ -198,6 +216,11 @@ export function AdminSettings() {
         registered_address: registeredAddress,
         support_email: supportEmail,
         support_phone: supportPhone,
+        cod_enabled: codEnabled ? "true" : "false",
+        cod_min_amount: codMinAmount,
+        cod_max_amount: codMaxAmount,
+        cod_fee_enabled: codFeeEnabled ? "true" : "false",
+        cod_fee_amount: codFeeAmount,
       };
 
       // Dirty checking: Determine changed settings
@@ -714,6 +737,105 @@ export function AdminSettings() {
             }}
             required
           />
+        </div>
+
+        <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />
+        
+        <h3 style={{ fontSize: 18, color: "var(--sage-dark)" }}>💵 Cash on Delivery (COD) Configuration</h3>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginTop: -15, marginBottom: 10 }}>
+          Manage Cash on Delivery availability, minimum/maximum order limits, and optional handling fees.
+        </p>
+
+        {/* Enable / Disable COD */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", background: "var(--bg-secondary)", borderRadius: 8 }}>
+          <div>
+            <label style={{ fontSize: 14, fontWeight: 700, display: "block" }}>Enable Cash on Delivery</label>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>Allow customers to select COD on checkout page.</span>
+          </div>
+          <input
+            type="checkbox"
+            checked={codEnabled}
+            onChange={(e) => setCodEnabled(e.target.checked)}
+            style={{ width: 20, height: 20, accentColor: "var(--sage-dark)" }}
+          />
+        </div>
+
+        {/* Min and Max Order Limits */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{ fontSize: 14, fontWeight: 600 }}>Minimum COD Order Amount (₹)</label>
+            <input
+              type="number"
+              value={codMinAmount}
+              onChange={(e) => setCodMinAmount(e.target.value)}
+              placeholder="500"
+              style={{
+                padding: "10px 14px",
+                border: "1px solid var(--line)",
+                borderRadius: 6,
+                background: "var(--white)",
+                fontSize: 14,
+              }}
+              required
+            />
+            <span style={{ fontSize: 11, color: "var(--muted)" }}>Default: ₹500. Orders below this amount will hide/disable COD.</span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{ fontSize: 14, fontWeight: 600 }}>Maximum COD Order Amount (₹)</label>
+            <input
+              type="number"
+              value={codMaxAmount}
+              onChange={(e) => setCodMaxAmount(e.target.value)}
+              placeholder="5000"
+              style={{
+                padding: "10px 14px",
+                border: "1px solid var(--line)",
+                borderRadius: 6,
+                background: "var(--white)",
+                fontSize: 14,
+              }}
+              required
+            />
+            <span style={{ fontSize: 11, color: "var(--muted)" }}>Default: ₹5000. Orders above this amount will hide/disable COD.</span>
+          </div>
+        </div>
+
+        {/* COD Handling Fee Config */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "14px 16px", background: "var(--bg-secondary)", borderRadius: 8, border: "1px solid var(--line)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <label style={{ fontSize: 14, fontWeight: 700, display: "block" }}>Enable COD Handling Fee</label>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Charge an additional fee (e.g. ₹49 or ₹99) for COD orders.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={codFeeEnabled}
+              onChange={(e) => setCodFeeEnabled(e.target.checked)}
+              style={{ width: 20, height: 20, accentColor: "var(--sage-dark)" }}
+            />
+          </div>
+
+          {codFeeEnabled && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+              <label style={{ fontSize: 13, fontWeight: 600 }}>COD Fee Amount (₹)</label>
+              <input
+                type="number"
+                value={codFeeAmount}
+                onChange={(e) => setCodFeeAmount(e.target.value)}
+                placeholder="49"
+                style={{
+                  padding: "8px 12px",
+                  border: "1px solid var(--line)",
+                  borderRadius: 6,
+                  background: "var(--white)",
+                  fontSize: 14,
+                  maxWidth: 200
+                }}
+                required
+              />
+            </div>
+          )}
         </div>
 
         <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />

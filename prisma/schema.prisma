@@ -58,13 +58,20 @@ model Order {
   items           Json
   subtotal        Float    @default(0)
   shippingCharge  Float    @default(0)
+  codFee          Float    @default(0)
   total           Float
-  status          String   @default("PENDING")
+  paymentMethod   String   @default("RAZORPAY")
+  paymentStatus   String   @default("PENDING")
+  status          String   @default("PLACED")
+  trackingNumber  String?
+  idempotencyKey  String?  @unique
   whatsappSent    Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([status, createdAt])
+  @@index([paymentMethod])
+  @@index([paymentStatus])
 }
 
 model Payment {

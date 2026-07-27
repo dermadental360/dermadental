@@ -28,6 +28,11 @@ export const DEFAULT_SETTINGS = {
   support_phone: "9833699887",
   clinic_doctor: "Dr. Sadaf Yamin",
   clinic_timing: "12:00 PM to 7:00 PM, Sunday closed",
+  cod_enabled: "true",
+  cod_min_amount: "500",
+  cod_max_amount: "5000",
+  cod_fee_enabled: "false",
+  cod_fee_amount: "0",
 };
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

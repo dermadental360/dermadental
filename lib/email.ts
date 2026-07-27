@@ -82,12 +82,19 @@ export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): st
   const stage = data.stage || "ORDER_CONFIRMED";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com";
 
+  const isCod = data.paymentStatus.toLowerCase().includes("pending") || data.paymentStatus.toLowerCase().includes("cod");
+
   const stageTitles: Record<OrderLifecycleStage, { subject: string; badge: string; heading: string; message: string }> = {
-    ORDER_CONFIRMED: {
-      subject: `🎉 Your Dermadental 360 Order is Confirmed - Order #${data.orderId}`,
+    ORDER_CONFIRMED: isCod ? {
+      subject: `Your Cash on Delivery Order has been Placed - Order #${data.orderId}`,
+      badge: "📦 CASH ON DELIVERY ORDER PLACED",
+      heading: "Your Cash on Delivery Order has been Placed",
+      message: "Your order has been placed successfully. Please keep the payable amount ready at the time of delivery. We will begin processing your order shortly.",
+    } : {
+      subject: `Your Order has been Confirmed - Order #${data.orderId}`,
       badge: "✓ PAYMENT SUCCESSFUL & ORDER CONFIRMED",
-      heading: "Thank you for your order!",
-      message: "We have received your payment and your order is now confirmed. Our team is preparing your items for delivery.",
+      heading: "Your Order has been Confirmed",
+      message: "Your payment has been received successfully. We have started processing your order.",
     },
     ORDER_PROCESSING: {
       subject: `⚙️ Order #${data.orderId} is Now Processing - Dermadental 360`,

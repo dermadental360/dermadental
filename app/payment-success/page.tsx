@@ -3,11 +3,13 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { OrderTimeline } from "@/components/OrderTimeline";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const paymentId = searchParams.get("paymentId");
+  const method = searchParams.get("method") || "RAZORPAY";
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -20,7 +22,7 @@ function PaymentSuccessContent() {
     fetch("/api/orders")
       .then((res) => res.json())
       .then((orders: any[]) => {
-        const found = orders.find((o) => String(o._id) === String(orderId));
+        const found = orders.find((o) => String(o._id) === String(orderId) || String(o.id) === String(orderId));
         if (found) setOrder(found);
       })
       .catch((err) => console.error(err))
@@ -33,12 +35,14 @@ function PaymentSuccessContent() {
     }
   }
 
+  const isCod = method === "COD" || order?.paymentMethod === "COD";
+
   if (loading) {
     return (
       <div className="card pad loading-card">
         <div className="spinner-center" />
-        <h2>Verifying Payment Status...</h2>
-        <p className="subtext">Please wait while we retrieve your invoice details.</p>
+        <h2>{isCod ? "Retrieving Order Details..." : "Verifying Payment Status..."}</h2>
+        <p className="subtext">Please wait while we retrieve your order confirmation.</p>
         <style jsx>{`
           .loading-card {
             text-align: center;
@@ -72,16 +76,27 @@ function PaymentSuccessContent() {
 
   return (
     <div className="success-wrapper">
-      <div className="card pad success-card">
+      <div className="card pad success-card" style={{ borderTopColor: isCod ? "#ca8a04" : "#16a34a" }}>
         <div className="success-header">
-          <div className="success-icon" aria-hidden="true">
-            ✓
+          <div className="success-icon" style={{ backgroundColor: isCod ? "#fef9c3" : "#dcfce7", color: isCod ? "#854d0e" : "#15803d" }} aria-hidden="true">
+            {isCod ? "📦" : "✓"}
           </div>
-          <h1 className="success-title">Payment Successful!</h1>
+          <h1 className="success-title">
+            {isCod ? "Cash on Delivery Order Placed!" : "Payment Successful!"}
+          </h1>
           <p className="success-subtitle">
-            Thank you for your order with DermaDental 360. Your payment has been verified.
+            {isCod
+              ? "Your Cash on Delivery order has been placed successfully. Please keep the payable amount ready at the time of delivery."
+              : "Thank you for your order with DermaDental 360. Your payment has been verified."}
           </p>
         </div>
+
+        {/* Order Progress Timeline */}
+        <OrderTimeline
+          status={order?.status || "PLACED"}
+          paymentMethod={isCod ? "COD" : "RAZORPAY"}
+          paymentStatus={order?.paymentStatus || (isCod ? "PENDING" : "PAID")}
+        />
 
         <div className="meta-grid">
           <div className="meta-box">
@@ -90,13 +105,22 @@ function PaymentSuccessContent() {
           </div>
 
           <div className="meta-box">
-            <span className="meta-label">Razorpay Payment ID</span>
-            <span className="meta-value">{paymentId || "N/A"}</span>
+            <span className="meta-label">Payment Method</span>
+            <span className="meta-value" style={{ color: "#0f172a", fontWeight: 700 }}>
+              {isCod ? "💵 Cash on Delivery (COD)" : "💳 Razorpay Online"}
+            </span>
           </div>
 
           <div className="meta-box">
             <span className="meta-label">Payment Status</span>
-            <span className="status-badge">PAID & VERIFIED</span>
+            <span className="status-badge" style={{ color: isCod ? "#ca8a04" : "#16a34a" }}>
+              {isCod ? "🟡 PENDING (Pay on Delivery)" : "🟢 PAID & VERIFIED"}
+            </span>
+          </div>
+
+          <div className="meta-box">
+            <span className="meta-label">Estimated Delivery</span>
+            <span className="meta-value">3 to 5 Business Days</span>
           </div>
         </div>
 
@@ -137,10 +161,16 @@ function PaymentSuccessContent() {
                   <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{order.shippingCharge || 99}</span>
                 )}
               </div>
+              {order.codFee > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
+                  <span>COD Handling Fee:</span>
+                  <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>+₹{order.codFee}</span>
+                </div>
+              )}
             </div>
 
             <div className="total-row">
-              <span>Grand Total Paid:</span>
+              <span>{isCod ? "Total Payable Amount:" : "Grand Total Paid:"}</span>
               <span className="total-amount">₹{order.total}</span>
             </div>
           </div>

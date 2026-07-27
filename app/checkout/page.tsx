@@ -17,8 +17,23 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [customer, setCustomer] = useState<any>(null);
+  
+  // Payment Method state: "ONLINE" (Razorpay) | "COD"
+  const [paymentMethod, setPaymentMethod] = useState<"ONLINE" | "COD">("ONLINE");
 
-  // Fetch customer session on mount to prefill form fields
+  // COD Admin Settings state
+  const [codSettings, setCodSettings] = useState({
+    enabled: true,
+    minAmount: 500,
+    maxAmount: 5000,
+    feeEnabled: false,
+    feeAmount: 0
+  });
+
+  // Idempotency Key ref (persisted across retries, regenerated on form change)
+  const idempotencyKeyRef = useState(() => `checkout-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`)[0];
+
+  // Fetch customer session & live COD configuration settings
   useEffect(() => {
     fetch("/api/customer/session")
       .then((res) => (res.ok ? res.json() : null))
@@ -26,6 +41,21 @@ export default function CheckoutPage() {
         if (data?.customer) setCustomer(data.customer);
       })
       .catch(() => setCustomer(null));
+
+    fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setCodSettings({
+            enabled: data.cod_enabled !== "false",
+            minAmount: parseFloat(data.cod_min_amount) || 500,
+            maxAmount: parseFloat(data.cod_max_amount) || 5000,
+            feeEnabled: data.cod_fee_enabled === "true",
+            feeAmount: data.cod_fee_enabled === "true" ? (parseFloat(data.cod_fee_amount) || 0) : 0
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Dynamically load Razorpay SDK Script
@@ -42,6 +72,23 @@ export default function CheckoutPage() {
       document.body.appendChild(script);
     });
   };
+
+  // Evaluate COD Availability
+  const subtotal = cart.subtotal;
+  const isCodTooLow = subtotal < codSettings.minAmount;
+  const isCodTooHigh = subtotal > codSettings.maxAmount;
+  const isCodDisabled = !codSettings.enabled || isCodTooLow || isCodTooHigh;
+
+  const getCodDisabledReason = () => {
+    if (!codSettings.enabled) return "Cash on Delivery is currently unavailable.";
+    if (isCodTooLow) return `Cash on Delivery is available only for orders of ₹${codSettings.minAmount} or more.`;
+    if (isCodTooHigh) return `Cash on Delivery is not available for orders above ₹${codSettings.maxAmount}. Please choose Online Payment.`;
+    return "";
+  };
+
+  // Calculate final total including COD fee if applicable
+  const codFee = (paymentMethod === "COD" && codSettings.feeEnabled) ? codSettings.feeAmount : 0;
+  const grandTotal = cart.total + codFee;
 
   async function handlePayment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,6 +118,45 @@ export default function CheckoutPage() {
       return;
     }
 
+    // CASH ON DELIVERY (COD) FLOW
+    if (paymentMethod === "COD") {
+      if (isCodDisabled) {
+        setErrorMessage(getCodDisabledReason());
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/checkout/cod", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customer: customerDetails,
+            items: cart.items,
+            idempotencyKey: idempotencyKeyRef
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          setErrorMessage(data.error || "Could not place COD order. Please try again.");
+          setLoading(false);
+          return;
+        }
+
+        cart.clear();
+        router.push(`/payment-success?orderId=${data.orderId}&method=COD`);
+        return;
+      } catch (err: any) {
+        console.error("COD checkout error:", err);
+        setErrorMessage("Network error placing COD order. Please try again.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    // PAY ONLINE (RAZORPAY) FLOW
     try {
       const isScriptLoaded = await loadRazorpayScript();
       if (!isScriptLoaded) {
@@ -135,7 +221,7 @@ export default function CheckoutPage() {
 
             if (verifyRes.ok && verifyData.success) {
               cart.clear();
-              router.push(`/payment-success?orderId=${orderId}&paymentId=${response.razorpay_payment_id}`);
+              router.push(`/payment-success?orderId=${orderId}&paymentId=${response.razorpay_payment_id}&method=RAZORPAY`);
             } else {
               router.push(
                 `/payment-failed?orderId=${orderId}&reason=${encodeURIComponent(
@@ -315,20 +401,97 @@ export default function CheckoutPage() {
             />
           </div>
 
+          {/* Payment Method Selector UI */}
+          <div className="field" style={{ marginTop: 12 }}>
+            <label style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, display: "block" }}>Select Payment Method *</label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+              {/* Online Payment Card */}
+              <div
+                onClick={() => setPaymentMethod("ONLINE")}
+                style={{
+                  padding: 16,
+                  borderRadius: 10,
+                  border: `2px solid ${paymentMethod === "ONLINE" ? "var(--sage-dark, #2d5a27)" : "var(--line, #cbd5e1)"}`,
+                  background: paymentMethod === "ONLINE" ? "var(--sage-light, #eaf1ec)" : "#ffffff",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12
+                }}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethodRadio"
+                  checked={paymentMethod === "ONLINE"}
+                  onChange={() => setPaymentMethod("ONLINE")}
+                  style={{ accentColor: "var(--sage-dark, #2d5a27)", width: 18, height: 18 }}
+                />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>💳 Pay Online (Razorpay)</div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>UPI, Credit/Debit Cards, NetBanking</div>
+                </div>
+              </div>
+
+              {/* Cash on Delivery Card */}
+              <div
+                onClick={() => !isCodDisabled && setPaymentMethod("COD")}
+                style={{
+                  padding: 16,
+                  borderRadius: 10,
+                  border: `2px solid ${paymentMethod === "COD" ? "var(--sage-dark, #2d5a27)" : "var(--line, #cbd5e1)"}`,
+                  background: isCodDisabled ? "#f8fafc" : (paymentMethod === "COD" ? "var(--sage-light, #eaf1ec)" : "#ffffff"),
+                  cursor: isCodDisabled ? "not-allowed" : "pointer",
+                  opacity: isCodDisabled ? 0.6 : 1,
+                  transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  position: "relative"
+                }}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethodRadio"
+                  checked={paymentMethod === "COD"}
+                  disabled={isCodDisabled}
+                  onChange={() => !isCodDisabled && setPaymentMethod("COD")}
+                  style={{ accentColor: "var(--sage-dark, #2d5a27)", width: 18, height: 18 }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span>💵 Cash on Delivery (COD)</span>
+                    {codSettings.feeEnabled && codSettings.feeAmount > 0 && (
+                      <span style={{ fontSize: 11, background: "#e0f2fe", color: "#0369a1", padding: "2px 6px", borderRadius: 4 }}>+₹{codSettings.feeAmount} Fee</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Pay cash at your doorstep</div>
+                </div>
+              </div>
+            </div>
+
+            {/* COD Disabled Warning Message */}
+            {isCodDisabled && (
+              <div style={{ marginTop: 8, padding: "8px 12px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 6, fontSize: 12, color: "#c2410c" }}>
+                ℹ️ {getCodDisabledReason()}
+              </div>
+            )}
+          </div>
+
           <div className="desktop-pay-btn-wrapper">
             <button
               type="submit"
               className="btn submit-btn"
-              disabled={loading || cart.items.length === 0}
-              aria-label={`Pay ₹${cart.total} via Razorpay`}
+              disabled={loading || cart.items.length === 0 || (paymentMethod === "COD" && isCodDisabled)}
+              aria-label={paymentMethod === "COD" ? `Place COD Order (₹${grandTotal})` : `Pay ₹${grandTotal} via Razorpay`}
             >
               {loading ? (
                 <>
                   <span className="spinner-icon" />
-                  Processing Payment...
+                  {paymentMethod === "COD" ? "Placing Order..." : "Processing Payment..."}
                 </>
               ) : (
-                `Pay ₹${cart.total} via Razorpay`
+                paymentMethod === "COD" ? `Place Cash on Delivery Order (₹${grandTotal})` : `Pay ₹${grandTotal} via Razorpay`
               )}
             </button>
           </div>
@@ -338,13 +501,13 @@ export default function CheckoutPage() {
             <div className="mobile-sticky-inner">
               <div className="mobile-sticky-info">
                 <span className="mobile-sticky-label">Total Payable</span>
-                <span className="mobile-sticky-amount">₹{cart.total}</span>
+                <span className="mobile-sticky-amount">₹{grandTotal}</span>
               </div>
               <button
                 type="submit"
                 className="btn submit-btn mobile-pay-btn"
-                disabled={loading || cart.items.length === 0}
-                aria-label={`Pay ₹${cart.total} via Razorpay`}
+                disabled={loading || cart.items.length === 0 || (paymentMethod === "COD" && isCodDisabled)}
+                aria-label={paymentMethod === "COD" ? `Place COD Order (₹${grandTotal})` : `Pay ₹${grandTotal}`}
               >
                 {loading ? (
                   <>
@@ -352,7 +515,7 @@ export default function CheckoutPage() {
                     Processing...
                   </>
                 ) : (
-                  `Pay ₹${cart.total}`
+                  paymentMethod === "COD" ? `Place Order (₹${grandTotal})` : `Pay ₹${grandTotal}`
                 )}
               </button>
             </div>
@@ -401,11 +564,17 @@ export default function CheckoutPage() {
                 <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{cart.shippingCharge}</span>
               )}
             </div>
+            {paymentMethod === "COD" && codFee > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
+                <span>COD Handling Fee</span>
+                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>+₹{codFee}</span>
+              </div>
+            )}
           </div>
 
           <div className="summary-total-row">
             <span>Grand Total</span>
-            <span className="summary-total-price">₹{cart.total}</span>
+            <span className="summary-total-price">₹{grandTotal}</span>
           </div>
         </aside>
       </div>
