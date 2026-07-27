@@ -51,7 +51,7 @@ export interface AdminOrderEmailData {
  */
 export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): string {
   const stage = data.stage || "ORDER_CONFIRMED";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dermadental360.com";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com";
 
   const stageTitles: Record<OrderLifecycleStage, { subject: string; badge: string; heading: string; message: string }> = {
     ORDER_CONFIRMED: {
@@ -331,7 +331,7 @@ ${itemsText}
 TOTAL AMOUNT PAID: ₹${data.total}
 
 VIEW ORDER DETAILS IN ADMIN DASHBOARD:
-${process.env.NEXT_PUBLIC_APP_URL || "https://dermadental360.com"}/admin/orders?search=${data.orderId}
+${process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com"}/admin/orders?search=${data.orderId}
 
 ==================================================
 `;
