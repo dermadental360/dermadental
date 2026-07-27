@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { fallbackStore } from "@/lib/fallbackStore";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { logAction } from "@/lib/auditLogger";
+import { sendAdminOrderEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -140,6 +141,42 @@ export async function POST(request: NextRequest) {
       if (existingOrder) {
         existingOrder.status = "PAID";
       }
+    }
+
+    // Step 4: Create Admin Notification & Send Email
+    const customerName = existingOrder?.customerName || existingOrder?.customer?.name || "Customer";
+    const totalAmount = existingOrder?.total || 0;
+    const itemsList = typeof existingOrder?.items === "string" ? JSON.parse(existingOrder.items) : (existingOrder?.items || []);
+
+    try {
+      await prisma.notification.create({
+        data: {
+          title: "🛒 New Order Received",
+          message: `Order #${orderId} received from ${customerName} for ₹${totalAmount}.`,
+          type: "ORDER",
+          orderId: orderId,
+          isRead: false
+        }
+      });
+    } catch (notifErr: any) {
+      console.warn("Could not create DB notification entry:", notifErr?.message || notifErr);
+    }
+
+    try {
+      await sendAdminOrderEmail({
+        orderId: orderId,
+        customerName: customerName,
+        customerPhone: existingOrder?.customerPhone || existingOrder?.customer?.phone || "",
+        customerEmail: existingOrder?.customerEmail || existingOrder?.customer?.email || null,
+        customerAddress: existingOrder?.customerAddress || existingOrder?.customer?.address || "",
+        items: itemsList,
+        total: totalAmount,
+        paymentStatus: "PAID",
+        paymentTime: new Date().toLocaleString(),
+        paymentId: razorpay_payment_id
+      });
+    } catch (emailErr: any) {
+      console.warn("Could not send admin email:", emailErr?.message || emailErr);
     }
 
     await logAction(

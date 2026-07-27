@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { AdminNotificationBell } from "@/components/AdminNotificationBell";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -26,6 +27,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="admin-menu">
           <Link href="/admin" className={isActive("/admin")}>
             📊 Dashboard
+          </Link>
+          <Link href="/admin/notifications" className={isActive("/admin/notifications")}>
+            🔔 Notifications
           </Link>
           <Link href="/admin/products" className={isActive("/admin/products")}>
             🧴 Products
@@ -58,11 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             🔑 Change Password
           </Link>
 
-          
           <Link href="/" style={{ marginTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 18 }}>
-
-
-
             ← View Site
           </Link>
 
@@ -91,7 +91,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </nav>
       </aside>
-      <main className="admin-main">{children}</main>
+      <main className="admin-main">
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            padding: "12px 24px",
+            borderBottom: "1px solid var(--line, #e2e8f0)",
+            backgroundColor: "#ffffff",
+            marginBottom: 20
+          }}
+        >
+          <AdminNotificationBell />
+        </header>
+        <div style={{ padding: "0 24px 24px 24px" }}>{children}</div>
+      </main>
     </div>
   );
 }
