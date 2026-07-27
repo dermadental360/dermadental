@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { fallbackStore } from "@/lib/fallbackStore";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { logAction } from "@/lib/auditLogger";
-import { sendAdminOrderEmail } from "@/lib/email";
+import { sendAdminOrderEmail, sendCustomerOrderEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -143,10 +143,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 4: Create Admin Notification & Send Email
+    // Step 4: Create Admin Notification & Send Email Alerts
     const customerName = existingOrder?.customerName || existingOrder?.customer?.name || "Customer";
+    const customerEmail = existingOrder?.customerEmail || existingOrder?.customer?.email || "";
+    const customerPhone = existingOrder?.customerPhone || existingOrder?.customer?.phone || "";
+    const customerAddress = existingOrder?.customerAddress || existingOrder?.customer?.address || "";
     const totalAmount = existingOrder?.total || 0;
     const itemsList = typeof existingOrder?.items === "string" ? JSON.parse(existingOrder.items) : (existingOrder?.items || []);
+    const paymentTimeString = new Date().toLocaleString();
 
     try {
       await prisma.notification.create({
@@ -162,21 +166,43 @@ export async function POST(request: NextRequest) {
       console.warn("Could not create DB notification entry:", notifErr?.message || notifErr);
     }
 
+    // Non-blocking Admin Email dispatch
     try {
       await sendAdminOrderEmail({
         orderId: orderId,
         customerName: customerName,
-        customerPhone: existingOrder?.customerPhone || existingOrder?.customer?.phone || "",
-        customerEmail: existingOrder?.customerEmail || existingOrder?.customer?.email || null,
-        customerAddress: existingOrder?.customerAddress || existingOrder?.customer?.address || "",
+        customerPhone: customerPhone,
+        customerEmail: customerEmail,
+        customerAddress: customerAddress,
         items: itemsList,
         total: totalAmount,
         paymentStatus: "PAID",
-        paymentTime: new Date().toLocaleString(),
+        paymentTime: paymentTimeString,
         paymentId: razorpay_payment_id
       });
     } catch (emailErr: any) {
       console.warn("Could not send admin email:", emailErr?.message || emailErr);
+    }
+
+    // Non-blocking Customer Order Confirmation Email dispatch
+    if (customerEmail) {
+      try {
+        await sendCustomerOrderEmail({
+          orderId: orderId,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          customerEmail: customerEmail,
+          customerAddress: customerAddress,
+          items: itemsList,
+          total: totalAmount,
+          paymentStatus: "PAID",
+          paymentTime: paymentTimeString,
+          paymentId: razorpay_payment_id,
+          stage: "ORDER_CONFIRMED"
+        });
+      } catch (custEmailErr: any) {
+        console.warn("Could not send customer confirmation email:", custEmailErr?.message || custEmailErr);
+      }
     }
 
     await logAction(
