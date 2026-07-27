@@ -7,80 +7,47 @@ interface NotificationItem {
   id: string;
   title: string;
   message: string;
-  type: "ORDER" | "PAYMENT" | "INVENTORY" | "SYSTEM";
+  type: string;
+  category?: string;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   orderId?: string | null;
+  link?: string | null;
   isRead: boolean;
   createdAt: string;
 }
+
+const CATEGORIES = [
+  { id: "ALL", label: "All" },
+  { id: "ORDERS", label: "Orders" },
+  { id: "SALES", label: "Sales" },
+  { id: "REVIEWS", label: "Reviews" },
+  { id: "CUSTOMERS", label: "Customers" },
+  { id: "INVENTORY", label: "Inventory" },
+  { id: "INQUIRIES", label: "Inquiries" },
+  { id: "PRODUCTS", label: "Products" },
+  { id: "COUPONS", label: "Coupons" },
+  { id: "SYSTEM", label: "System" },
+  { id: "ADMIN", label: "Admin" },
+];
 
 export function AdminNotificationBell() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [toastNotification, setToastNotification] = useState<NotificationItem | null>(null);
+  const [activeCategory, setActiveCategory] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const knownNotificationIds = useRef<Set<string>>(new Set());
-  const initialLoadDone = useRef(false);
-
-  // Synthesize Web Audio notification chime for new order
-  const playNotificationChime = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      if (ctx.state === "suspended") {
-        ctx.resume();
-      }
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-    } catch {
-      // Audio playback quiet fallback if user has not interacted with document yet
-    }
-  };
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch("/api/admin/notifications?limit=8");
+      const categoryParam = activeCategory !== "ALL" ? `&category=${activeCategory}` : "";
+      const queryParam = searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : "";
+      const res = await fetch(`/api/admin/notifications?limit=25${categoryParam}${queryParam}`);
       if (!res.ok) return;
       const data = await res.json();
 
-      const items: NotificationItem[] = data.notifications || [];
-      const newUnreadCount: number = data.unreadCount || 0;
-
-      // Check for newly arrived unread notifications
-      if (initialLoadDone.current) {
-        const newlyArrived = items.find(
-          (item) => !item.isRead && !knownNotificationIds.current.has(item.id)
-        );
-
-        if (newlyArrived) {
-          playNotificationChime();
-          setToastNotification(newlyArrived);
-          setTimeout(() => setToastNotification(null), 5000);
-        }
-      } else {
-        initialLoadDone.current = true;
-      }
-
-      // Track known IDs
-      items.forEach((item) => knownNotificationIds.current.add(item.id));
-
-      setNotifications(items);
-      setUnreadCount(newUnreadCount);
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount || 0);
     } catch (err) {
       console.error("Failed to fetch notifications:", err);
     }
@@ -89,72 +56,31 @@ export function AdminNotificationBell() {
   useEffect(() => {
     fetchNotifications();
 
-    // Request browser native notification permission on client mount
+    // Request desktop notifications permission
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
 
-    // Real-Time SSE Stream Subscription
+    // Subscribe to SSE stream
     let eventSource: EventSource | null = null;
     try {
       eventSource = new EventSource("/api/admin/stream");
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "NOTIFICATION_NEW" && data.payload) {
-            const newNotif: NotificationItem = {
-              id: data.payload.id || "notif-" + Date.now(),
-              title: data.payload.title || "New Notification",
-              message: data.payload.message || "",
-              type: data.payload.type || "SYSTEM",
-              orderId: data.payload.orderId || null,
-              isRead: false,
-              createdAt: data.payload.createdAt || new Date().toISOString()
-            };
-
-            playNotificationChime();
-
-            // Native Browser Desktop Popup Notification
-            if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-              try {
-                new Notification(newNotif.title, {
-                  body: newNotif.message,
-                  icon: "/favicon.ico"
-                });
-              } catch {}
-            }
-
-            setToastNotification(newNotif);
-            setTimeout(() => setToastNotification(null), 6000);
-
-            setNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== newNotif.id)]);
-            setUnreadCount((prev) => prev + 1);
-          } else {
-            // Fetch updated unread badge counts on any event
-            fetchNotifications();
-          }
-        } catch (err) {
-          console.error("Error parsing SSE event:", err);
-        }
-      };
-
-      eventSource.onerror = () => {
-        // Fallback polling if SSE drops out
+      eventSource.onmessage = () => {
+        fetchNotifications();
       };
     } catch (err) {
-      console.warn("SSE not available, falling back to polling:", err);
+      console.warn("Notification bell SSE error:", err);
     }
 
-    const interval = setInterval(fetchNotifications, 15000); // Polling backup
+    const interval = setInterval(fetchNotifications, 15000);
 
     return () => {
       if (eventSource) eventSource.close();
       clearInterval(interval);
     };
-  }, []);
+  }, [activeCategory, searchQuery]);
 
-  // Close dropdown on click outside
+  // Close drawer on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -191,7 +117,7 @@ export function AdminNotificationBell() {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (err) {
-      console.error("Failed to mark all as read:", err);
+      console.error("Failed to mark all read:", err);
     }
   };
 
@@ -222,6 +148,13 @@ export function AdminNotificationBell() {
     return `${days}d ago`;
   };
 
+  const getPriorityDot = (priority?: string) => {
+    if (priority === "CRITICAL") return <span className="p-dot critical" title="Critical Priority">🔴</span>;
+    if (priority === "HIGH") return <span className="p-dot high" title="High Priority">🟠</span>;
+    if (priority === "LOW") return <span className="p-dot low" title="Low Priority">⚪</span>;
+    return <span className="p-dot medium" title="Medium Priority">🔵</span>;
+  };
+
   return (
     <div className="notif-bell-container" ref={dropdownRef}>
       <button
@@ -239,105 +172,105 @@ export function AdminNotificationBell() {
 
       {isOpen && (
         <div className="notif-dropdown" role="menu">
+          {/* Header */}
           <div className="notif-dropdown-header">
             <div className="header-title-box">
-              <span className="header-title">Notifications</span>
-              {unreadCount > 0 && <span className="unread-pill">{unreadCount} new</span>}
+              <span className="header-title">Notification Center</span>
+              {unreadCount > 0 && <span className="unread-pill">{unreadCount} unread</span>}
             </div>
             {unreadCount > 0 && (
-              <button
-                type="button"
-                className="mark-all-btn"
-                onClick={handleMarkAllRead}
-              >
+              <button type="button" className="mark-all-btn" onClick={handleMarkAllRead}>
                 Mark all read
               </button>
             )}
           </div>
 
+          {/* Search Bar */}
+          <div className="notif-search-box">
+            <input
+              type="text"
+              placeholder="Search notifications..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="notif-search-input"
+            />
+          </div>
+
+          {/* Category Filter Tabs */}
+          <div className="notif-categories-bar">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                className={`category-tab ${activeCategory === cat.id ? "active" : ""}`}
+                onClick={() => setActiveCategory(cat.id)}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Notifications List */}
           <div className="notif-list">
             {notifications.length === 0 ? (
               <div className="notif-empty">
                 <span>🔕</span>
-                <p>No notifications right now.</p>
+                <p>No notifications found in {activeCategory} category.</p>
               </div>
             ) : (
-              notifications.map((item) => (
-                <div
-                  key={item.id}
-                  className={`notif-item ${item.isRead ? "read" : "unread"}`}
-                  onClick={() => !item.isRead && handleMarkAsRead(item.id)}
-                >
-                  <div className="notif-item-header">
-                    <span className="notif-type-tag">{item.type}</span>
-                    <span className="notif-time">{formatTimeAgo(item.createdAt)}</span>
-                  </div>
+              notifications.map((item) => {
+                const targetLink = item.link || (item.orderId ? `/admin/orders?search=${item.orderId}` : null);
 
-                  <p className="notif-title">{item.title}</p>
-                  <p className="notif-message">{item.message}</p>
+                return (
+                  <div
+                    key={item.id}
+                    className={`notif-item ${item.isRead ? "read" : "unread"}`}
+                    onClick={() => !item.isRead && handleMarkAsRead(item.id)}
+                  >
+                    <div className="notif-item-header">
+                      <div className="notif-tags">
+                        {getPriorityDot(item.priority)}
+                        <span className="notif-type-tag">{item.category || item.type}</span>
+                      </div>
+                      <span className="notif-time">{formatTimeAgo(item.createdAt)}</span>
+                    </div>
 
-                  <div className="notif-actions">
-                    {item.orderId ? (
-                      <Link
-                        href={`/admin/orders?search=${item.orderId}`}
-                        className="notif-link"
-                        onClick={() => setIsOpen(false)}
+                    <p className="notif-title">{item.title}</p>
+                    <p className="notif-message">{item.message}</p>
+
+                    <div className="notif-actions">
+                      {targetLink ? (
+                        <Link
+                          href={targetLink}
+                          className="notif-link"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          View Related →
+                        </Link>
+                      ) : (
+                        <span />
+                      )}
+                      <button
+                        type="button"
+                        className="notif-del-btn"
+                        onClick={(e) => handleDelete(item.id, e)}
+                        title="Delete Notification"
                       >
-                        View Order →
-                      </Link>
-                    ) : (
-                      <span />
-                    )}
-                    <button
-                      type="button"
-                      className="notif-del-btn"
-                      onClick={(e) => handleDelete(item.id, e)}
-                      title="Delete Notification"
-                    >
-                      &times;
-                    </button>
+                        &times;
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
+          {/* Footer */}
           <div className="notif-dropdown-footer">
-            <Link
-              href="/admin/notifications"
-              className="view-all-link"
-              onClick={() => setIsOpen(false)}
-            >
-              View All Notifications ({notifications.length})
+            <Link href="/admin/notifications" className="view-all-link" onClick={() => setIsOpen(false)}>
+              View Notification History & Analytics →
             </Link>
           </div>
-        </div>
-      )}
-
-      {/* Real-time Order Toast Notification */}
-      {toastNotification && (
-        <div className="realtime-toast" role="alert">
-          <div className="toast-header">
-            <span className="toast-tag">🛒 REAL-TIME ORDER</span>
-            <button
-              type="button"
-              className="toast-close"
-              onClick={() => setToastNotification(null)}
-            >
-              &times;
-            </button>
-          </div>
-          <p className="toast-title">{toastNotification.title}</p>
-          <p className="toast-msg">{toastNotification.message}</p>
-          {toastNotification.orderId && (
-            <Link
-              href={`/admin/orders?search=${toastNotification.orderId}`}
-              className="toast-action-btn"
-              onClick={() => setToastNotification(null)}
-            >
-              View Order Details
-            </Link>
-          )}
         </div>
       )}
 
@@ -377,16 +310,22 @@ export function AdminNotificationBell() {
           border-radius: 10px;
           line-height: 1;
           border: 2px solid #ffffff;
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.15); }
+          100% { transform: scale(1); }
         }
         .notif-dropdown {
           position: absolute;
           right: 0;
           top: 48px;
-          width: 360px;
-          max-width: 90vw;
+          width: 380px;
+          max-width: 92vw;
           background: #ffffff;
-          border-radius: 12px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+          border-radius: 14px;
+          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
           border: 1px solid var(--line, #e2e8f0);
           z-index: 1000;
           display: flex;
@@ -395,14 +334,8 @@ export function AdminNotificationBell() {
           animation: fadeIn 0.2s ease;
         }
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .notif-dropdown-header {
           padding: 14px 16px;
@@ -438,6 +371,45 @@ export function AdminNotificationBell() {
           font-weight: 600;
           cursor: pointer;
         }
+        .notif-search-box {
+          padding: 8px 12px;
+          background-color: #ffffff;
+          border-bottom: 1px solid #f1f5f9;
+        }
+        .notif-search-input {
+          width: 100%;
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1px solid #cbd5e1;
+          font-size: 12px;
+          outline: none;
+        }
+        .notif-categories-bar {
+          display: flex;
+          gap: 6px;
+          padding: 8px 12px;
+          overflow-x: auto;
+          background-color: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          scrollbar-width: thin;
+        }
+        .category-tab {
+          background: none;
+          border: 1px solid #cbd5e1;
+          color: #475569;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 10px;
+          border-radius: 12px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+        }
+        .category-tab.active {
+          background-color: #0f172a;
+          color: #ffffff;
+          border-color: #0f172a;
+        }
         .notif-list {
           max-height: 360px;
           overflow-y: auto;
@@ -446,7 +418,7 @@ export function AdminNotificationBell() {
           text-align: center;
           padding: 32px 16px;
           color: var(--muted, #64748b);
-          font-size: 14px;
+          font-size: 13px;
         }
         .notif-item {
           padding: 12px 16px;
@@ -467,6 +439,14 @@ export function AdminNotificationBell() {
           align-items: center;
           margin-bottom: 4px;
         }
+        .notif-tags {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .p-dot {
+          font-size: 10px;
+        }
         .notif-type-tag {
           font-size: 10px;
           font-weight: 700;
@@ -483,12 +463,12 @@ export function AdminNotificationBell() {
         }
         .notif-title {
           font-weight: 600;
-          font-size: 14px;
+          font-size: 13px;
           color: var(--ink, #0f172a);
           margin: 2px 0;
         }
         .notif-message {
-          font-size: 13px;
+          font-size: 12px;
           color: var(--muted, #475569);
           margin: 0;
           line-height: 1.4;
@@ -497,10 +477,10 @@ export function AdminNotificationBell() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-top: 8px;
+          margin-top: 6px;
         }
         .notif-link {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 600;
           color: var(--sage-dark, #2d5a27);
           text-decoration: none;
@@ -523,72 +503,9 @@ export function AdminNotificationBell() {
           text-align: center;
         }
         .view-all-link {
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
           color: var(--sage-dark, #2d5a27);
-          text-decoration: none;
-        }
-        .realtime-toast {
-          position: fixed;
-          bottom: 24px;
-          right: 24px;
-          width: 320px;
-          background: #0f172a;
-          color: #ffffff;
-          padding: 16px;
-          border-radius: 12px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-          z-index: 9999;
-          animation: slideUp 0.3s ease;
-          border: 1px solid #334155;
-        }
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .toast-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 6px;
-        }
-        .toast-tag {
-          font-size: 11px;
-          font-weight: 700;
-          color: #4ade80;
-          letter-spacing: 0.5px;
-        }
-        .toast-close {
-          background: none;
-          border: none;
-          color: #94a3b8;
-          font-size: 18px;
-          cursor: pointer;
-        }
-        .toast-title {
-          font-weight: 700;
-          font-size: 15px;
-          margin: 0 0 4px 0;
-        }
-        .toast-msg {
-          font-size: 13px;
-          color: #cbd5e1;
-          margin: 0 0 12px 0;
-        }
-        .toast-action-btn {
-          display: inline-block;
-          background-color: #22c55e;
-          color: #ffffff;
-          font-size: 12px;
-          font-weight: 700;
-          padding: 8px 14px;
-          border-radius: 6px;
           text-decoration: none;
         }
       `}</style>

@@ -153,25 +153,17 @@ export async function POST(request: NextRequest) {
     const paymentTimeString = new Date().toLocaleString();
 
     try {
-      const notification = await prisma.notification.create({
-        data: {
-          title: "🛒 New Order Received",
-          message: `Order #${orderId} received from ${customerName} for ₹${totalAmount}.`,
-          type: "ORDER",
-          orderId: orderId,
-          isRead: false
-        }
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification({
+        title: "💰 Razorpay Payment Successful",
+        message: `Order #${orderId} received from ${customerName} for ₹${totalAmount}.`,
+        category: "SALES",
+        priority: "HIGH",
+        orderId: orderId,
+        link: `/admin/orders?search=${orderId}`
       });
-
-      const { broadcastAdminEvent } = await import("@/lib/eventBus");
-      broadcastAdminEvent("PAYMENT_SUCCESS", { orderId, amount: totalAmount, customerName });
-      broadcastAdminEvent("NOTIFICATION_NEW", notification);
     } catch (notifErr: any) {
-      console.warn("Could not create DB notification entry:", notifErr?.message || notifErr);
-      try {
-        const { broadcastAdminEvent } = await import("@/lib/eventBus");
-        broadcastAdminEvent("PAYMENT_SUCCESS", { orderId, amount: totalAmount, customerName });
-      } catch {}
+      console.warn("Could not trigger payment notification:", notifErr?.message || notifErr);
     }
 
     // Non-blocking Admin Email dispatch

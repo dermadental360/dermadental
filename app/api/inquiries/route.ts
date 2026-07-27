@@ -83,24 +83,16 @@ export async function POST(request: NextRequest) {
 
     // Create DB Notification & Broadcast real-time event
     try {
-      const notification = await prisma.notification.create({
-        data: {
-          title: "📬 New Customer Inquiry",
-          message: `Inquiry received from ${name} (${email}): "${message.slice(0, 60)}${message.length > 60 ? "..." : ""}"`,
-          type: "SYSTEM",
-          isRead: false
-        }
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification({
+        title: "📩 New Customer Inquiry",
+        message: `Inquiry received from ${name} (${email}): "${message.slice(0, 70)}${message.length > 70 ? "..." : ""}"`,
+        category: "INQUIRIES",
+        priority: "MEDIUM",
+        link: "/admin/inquiries"
       });
-
-      const { broadcastAdminEvent } = await import("@/lib/eventBus");
-      broadcastAdminEvent("INQUIRY_NEW", saved);
-      broadcastAdminEvent("NOTIFICATION_NEW", notification);
     } catch (err) {
-      console.warn("Failed to create notification/event for inquiry:", err);
-      try {
-        const { broadcastAdminEvent } = await import("@/lib/eventBus");
-        broadcastAdminEvent("INQUIRY_NEW", saved);
-      } catch {}
+      console.warn("Failed to trigger inquiry notification:", err);
     }
 
     return NextResponse.json({ success: true, inquiry: saved });

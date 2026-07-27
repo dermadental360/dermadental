@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AdminNotificationBell } from "@/components/AdminNotificationBell";
+import { NotificationToastContainer } from "@/components/NotificationToastContainer";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,6 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="admin-shell">
+      <NotificationToastContainer />
       <aside className="admin-side">
         <h2>DermaDental360</h2>
         <nav className="admin-menu">

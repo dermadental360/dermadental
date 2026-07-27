@@ -80,27 +80,19 @@ export async function POST(request: NextRequest) {
 
   await logAction("Create Order", `New order ID "${saved._id}" placed by "${body.customer.name}" (total: ₹${body.total}).`);
 
-  // Create DB Notification & Broadcast real-time event
+  // Create DB Notification & Broadcast real-time event via createNotification helper
   try {
-    const notification = await prisma.notification.create({
-      data: {
-        title: "🛒 New Order Received",
-        message: `New order #${saved._id} placed by ${body.customer.name} (Total: ₹${body.total}).`,
-        type: "ORDER",
-        orderId: String(saved._id),
-        isRead: false
-      }
+    const { createNotification } = await import("@/lib/notifications");
+    await createNotification({
+      title: "🔔 New Order Received",
+      message: `Order #${saved._id} placed by ${body.customer.name} for ₹${body.total}.`,
+      category: "ORDERS",
+      priority: "HIGH",
+      orderId: String(saved._id),
+      link: `/admin/orders?search=${saved._id}`
     });
-
-    const { broadcastAdminEvent } = await import("@/lib/eventBus");
-    broadcastAdminEvent("ORDER_NEW", saved);
-    broadcastAdminEvent("NOTIFICATION_NEW", notification);
   } catch (err) {
-    console.warn("Failed to create notification/event for order:", err);
-    try {
-      const { broadcastAdminEvent } = await import("@/lib/eventBus");
-      broadcastAdminEvent("ORDER_NEW", saved);
-    } catch {}
+    console.warn("Failed to trigger order notification:", err);
   }
 
   const lines = [

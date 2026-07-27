@@ -73,6 +73,29 @@ export async function POST(request: NextRequest) {
     });
 
     await logAction("Create Product", `Product "${body.name}" (${body.brand}) created successfully with price ₹${body.price}.`);
+
+    try {
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification({
+        title: "🧴 Product Added",
+        message: `New product "${body.name}" (${body.brand}) added to catalog at ₹${body.price}.`,
+        category: "PRODUCTS",
+        priority: "LOW",
+        link: "/admin/products"
+      });
+
+      if (Number(body.stock) < 10) {
+        await createNotification({
+          title: "⚠ Low Stock Alert",
+          message: `Product "${body.name}" created with low stock of ${body.stock} units!`,
+          category: "INVENTORY",
+          priority: "HIGH",
+          link: "/admin/products"
+        });
+      }
+    } catch (err) {
+      console.warn("Failed to trigger product notification:", err);
+    }
     
     return NextResponse.json({
       ...product,

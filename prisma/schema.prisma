@@ -203,20 +203,55 @@ enum NotificationType {
   PAYMENT
   INVENTORY
   SYSTEM
+  SALES
+  REVIEWS
+  CUSTOMERS
+  PRODUCTS
+  COUPONS
+  ADMIN
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  title     String
-  message   String           @db.Text
-  type      NotificationType @default(ORDER)
-  orderId   String?
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id          String           @id @default(cuid())
+  title       String
+  message     String           @db.Text
+  type        NotificationType @default(ORDER)
+  priority    String           @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  category    String           @default("ORDERS") // ORDERS, SALES, REVIEWS, CUSTOMERS, INVENTORY, INQUIRIES, PRODUCTS, COUPONS, SYSTEM, ADMIN
+  orderId     String?
+  relatedId   String?
+  relatedType String?
+  link        String?
+  createdBy   String?
+  metadata    Json?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([isRead, createdAt])
+  @@index([category, createdAt])
+  @@index([priority])
   @@index([orderId])
 }
+
+model NotificationPreference {
+  id                   String   @id @default(cuid())
+  adminEmail           String   @unique @default("admin")
+  enableOrders         Boolean  @default(true)
+  enableSales          Boolean  @default(true)
+  enableReviews        Boolean  @default(true)
+  enableCustomers      Boolean  @default(true)
+  enableInventory      Boolean  @default(true)
+  enableInquiries      Boolean  @default(true)
+  enableProducts       Boolean  @default(true)
+  enableSystemAlerts   Boolean  @default(true)
+  enableAdminActivity  Boolean  @default(true)
+  enableSound          Boolean  @default(true)
+  enableDesktopPopups  Boolean  @default(true)
+  lowStockThreshold    Int      @default(10)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
 
 
