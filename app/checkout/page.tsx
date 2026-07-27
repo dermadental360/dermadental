@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
 
 declare global {
@@ -44,16 +45,24 @@ export default function CheckoutPage() {
 
   async function handlePayment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return; // Prevent duplicate execution
     setLoading(true);
     setErrorMessage(null);
 
     const formData = new FormData(event.currentTarget);
+    const streetAddress = (formData.get("address") as string || "").trim();
+    const city = (formData.get("city") as string || "").trim();
+    const state = (formData.get("state") as string || "").trim();
+    const pincode = (formData.get("pincode") as string || "").trim();
+
+    const fullAddress = [streetAddress, city, state, pincode].filter(Boolean).join(", ");
+
     const customerDetails = {
-      name: formData.get("name") as string,
-      phone: formData.get("phone") as string,
-      email: formData.get("email") as string,
-      address: formData.get("address") as string,
-      notes: formData.get("notes") as string,
+      name: (formData.get("name") as string || "").trim(),
+      phone: (formData.get("phone") as string || "").trim(),
+      email: (formData.get("email") as string || "").trim(),
+      address: fullAddress,
+      notes: (formData.get("notes") as string || "").trim(),
     };
 
     if (cart.items.length === 0) {
@@ -167,164 +176,447 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="section page-enter">
+    <main className="section page-enter checkout-main">
       <div className="container split checkout-split">
-        <form className="card pad form reveal" onSubmit={handlePayment}>
+        <form
+          className="card pad form reveal checkout-form"
+          onSubmit={handlePayment}
+          noValidate={false}
+          aria-label="Checkout Form"
+        >
           <p className="eyebrow">Secure Razorpay Payment</p>
-          <h1 style={{ marginBottom: 18 }}>Checkout Information</h1>
+          <h1 className="checkout-title">Checkout Information</h1>
 
           {errorMessage && (
             <div
-              style={{
-                backgroundColor: "#fee2e2",
-                color: "#991b1b",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                fontSize: 14,
-                marginBottom: 16,
-                border: "1px solid #f87171",
-              }}
+              className="checkout-error-banner"
+              role="alert"
+              aria-live="assertive"
             >
               ⚠️ {errorMessage}
             </div>
           )}
 
           <div className="field">
-            <label>Full Name *</label>
+            <label htmlFor="checkout-name">Full Name *</label>
             <input
-              className="input"
+              id="checkout-name"
+              className="input mobile-input"
               name="name"
+              type="text"
+              autoComplete="name"
               defaultValue={customer?.name || ""}
               required
               placeholder="Your full name"
+              aria-required="true"
             />
           </div>
 
-          <div className="field">
-            <label>Phone Number *</label>
-            <input
-              className="input"
-              name="phone"
-              type="tel"
-              defaultValue={customer?.phone || ""}
-              required
-              placeholder="10-digit mobile number"
-            />
+          <div className="field-group">
+            <div className="field flex-1">
+              <label htmlFor="checkout-phone">Phone Number *</label>
+              <input
+                id="checkout-phone"
+                className="input mobile-input"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                defaultValue={customer?.phone || ""}
+                required
+                placeholder="10-digit mobile number"
+                aria-required="true"
+              />
+            </div>
+
+            <div className="field flex-1">
+              <label htmlFor="checkout-email">Email Address</label>
+              <input
+                id="checkout-email"
+                className="input mobile-input"
+                name="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                defaultValue={customer?.email || ""}
+                placeholder="name@example.com"
+              />
+            </div>
           </div>
 
           <div className="field">
-            <label>Email Address</label>
-            <input
-              className="input"
-              name="email"
-              type="email"
-              defaultValue={customer?.email || ""}
-              placeholder="name@example.com"
-            />
-          </div>
-
-          <div className="field">
-            <label>Shipping Address *</label>
+            <label htmlFor="checkout-address">Street Address *</label>
             <textarea
-              className="input"
+              id="checkout-address"
+              className="input mobile-input textarea-input"
               name="address"
-              rows={4}
+              rows={3}
+              autoComplete="street-address"
               required
-              placeholder="Flat, Street, Area, Landmark, Pincode"
+              placeholder="Flat, House no., Building, Street, Area"
+              aria-required="true"
             />
           </div>
 
+          <div className="field-grid-3">
+            <div className="field">
+              <label htmlFor="checkout-city">City *</label>
+              <input
+                id="checkout-city"
+                className="input mobile-input"
+                name="city"
+                type="text"
+                autoComplete="address-level2"
+                required
+                placeholder="City"
+                aria-required="true"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="checkout-state">State *</label>
+              <input
+                id="checkout-state"
+                className="input mobile-input"
+                name="state"
+                type="text"
+                autoComplete="address-level1"
+                required
+                placeholder="State"
+                aria-required="true"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="checkout-pincode">PIN Code *</label>
+              <input
+                id="checkout-pincode"
+                className="input mobile-input"
+                name="pincode"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="postal-code"
+                required
+                placeholder="6-digit PIN"
+                aria-required="true"
+              />
+            </div>
+          </div>
+
           <div className="field">
-            <label>Special Instructions / Notes (Optional)</label>
+            <label htmlFor="checkout-notes">Special Instructions / Notes (Optional)</label>
             <textarea
-              className="input"
+              id="checkout-notes"
+              className="input mobile-input textarea-notes"
               name="notes"
               rows={2}
-              placeholder="E.g. Delivery timings or specific guidance"
+              placeholder="E.g. Preferred delivery time or Landmark"
             />
           </div>
 
-          <button
-            type="submit"
-            className="btn"
-            style={{
-              width: "100%",
-              marginTop: 14,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-            }}
-            disabled={loading || cart.items.length === 0}
-          >
-            {loading ? (
-              <>
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: 16,
-                    height: 16,
-                    border: "2px solid #ffffff",
-                    borderTopColor: "transparent",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                  }}
-                />
-                Processing Payment...
-              </>
-            ) : (
-              `Pay ₹${cart.total} via Razorpay`
-            )}
-          </button>
+          <div className="desktop-pay-btn-wrapper">
+            <button
+              type="submit"
+              className="btn submit-btn"
+              disabled={loading || cart.items.length === 0}
+              aria-label={`Pay ₹${cart.total} via Razorpay`}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-icon" />
+                  Processing Payment...
+                </>
+              ) : (
+                `Pay ₹${cart.total} via Razorpay`
+              )}
+            </button>
+          </div>
+
+          {/* Sticky Mobile Pay Button */}
+          <div className="mobile-sticky-bar">
+            <div className="mobile-sticky-inner">
+              <div className="mobile-sticky-info">
+                <span className="mobile-sticky-label">Total Payable</span>
+                <span className="mobile-sticky-amount">₹{cart.total}</span>
+              </div>
+              <button
+                type="submit"
+                className="btn submit-btn mobile-pay-btn"
+                disabled={loading || cart.items.length === 0}
+                aria-label={`Pay ₹${cart.total} via Razorpay`}
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner-icon" />
+                    Processing...
+                  </>
+                ) : (
+                  `Pay ₹${cart.total}`
+                )}
+              </button>
+            </div>
+          </div>
         </form>
 
-        <aside className="card pad reveal reveal-delay-1 shop-sidebar">
-          <h3 style={{ fontSize: 20, borderBottom: "1px solid var(--line)", paddingBottom: 12, marginBottom: 16 }}>
-            Order Summary
-          </h3>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 14,
-              maxHeight: 300,
-              overflowY: "auto",
-              marginBottom: 16,
-            }}
-          >
-            {cart.items.map((item) => (
-              <div key={item.productId} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                <span style={{ color: "var(--ink)", fontWeight: 500 }}>
-                  {item.quantity} x {item.name}
-                </span>
-                <span style={{ color: "var(--muted)" }}>₹{item.price * item.quantity}</span>
-              </div>
-            ))}
+        <aside className="card pad reveal reveal-delay-1 shop-sidebar order-summary-aside">
+          <h2 className="summary-heading">Order Summary ({cart.count})</h2>
+          <div className="summary-items-container">
+            {cart.items.length === 0 ? (
+              <p className="empty-cart-text">Your cart is empty.</p>
+            ) : (
+              cart.items.map((item) => (
+                <div key={item.productId} className="summary-item-card">
+                  {item.image && (
+                    <div className="summary-item-img-box">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={48}
+                        height={48}
+                        className="summary-item-img"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div className="summary-item-details">
+                    <span className="summary-item-name">{item.name}</span>
+                    <span className="summary-item-qty">Qty: {item.quantity}</span>
+                  </div>
+                  <span className="summary-item-price">₹{item.price * item.quantity}</span>
+                </div>
+              ))
+            )}
           </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontWeight: 800,
-              fontSize: 20,
-              color: "var(--ink)",
-              borderTop: "1px solid var(--line)",
-              paddingTop: 12,
-            }}
-          >
+          <div className="summary-total-row">
             <span>Total</span>
-            <span>₹{cart.total}</span>
+            <span className="summary-total-price">₹{cart.total}</span>
           </div>
         </aside>
       </div>
 
       <style jsx>{`
+        .checkout-main {
+          overflow-x: hidden;
+        }
+        .checkout-title {
+          font-size: clamp(1.5rem, 4vw, 2.2rem);
+          margin-bottom: 18px;
+        }
+        .checkout-error-banner {
+          background-color: #fee2e2;
+          color: #991b1b;
+          padding: 12px 16px;
+          border-radius: 8px;
+          font-size: 14px;
+          margin-bottom: 16px;
+          border: 1px solid #f87171;
+        }
+        .mobile-input {
+          min-height: 48px;
+          font-size: 16px !important; /* Prevents auto-zoom on iOS */
+          padding: 12px 14px;
+          width: 100%;
+          border-radius: 8px;
+          border: 1px solid var(--line, #e2e8f0);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .mobile-input:focus {
+          outline: none;
+          border-color: var(--sage-dark, #2d5a27);
+          box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.15);
+        }
+        .textarea-input {
+          min-height: 90px;
+          resize: vertical;
+        }
+        .textarea-notes {
+          min-height: 60px;
+          resize: vertical;
+        }
+        .field-group {
+          display: flex;
+          gap: 14px;
+          flex-wrap: wrap;
+        }
+        .flex-1 {
+          flex: 1;
+          min-width: 220px;
+        }
+        .field-grid-3 {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          gap: 12px;
+        }
+        .submit-btn {
+          width: 100%;
+          min-height: 50px;
+          font-size: 16px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          border-radius: 8px;
+          cursor: pointer;
+        }
+        .submit-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        .spinner-icon {
+          display: inline-block;
+          width: 18px;
+          height: 18px;
+          border: 2px solid #ffffff;
+          border-top-color: transparent;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
         @keyframes spin {
           0% {
             transform: rotate(0deg);
           }
           100% {
             transform: rotate(360deg);
+          }
+        }
+        .summary-heading {
+          font-size: 1.25rem;
+          border-bottom: 1px solid var(--line, #e2e8f0);
+          padding-bottom: 12px;
+          margin-bottom: 16px;
+        }
+        .summary-items-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-height: 320px;
+          overflow-y: auto;
+          margin-bottom: 16px;
+          padding-right: 4px;
+        }
+        .empty-cart-text {
+          color: var(--muted, #64748b);
+          font-size: 14px;
+        }
+        .summary-item-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          font-size: 14px;
+          padding: 8px 0;
+          border-bottom: 1px dashed var(--line, #f1f5f9);
+        }
+        .summary-item-img-box {
+          width: 44px;
+          height: 44px;
+          border-radius: 6px;
+          overflow: hidden;
+          flex-shrink: 0;
+          background-color: #f8fafc;
+        }
+        .summary-item-img {
+          object-fit: cover;
+          width: 100%;
+          height: 100%;
+        }
+        .summary-item-details {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-width: 0;
+        }
+        .summary-item-name {
+          color: var(--ink, #0f172a);
+          font-weight: 500;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+        .summary-item-qty {
+          font-size: 12px;
+          color: var(--muted, #64748b);
+        }
+        .summary-item-price {
+          font-weight: 600;
+          color: var(--ink, #0f172a);
+          white-space: nowrap;
+        }
+        .summary-total-row {
+          display: flex;
+          justify-content: space-between;
+          font-weight: 800;
+          font-size: 1.2rem;
+          color: var(--ink, #0f172a);
+          border-top: 1px solid var(--line, #e2e8f0);
+          padding-top: 12px;
+        }
+        .mobile-sticky-bar {
+          display: none;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+          .desktop-pay-btn-wrapper {
+            display: none;
+          }
+          .mobile-sticky-bar {
+            display: block;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+            padding: 12px 16px max(12px, env(safe-area-inset-bottom));
+            z-index: 99;
+            border-top: 1px solid var(--line, #e2e8f0);
+          }
+          .mobile-sticky-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+          }
+          .mobile-sticky-info {
+            display: flex;
+            flex-direction: column;
+          }
+          .mobile-sticky-label {
+            font-size: 12px;
+            color: var(--muted, #64748b);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .mobile-sticky-amount {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--sage-dark, #2d5a27);
+          }
+          .mobile-pay-btn {
+            flex: 1;
+            max-width: 240px;
+            min-height: 48px;
+          }
+          .checkout-main {
+            padding-bottom: 90px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .field-group {
+            flex-direction: column;
+            gap: 0;
+          }
+          .flex-1 {
+            min-width: 100%;
+          }
+          .field-grid-3 {
+            grid-template-columns: 1fr;
+            gap: 0;
           }
         }
       `}</style>

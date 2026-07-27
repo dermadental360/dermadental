@@ -28,148 +28,279 @@ function PaymentSuccessContent() {
   }, [orderId]);
 
   function handlePrint() {
-    window.print();
+    if (typeof window !== "undefined") {
+      window.print();
+    }
   }
 
   if (loading) {
     return (
-      <div className="card pad" style={{ textAlign: "center", padding: 48, maxWidth: 600, margin: "40px auto" }}>
+      <div className="card pad loading-card">
+        <div className="spinner-center" />
         <h2>Verifying Payment Status...</h2>
-        <p style={{ color: "var(--muted)", marginTop: 8 }}>Please wait while we retrieve your invoice.</p>
+        <p className="subtext">Please wait while we retrieve your invoice details.</p>
+        <style jsx>{`
+          .loading-card {
+            text-align: center;
+            padding: 48px 24px;
+            max-width: 540px;
+            margin: 40px auto;
+          }
+          .spinner-center {
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--line, #e2e8f0);
+            border-top-color: var(--sage-dark, #2d5a27);
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            animation: spin 0.8s linear infinite;
+          }
+          .subtext {
+            color: var(--muted, #64748b);
+            margin-top: 8px;
+            font-size: 14px;
+          }
+          @keyframes spin {
+            100% {
+              transform: rotate(360deg);
+            }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: "40px auto", padding: "0 16px" }}>
-      <div className="card pad" style={{ borderTop: "4px solid #16a34a" }}>
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              backgroundColor: "#dcfce7",
-              color: "#15803d",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 28,
-              fontWeight: "bold",
-              marginBottom: 12,
-            }}
-          >
+    <div className="success-wrapper">
+      <div className="card pad success-card">
+        <div className="success-header">
+          <div className="success-icon" aria-hidden="true">
             ✓
           </div>
-          <h1 style={{ fontSize: 26, color: "var(--ink)", margin: 0 }}>Payment Successful!</h1>
-          <p style={{ color: "var(--muted)", marginTop: 6, fontSize: 15 }}>
+          <h1 className="success-title">Payment Successful!</h1>
+          <p className="success-subtitle">
             Thank you for your order with DermaDental 360. Your payment has been verified.
           </p>
         </div>
 
-        <div
-          style={{
-            backgroundColor: "var(--bg-secondary, #f8fafc)",
-            padding: 16,
-            borderRadius: 8,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 12,
-            fontSize: 14,
-            marginBottom: 24,
-          }}
-        >
-          <div>
-            <strong style={{ display: "block", color: "var(--muted)", fontSize: 12, textTransform: "uppercase" }}>
-              Order Reference
-            </strong>
-            <span style={{ fontWeight: 600, fontSize: 15 }}>{orderId || "N/A"}</span>
+        <div className="meta-grid">
+          <div className="meta-box">
+            <span className="meta-label">Order Reference</span>
+            <span className="meta-value">{orderId || "N/A"}</span>
           </div>
 
-          <div>
-            <strong style={{ display: "block", color: "var(--muted)", fontSize: 12, textTransform: "uppercase" }}>
-              Razorpay Payment ID
-            </strong>
-            <span style={{ fontWeight: 600, fontSize: 15 }}>{paymentId || "N/A"}</span>
+          <div className="meta-box">
+            <span className="meta-label">Razorpay Payment ID</span>
+            <span className="meta-value">{paymentId || "N/A"}</span>
           </div>
 
-          <div>
-            <strong style={{ display: "block", color: "var(--muted)", fontSize: 12, textTransform: "uppercase" }}>
-              Payment Status
-            </strong>
-            <span style={{ fontWeight: 700, color: "#16a34a" }}>PAID & VERIFIED</span>
+          <div className="meta-box">
+            <span className="meta-label">Payment Status</span>
+            <span className="status-badge">PAID & VERIFIED</span>
           </div>
         </div>
 
         {order && (
-          <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 16, borderBottom: "1px solid var(--line)", paddingBottom: 8, marginBottom: 12 }}>
-              Customer & Shipping Details
-            </h3>
-            <p style={{ margin: "4px 0", fontSize: 14 }}>
-              <strong>Name:</strong> {order.customer?.name}
-            </p>
-            <p style={{ margin: "4px 0", fontSize: 14 }}>
-              <strong>Phone:</strong> {order.customer?.phone}
-            </p>
-            {order.customer?.email && (
-              <p style={{ margin: "4px 0", fontSize: 14 }}>
-                <strong>Email:</strong> {order.customer.email}
-              </p>
-            )}
-            <p style={{ margin: "4px 0", fontSize: 14 }}>
-              <strong>Address:</strong> {order.customer?.address}
-            </p>
+          <div className="order-details-section">
+            <h2 className="section-title">Customer & Shipping Details</h2>
+            <div className="info-list">
+              <p><strong>Name:</strong> {order.customer?.name}</p>
+              <p><strong>Phone:</strong> {order.customer?.phone}</p>
+              {order.customer?.email && <p><strong>Email:</strong> {order.customer.email}</p>}
+              <p><strong>Address:</strong> {order.customer?.address}</p>
+            </div>
 
-            <h3
-              style={{
-                fontSize: 16,
-                borderBottom: "1px solid var(--line)",
-                paddingBottom: 8,
-                marginTop: 20,
-                marginBottom: 12,
-              }}
-            >
-              Order Items
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <h2 className="section-title" style={{ marginTop: 24 }}>Order Items</h2>
+            <div className="items-list">
               {order.items?.map((item: any, idx: number) => (
-                <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                  <span>
+                <div key={idx} className="item-row">
+                  <span className="item-name">
                     {item.quantity} x {item.name}
                   </span>
-                  <span style={{ fontWeight: 600 }}>₹{item.price * item.quantity}</span>
+                  <span className="item-price">₹{item.price * item.quantity}</span>
                 </div>
               ))}
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                borderTop: "2px solid var(--line)",
-                paddingTop: 12,
-                marginTop: 14,
-                fontSize: 18,
-                fontWeight: 800,
-              }}
-            >
+            <div className="total-row">
               <span>Total Paid:</span>
-              <span style={{ color: "var(--sage-dark, #2d5a27)" }}>₹{order.total}</span>
+              <span className="total-amount">₹{order.total}</span>
             </div>
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginTop: 24 }}>
-          <button className="btn soft" onClick={handlePrint} style={{ padding: "10px 20px" }}>
+        <div className="action-buttons-row">
+          <button
+            type="button"
+            className="btn soft action-btn print-btn"
+            onClick={handlePrint}
+            aria-label="Print or download receipt invoice"
+          >
             🖨️ Print / Download Invoice
           </button>
 
-          <Link href="/shop" className="btn" style={{ padding: "10px 20px" }}>
+          <Link href="/shop" className="btn action-btn shop-btn">
             Return to Shop
           </Link>
         </div>
       </div>
+
+      <style jsx>{`
+        .success-wrapper {
+          max-width: 720px;
+          margin: 32px auto;
+          padding: 0 16px;
+          overflow-x: hidden;
+        }
+        .success-card {
+          border-top: 4px solid #16a34a;
+          border-radius: 12px;
+        }
+        .success-header {
+          text-align: center;
+          margin-bottom: 24px;
+        }
+        .success-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background-color: #dcfce7;
+          color: #15803d;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          font-weight: bold;
+          margin-bottom: 12px;
+        }
+        .success-title {
+          font-size: clamp(1.4rem, 4vw, 1.8rem);
+          color: var(--ink, #0f172a);
+          margin: 0;
+        }
+        .success-subtitle {
+          color: var(--muted, #64748b);
+          margin-top: 6px;
+          font-size: 15px;
+        }
+        .meta-grid {
+          background-color: var(--bg-secondary, #f8fafc);
+          padding: 16px;
+          border-radius: 8px;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 12px;
+          font-size: 14px;
+          margin-bottom: 24px;
+        }
+        .meta-box {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .meta-label {
+          color: var(--muted, #64748b);
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .meta-value {
+          font-weight: 600;
+          font-size: 14px;
+          word-break: break-all;
+          color: var(--ink, #0f172a);
+        }
+        .status-badge {
+          font-weight: 700;
+          color: #16a34a;
+          font-size: 14px;
+        }
+        .order-details-section {
+          margin-bottom: 24px;
+        }
+        .section-title {
+          font-size: 16px;
+          border-bottom: 1px solid var(--line, #e2e8f0);
+          padding-bottom: 8px;
+          margin-bottom: 12px;
+          color: var(--ink, #0f172a);
+        }
+        .info-list p {
+          margin: 6px 0;
+          font-size: 14px;
+          line-height: 1.5;
+          word-break: break-word;
+        }
+        .items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .item-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 14px;
+          gap: 12px;
+        }
+        .item-name {
+          word-break: break-word;
+          color: var(--ink, #0f172a);
+        }
+        .item-price {
+          font-weight: 600;
+          white-space: nowrap;
+        }
+        .total-row {
+          display: flex;
+          justify-content: space-between;
+          border-top: 2px solid var(--line, #e2e8f0);
+          padding-top: 12px;
+          margin-top: 14px;
+          font-size: 18px;
+          font-weight: 800;
+        }
+        .total-amount {
+          color: var(--sage-dark, #2d5a27);
+        }
+        .action-buttons-row {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          justify-content: center;
+          margin-top: 24px;
+        }
+        .action-btn {
+          min-height: 48px;
+          padding: 12px 24px;
+          font-size: 15px;
+          font-weight: 600;
+          border-radius: 8px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex: 1;
+          min-width: 200px;
+        }
+
+        @media (max-width: 480px) {
+          .meta-grid {
+            grid-template-columns: 1fr;
+          }
+          .action-buttons-row {
+            flex-direction: column;
+          }
+          .action-btn {
+            width: 100%;
+            min-width: 100%;
+          }
+        }
+
+        @media print {
+          .action-buttons-row {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
