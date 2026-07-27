@@ -301,7 +301,7 @@ export async function sendCustomerOrderEmail(data: CustomerOrderEmailData): Prom
  * Sends an Admin Order Paid email notification.
  */
 export async function sendAdminOrderEmail(data: AdminOrderEmailData): Promise<boolean> {
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@dermadental360.com";
+  const adminEmail = process.env.ADMIN_EMAIL || "dd360health@gmail.com";
   
   const itemsText = data.items
     .map((item) => `- ${item.quantity}x ${item.name} @ ₹${item.price}`)

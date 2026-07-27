@@ -7,7 +7,7 @@ export const clinic = {
   whatsapp: "919833699887",
   address: "502, Villa Rosa, 24 & 30 Road, Bandra West, Mumbai, Maharashtra 400050",
   timing: "12:00 PM to 7:00 PM, Sunday closed",
-  email: "moeenint@gmail.com"
+  email: "dd360health@gmail.com"
 };
 
 export const categories = ["Skin", "Oral Care", "Hair", "Supplements", "Luxe"];
