@@ -10,9 +10,11 @@ export default async function ConcernPage({ params }: { params: Promise<{ slug: 
   const products = await getProducts({ concern });
   return (
     <main className="section page-enter">
-      <div className="container reveal">
-        <p className="eyebrow">Concern Care</p>
-        <h1 style={{ marginBottom: 28 }}>Solutions for {concern}</h1>
+      <div className="container">
+        <div className="reveal">
+          <p className="eyebrow">Concern Care</p>
+          <h1 style={{ marginBottom: 28 }}>Solutions for {concern}</h1>
+        </div>
         <ShopGrid products={products} />
       </div>
     </main>

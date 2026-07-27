@@ -12,15 +12,15 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
     <main className="section page-enter">
       <div className="container split">
         <ShopFilters initialQ={params.q} initialCategory={params.category} initialConcern={params.concern} />
-        <section className="reveal reveal-delay-1">
-          <div className="section-head">
+        <section>
+          <div className="section-head reveal">
             <div>
               <p className="eyebrow">Dermaceutic catalog</p>
               <h2>{products.length} {products.length === 1 ? "Product" : "Products"} Available</h2>
             </div>
           </div>
           {products.length === 0 ? (
-            <div className="card pad" style={{ textAlign: "center", padding: "64px 24px" }}>
+            <div className="card pad reveal" style={{ textAlign: "center", padding: "64px 24px" }}>
               <h3>No products found</h3>
               <p style={{ marginTop: 8 }}>Try adjusting your filters or search key.</p>
               <Link className="btn" href="/shop" style={{ marginTop: 18 }}>Reset Filters</Link>

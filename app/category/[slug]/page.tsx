@@ -30,11 +30,13 @@ export default async function CategoryPage({
 
   return (
     <main className="section page-enter">
-      <div className="container reveal">
-        <p className="eyebrow">Category Catalog</p>
-        <h1 style={{ marginBottom: 20 }}>{category} essentials</h1>
+      <div className="container">
+        <div className="reveal">
+          <p className="eyebrow">Category Catalog</p>
+          <h1 style={{ marginBottom: 20 }}>{category} essentials</h1>
+        </div>
 
-        <div className="subcategory-container">
+        <div className="subcategory-container reveal">
           <div className="subcategory-tabs">
             {subcategories.map((sub) => {
               const isActive = activeSub === sub;
