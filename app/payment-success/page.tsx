@@ -122,8 +122,25 @@ function PaymentSuccessContent() {
               ))}
             </div>
 
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line, #e2e8f0)", fontSize: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
+                <span>Subtotal:</span>
+                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>
+                  ₹{order.subtotal || order.items?.reduce((s: number, i: any) => s + i.price * i.quantity, 0) || order.total}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
+                <span>Shipping Charge:</span>
+                {order.shippingCharge === 0 || (order.subtotal || order.total) >= 1499 ? (
+                  <span style={{ color: "#16a34a", fontWeight: 700 }}>FREE</span>
+                ) : (
+                  <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{order.shippingCharge || 99}</span>
+                )}
+              </div>
+            </div>
+
             <div className="total-row">
-              <span>Total Paid:</span>
+              <span>Grand Total Paid:</span>
               <span className="total-amount">₹{order.total}</span>
             </div>
           </div>

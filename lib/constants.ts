@@ -10,6 +10,23 @@ export const clinic = {
   email: "dd360health@gmail.com"
 };
 
+export const FREE_SHIPPING_THRESHOLD = 1499;
+export const SHIPPING_CHARGE = 99;
+
+export function calculateShippingDetails(subtotal: number) {
+  const isFree = subtotal >= FREE_SHIPPING_THRESHOLD;
+  const shippingCharge = isFree ? 0 : SHIPPING_CHARGE;
+  const remainingForFreeShipping = isFree ? 0 : Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const grandTotal = subtotal + shippingCharge;
+  return {
+    subtotal,
+    shippingCharge,
+    isFree,
+    remainingForFreeShipping,
+    grandTotal
+  };
+}
+
 export const categories = ["Skin", "Oral Care", "Hair", "Supplements", "Luxe"];
 
 export const subcategoriesMap: Record<string, string[]> = {

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Product } from "@/lib/demo";
+import { calculateShippingDetails } from "@/lib/constants";
 
 export type CartItem = {
   productId: string;
@@ -19,7 +20,11 @@ type ToastMsg = {
 type CartContextValue = {
   items: CartItem[];
   count: number;
-  total: number;
+  subtotal: number;
+  shippingCharge: number;
+  isFreeShipping: boolean;
+  remainingForFreeShipping: number;
+  total: number; // Grand Total = subtotal + shippingCharge
   add: (product: Product, quantity?: number) => void;
   update: (productId: string, quantity: number) => void;
   remove: (productId: string) => void;
@@ -49,45 +54,54 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }, 3000);
   };
 
-  const value = useMemo<CartContextValue>(() => ({
-    items,
-    count: items.reduce((sum, item) => sum + item.quantity, 0),
-    total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    add(product, quantity = 1) {
-      setItems((current) => {
-        const found = current.find((item) => item.productId === product._id);
-        if (found) {
-          return current.map((item) =>
-            item.productId === product._id ? { ...item, quantity: item.quantity + quantity } : item
-          );
-        }
-        return [
-          ...current,
-          {
-            productId: product._id,
-            name: product.name,
-            price: product.discountedPrice || product.price,
-            image: product.images[0],
-            quantity,
-          },
-        ];
-      });
-      showToast(`Added "${product.name}" to cart`);
-    },
-    update(productId, quantity) {
-      setItems((current) =>
-        current
-          .map((item) => (item.productId === productId ? { ...item, quantity } : item))
-          .filter((item) => item.quantity > 0)
-      );
-    },
-    remove(productId) {
-      setItems((current) => current.filter((item) => item.productId !== productId));
-    },
-    clear() {
-      setItems([]);
-    },
-  }), [items]);
+  const value = useMemo<CartContextValue>(() => {
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shippingInfo = calculateShippingDetails(subtotal);
+
+    return {
+      items,
+      count: items.reduce((sum, item) => sum + item.quantity, 0),
+      subtotal,
+      shippingCharge: items.length > 0 ? shippingInfo.shippingCharge : 0,
+      isFreeShipping: items.length > 0 ? shippingInfo.isFree : false,
+      remainingForFreeShipping: shippingInfo.remainingForFreeShipping,
+      total: items.length > 0 ? shippingInfo.grandTotal : 0,
+      add(product, quantity = 1) {
+        setItems((current) => {
+          const found = current.find((item) => item.productId === product._id);
+          if (found) {
+            return current.map((item) =>
+              item.productId === product._id ? { ...item, quantity: item.quantity + quantity } : item
+            );
+          }
+          return [
+            ...current,
+            {
+              productId: product._id,
+              name: product.name,
+              price: product.discountedPrice || product.price,
+              image: product.images[0],
+              quantity,
+            },
+          ];
+        });
+        showToast(`Added "${product.name}" to cart`);
+      },
+      update(productId, quantity) {
+        setItems((current) =>
+          current
+            .map((item) => (item.productId === productId ? { ...item, quantity } : item))
+            .filter((item) => item.quantity > 0)
+        );
+      },
+      remove(productId) {
+        setItems((current) => current.filter((item) => item.productId !== productId));
+      },
+      clear() {
+        setItems([]);
+      },
+    };
+  }, [items]);
 
   return (
     <CartContext.Provider value={value}>

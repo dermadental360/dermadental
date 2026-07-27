@@ -1,5 +1,5 @@
 import { logAction } from "./auditLogger";
-import { clinic } from "./constants";
+import { clinic, calculateShippingDetails } from "./constants";
 
 export type OrderLifecycleStage =
   | "ORDER_CONFIRMED"
@@ -22,6 +22,8 @@ export interface CustomerOrderEmailData {
     quantity: number;
     price: number;
   }>;
+  subtotal?: number;
+  shippingCharge?: number;
   total: number;
   paymentStatus: string;
   paymentTime: string;
@@ -40,6 +42,8 @@ export interface AdminOrderEmailData {
     quantity: number;
     price: number;
   }>;
+  subtotal?: number;
+  shippingCharge?: number;
   total: number;
   paymentStatus: string;
   paymentTime: string;
@@ -105,6 +109,11 @@ export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): st
   };
 
   const config = stageTitles[stage];
+
+  const itemsSubtotal = data.subtotal || data.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const shippingInfo = calculateShippingDetails(itemsSubtotal);
+  const finalShippingCharge = data.shippingCharge !== undefined ? data.shippingCharge : shippingInfo.shippingCharge;
+  const shippingDisplay = finalShippingCharge === 0 ? "FREE" : `₹${finalShippingCharge}`;
 
   const itemsHtml = data.items
     .map(
@@ -209,7 +218,7 @@ export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): st
             </td>
           </tr>
 
-          <!-- Products Table -->
+          <!-- Products & Breakdown Table -->
           <tr>
             <td style="padding: 0 24px 16px 24px;">
               <h3 style="margin: 0 0 12px 0; font-size: 15px; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
@@ -228,10 +237,26 @@ export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): st
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colspan="2" align="left" style="padding: 16px; font-size: 16px; font-weight: 700; color: #0f172a;">
-                      Total Amount Paid:
+                    <td colspan="2" align="left" style="padding: 10px 16px; font-size: 14px; color: #64748b; border-top: 1px solid #e2e8f0;">
+                      Subtotal:
                     </td>
-                    <td align="right" style="padding: 16px; font-size: 18px; font-weight: 800; color: #2d5a27;">
+                    <td align="right" style="padding: 10px 16px; font-size: 14px; font-weight: 600; color: #0f172a; border-top: 1px solid #e2e8f0;">
+                      ₹${itemsSubtotal.toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" align="left" style="padding: 10px 16px; font-size: 14px; color: #64748b;">
+                      Shipping Charge:
+                    </td>
+                    <td align="right" style="padding: 10px 16px; font-size: 14px; font-weight: 700; color: ${finalShippingCharge === 0 ? "#16a34a" : "#0f172a"};">
+                      ${shippingDisplay}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" align="left" style="padding: 14px 16px; font-size: 16px; font-weight: 700; color: #0f172a; border-top: 2px solid #e2e8f0;">
+                      Grand Total Paid:
+                    </td>
+                    <td align="right" style="padding: 14px 16px; font-size: 18px; font-weight: 800; color: #2d5a27; border-top: 2px solid #e2e8f0;">
                       ₹${data.total.toLocaleString("en-IN")}
                     </td>
                   </tr>
@@ -272,7 +297,6 @@ export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): st
 
 /**
  * Asynchronously dispatches Customer Order Confirmation Email without blocking payment thread.
- * Logs output and prevents duplicate email delivery.
  */
 export async function sendCustomerOrderEmail(data: CustomerOrderEmailData): Promise<boolean> {
   if (!data.customerEmail || !data.customerEmail.includes("@")) {
@@ -307,6 +331,11 @@ export async function sendAdminOrderEmail(data: AdminOrderEmailData): Promise<bo
     .map((item) => `- ${item.quantity}x ${item.name} @ ₹${item.price}`)
     .join("\n");
 
+  const itemsSubtotal = data.subtotal || data.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const shippingInfo = calculateShippingDetails(itemsSubtotal);
+  const shippingCharge = data.shippingCharge !== undefined ? data.shippingCharge : shippingInfo.shippingCharge;
+  const shippingText = shippingCharge === 0 ? "FREE" : `Rs ${shippingCharge}`;
+
   const emailSubject = `🛒 NEW PAID ORDER: #${data.orderId} - ₹${data.total} by ${data.customerName}`;
 
   const emailBody = `
@@ -328,7 +357,10 @@ CUSTOMER DETAILS:
 ITEMS PURCHASED:
 ${itemsText}
 
-TOTAL AMOUNT PAID: ₹${data.total}
+PRICE BREAKDOWN:
+- Subtotal: Rs ${itemsSubtotal}
+- Shipping Charge: ${shippingText}
+- Grand Total Paid: Rs ${data.total}
 
 VIEW ORDER DETAILS IN ADMIN DASHBOARD:
 ${process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com"}/admin/orders?search=${data.orderId}
@@ -338,7 +370,7 @@ ${process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com"}/admin/orders?sea
 
   await logAction(
     "Admin Order Email Triggered",
-    `Order #${data.orderId} email notification dispatched for ${adminEmail}. Total: ₹${data.total}`
+    `Order #${data.orderId} email notification dispatched for ${adminEmail}. Subtotal: ₹${itemsSubtotal}, Shipping: ${shippingText}, Grand Total: ₹${data.total}`
   );
 
   console.log(`[ADMIN EMAIL DISPATCH to ${adminEmail}]\nSubject: ${emailSubject}\n${emailBody}`);

@@ -388,8 +388,23 @@ export default function CheckoutPage() {
               ))
             )}
           </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "1px solid var(--line, #e2e8f0)", paddingTop: 12, fontSize: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
+              <span>Products Total</span>
+              <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{cart.subtotal}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
+              <span>Shipping</span>
+              {cart.isFreeShipping ? (
+                <span style={{ color: "#16a34a", fontWeight: 700 }}>FREE</span>
+              ) : (
+                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{cart.shippingCharge}</span>
+              )}
+            </div>
+          </div>
+
           <div className="summary-total-row">
-            <span>Total</span>
+            <span>Grand Total</span>
             <span className="summary-total-price">₹{cart.total}</span>
           </div>
         </aside>

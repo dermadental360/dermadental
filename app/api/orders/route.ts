@@ -19,6 +19,8 @@ export async function GET() {
         notes: o.notes
       },
       items: typeof o.items === "string" ? JSON.parse(o.items) : o.items,
+      subtotal: o.subtotal,
+      shippingCharge: o.shippingCharge,
       total: o.total,
       status: o.status,
       whatsappSent: o.whatsappSent,

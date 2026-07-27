@@ -134,8 +134,14 @@ export function AdminOrders() {
                     <span className={`status-pill ${(order.status || "New").toLowerCase()}`}>{order.status || "New"}</span>
                   </div>
                   <div>
-                    <span style={{ fontSize: 13, color: "var(--muted)", display: "block" }}>Total Amount</span>
-                    <span style={{ fontWeight: 800, fontSize: 18, color: "var(--sage-dark)" }}>₹{order.total}</span>
+                    <span style={{ fontSize: 13, color: "var(--muted)", display: "block" }}>Payment Breakdown</span>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>
+                      Subtotal: ₹{order.subtotal || order.items?.reduce((s: number, i: any) => s + i.price * i.quantity, 0) || order.total}
+                    </span>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>
+                      Shipping: {order.shippingCharge === 0 || (order.subtotal || order.total) >= 1499 ? "FREE" : `₹${order.shippingCharge || 99}`}
+                    </span>
+                    <span style={{ fontWeight: 800, fontSize: 16, color: "var(--sage-dark)" }}>Grand Total: ₹{order.total}</span>
                   </div>
                 </div>
 

@@ -56,6 +56,8 @@ model Order {
   customerAddress String   @db.Text
   notes           String?  @db.Text
   items           Json
+  subtotal        Float    @default(0)
+  shippingCharge  Float    @default(0)
   total           Float
   status          String   @default("PENDING")
   whatsappSent    Boolean  @default(false)

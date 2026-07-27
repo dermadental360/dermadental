@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { fallbackStore } from "@/lib/fallbackStore";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { logAction } from "@/lib/auditLogger";
+import { calculateShippingDetails } from "@/lib/constants";
 
 export const runtime = "nodejs";
 
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     const productMap = new Map(dbProducts.map(p => [p.id, p]));
 
-    let calculatedTotalPaise = 0;
+    let calculatedSubtotalPaise = 0;
     const verifiedItems = [];
 
     for (const item of items) {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
       const unitPricePaise = Math.round(unitPrice * 100);
       const itemTotalPaise = unitPricePaise * quantity;
 
-      calculatedTotalPaise += itemTotalPaise;
+      calculatedSubtotalPaise += itemTotalPaise;
 
       verifiedItems.push({
         productId: pid,
@@ -67,9 +68,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (calculatedTotalPaise <= 0) {
-      return NextResponse.json({ error: "Invalid order total amount calculation." }, { status: 400 });
+    if (calculatedSubtotalPaise <= 0) {
+      return NextResponse.json({ error: "Invalid order subtotal amount calculation." }, { status: 400 });
     }
+
+    const subtotalRupees = calculatedSubtotalPaise / 100;
+
+    // Server-Side Shipping Charge Calculation (Ignore client payload)
+    const shippingInfo = calculateShippingDetails(subtotalRupees);
+    const shippingChargeRupees = shippingInfo.shippingCharge;
+    const shippingChargePaise = Math.round(shippingChargeRupees * 100);
+
+    const grandTotalPaise = calculatedSubtotalPaise + shippingChargePaise;
+    const grandTotalRupees = grandTotalPaise / 100;
 
     const keyId = process.env.RAZORPAY_KEY_ID;
     if (!keyId) {
@@ -80,19 +91,20 @@ export async function POST(request: NextRequest) {
     // Initialize Razorpay SDK instance
     const razorpay = getRazorpayInstance();
 
-    // Create Razorpay Order securely on backend (Amount in Paise)
+    // Create Razorpay Order securely on backend (Grand Total in Paise)
     const razorpayOrder = await razorpay.orders.create({
-      amount: calculatedTotalPaise,
+      amount: grandTotalPaise,
       currency: "INR",
       receipt: `rcpt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       notes: {
         customerName: customer.name,
         customerPhone: customer.phone,
-        customerEmail: customer.email || ""
+        customerEmail: customer.email || "",
+        subtotal: subtotalRupees,
+        shipping: shippingChargeRupees
       }
     });
 
-    const totalRupees = calculatedTotalPaise / 100;
     let internalOrderId = "ord-" + Date.now();
 
     // Try saving internal Order & Payment to DB, fallback to in-memory store if DB error occurs
@@ -105,7 +117,9 @@ export async function POST(request: NextRequest) {
           customerAddress: customer.address,
           notes: customer.notes || null,
           items: verifiedItems,
-          total: totalRupees,
+          subtotal: subtotalRupees,
+          shippingCharge: shippingChargeRupees,
+          total: grandTotalRupees,
           status: "PENDING"
         }
       });
@@ -115,7 +129,7 @@ export async function POST(request: NextRequest) {
         data: {
           orderId: order.id,
           razorpayOrderId: razorpayOrder.id,
-          amount: calculatedTotalPaise,
+          amount: grandTotalPaise,
           currency: razorpayOrder.currency || "INR",
           status: "CREATED",
           customerName: customer.name,
@@ -136,7 +150,7 @@ export async function POST(request: NextRequest) {
           notes: customer.notes || ""
         },
         items: verifiedItems,
-        total: totalRupees,
+        total: grandTotalRupees,
         status: "PENDING",
         createdAt: new Date().toISOString()
       });
@@ -144,13 +158,15 @@ export async function POST(request: NextRequest) {
 
     await logAction(
       "Create Razorpay Order",
-      `Order ID "${internalOrderId}" / Razorpay Order "${razorpayOrder.id}" created for "${customer.name}" (Amount: ₹${totalRupees}). IP: ${ip}`
+      `Order ID "${internalOrderId}" created. Subtotal: ₹${subtotalRupees}, Shipping: ₹${shippingChargeRupees}, Grand Total: ₹${grandTotalRupees} (${grandTotalPaise} paise). IP: ${ip}`
     );
 
     return NextResponse.json({
       orderId: internalOrderId,
       razorpayOrderId: razorpayOrder.id,
-      amount: calculatedTotalPaise,
+      subtotal: subtotalRupees,
+      shippingCharge: shippingChargeRupees,
+      amount: grandTotalPaise,
       currency: "INR",
       key: keyId
     });
