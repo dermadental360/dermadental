@@ -265,6 +265,7 @@ export default function CheckoutPage() {
     <main className="section page-enter checkout-main">
       <div className="container split checkout-split">
         <form
+          id="checkout-form"
           className="card pad form reveal checkout-form"
           onSubmit={handlePayment}
           noValidate={false}
@@ -473,31 +474,6 @@ export default function CheckoutPage() {
               )}
             </button>
           </div>
-
-          {/* Sticky Mobile Pay Button */}
-          <div className="mobile-sticky-bar">
-            <div className="mobile-sticky-inner">
-              <div className="mobile-sticky-info">
-                <span className="mobile-sticky-label">Total Payable</span>
-                <span className="mobile-sticky-amount">₹{grandTotal}</span>
-              </div>
-              <button
-                type="submit"
-                className="btn submit-btn mobile-pay-btn"
-                disabled={loading || cart.items.length === 0 || (paymentMethod === "COD" && isCodDisabled)}
-                aria-label={paymentMethod === "COD" ? `Place COD Order (₹${grandTotal})` : `Pay ₹${grandTotal}`}
-              >
-                {loading ? (
-                  <>
-                    <span className="spinner-icon" />
-                    Processing...
-                  </>
-                ) : (
-                  paymentMethod === "COD" ? `Place Order (₹${grandTotal})` : `Pay ₹${grandTotal}`
-                )}
-              </button>
-            </div>
-          </div>
         </form>
 
         <aside className="card pad shop-sidebar order-summary-aside">
@@ -557,12 +533,35 @@ export default function CheckoutPage() {
         </aside>
       </div>
 
+      {/* Sticky Mobile Pay Footer (Extracted outside transform container for true viewport attachment) */}
+      <div className="mobile-sticky-bar">
+        <div className="mobile-sticky-inner">
+          <div className="mobile-sticky-info">
+            <span className="mobile-sticky-label">Total Payable</span>
+            <span className="mobile-sticky-amount">₹{grandTotal}</span>
+          </div>
+          <button
+            type="submit"
+            form="checkout-form"
+            className="btn submit-btn mobile-pay-btn"
+            disabled={loading || cart.items.length === 0 || (paymentMethod === "COD" && isCodDisabled)}
+            aria-label={paymentMethod === "COD" ? `Place COD Order (₹${grandTotal})` : `Pay ₹${grandTotal}`}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-icon" />
+                Processing...
+              </>
+            ) : (
+              paymentMethod === "COD" ? `Place Order (₹${grandTotal})` : `Pay ₹${grandTotal}`
+            )}
+          </button>
+        </div>
+      </div>
+
       <style jsx>{`
         .checkout-main {
-          overflow-x: hidden;
-          overflow-y: auto;
           min-height: 100dvh;
-          -webkit-overflow-scrolling: touch;
         }
         .checkout-form, .order-summary-aside {
           opacity: 1 !important;
@@ -751,10 +750,10 @@ export default function CheckoutPage() {
         /* Responsive Breakpoints & Mobile Enhancements */
         @media (max-width: 768px) {
           .checkout-main {
-            padding-bottom: calc(160px + env(safe-area-inset-bottom, 20px)) !important;
+            padding-bottom: calc(140px + env(safe-area-inset-bottom, 16px)) !important;
           }
           .checkout-form {
-            padding-bottom: 32px !important;
+            padding-bottom: 24px !important;
             margin-bottom: 24px !important;
           }
           .payment-methods-grid {
@@ -780,12 +779,13 @@ export default function CheckoutPage() {
             bottom: 0;
             left: 0;
             right: 0;
+            width: 100%;
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
             padding: 12px 16px max(14px, env(safe-area-inset-bottom, 14px));
-            z-index: 999;
+            z-index: 99;
             border-top: 1px solid var(--line, #cbd5e1);
           }
           .mobile-sticky-inner {
@@ -835,3 +835,4 @@ export default function CheckoutPage() {
     </main>
   );
 }
+
