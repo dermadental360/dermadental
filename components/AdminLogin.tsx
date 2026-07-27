@@ -108,15 +108,15 @@ export function AdminLogin() {
           )}
 
           <div className="field">
+            <label style={{ fontSize: 13, fontWeight: 600, color: "#cbd5e1", marginBottom: 6, display: "block" }}>Email Address</label>
             <input
               className="input"
               name="email"
               type="email"
-              placeholder="admin@dermadental360.com"
+              placeholder="Enter email address"
               defaultValue=""
               autoComplete="new-email"
               required
-              aria-label="Admin Email Address"
               style={{
                 backgroundColor: "#0f172a",
                 border: "1px solid #334155",
@@ -132,16 +132,16 @@ export function AdminLogin() {
           </div>
 
           <div className="field">
+            <label style={{ fontSize: 13, fontWeight: 600, color: "#cbd5e1", marginBottom: 6, display: "block" }}>Password</label>
             <div style={{ position: "relative", width: "100%" }}>
               <input
                 className="input"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••••••"
+                placeholder="Enter password"
                 defaultValue=""
                 autoComplete="new-password"
                 required
-                aria-label="Admin Password"
                 style={{
                   backgroundColor: "#0f172a",
                   border: "1px solid #334155",
