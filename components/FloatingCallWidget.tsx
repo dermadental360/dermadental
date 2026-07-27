@@ -6,8 +6,8 @@ import { clinic } from "@/lib/constants";
 export function FloatingCallWidget() {
   const pathname = usePathname();
 
-  // Hide the call buttons on admin layout pages
-  if (pathname.startsWith("/admin")) return null;
+  // Hide the call buttons on admin layout pages and checkout page to prevent blocking payment controls
+  if (pathname.startsWith("/admin") || pathname === "/checkout") return null;
 
   return (
     <div className="floating-widget reveal revealed">

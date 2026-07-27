@@ -402,30 +402,20 @@ export default function CheckoutPage() {
           </div>
 
           {/* Payment Method Selector UI */}
-          <div className="field" style={{ marginTop: 12 }}>
+          <div className="field" style={{ marginTop: 16 }}>
             <label style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, display: "block" }}>Select Payment Method *</label>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <div className="payment-methods-grid">
               {/* Online Payment Card */}
               <div
                 onClick={() => setPaymentMethod("ONLINE")}
-                style={{
-                  padding: 16,
-                  borderRadius: 10,
-                  border: `2px solid ${paymentMethod === "ONLINE" ? "var(--sage-dark, #2d5a27)" : "var(--line, #cbd5e1)"}`,
-                  background: paymentMethod === "ONLINE" ? "var(--sage-light, #eaf1ec)" : "#ffffff",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12
-                }}
+                className={`payment-card ${paymentMethod === "ONLINE" ? "active" : ""}`}
               >
                 <input
                   type="radio"
                   name="paymentMethodRadio"
                   checked={paymentMethod === "ONLINE"}
                   onChange={() => setPaymentMethod("ONLINE")}
-                  style={{ accentColor: "var(--sage-dark, #2d5a27)", width: 18, height: 18 }}
+                  style={{ accentColor: "var(--sage-dark, #2d5a27)", width: 20, height: 20, cursor: "pointer" }}
                 />
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>💳 Pay Online (Razorpay)</div>
@@ -436,19 +426,7 @@ export default function CheckoutPage() {
               {/* Cash on Delivery Card */}
               <div
                 onClick={() => !isCodDisabled && setPaymentMethod("COD")}
-                style={{
-                  padding: 16,
-                  borderRadius: 10,
-                  border: `2px solid ${paymentMethod === "COD" ? "var(--sage-dark, #2d5a27)" : "var(--line, #cbd5e1)"}`,
-                  background: isCodDisabled ? "#f8fafc" : (paymentMethod === "COD" ? "var(--sage-light, #eaf1ec)" : "#ffffff"),
-                  cursor: isCodDisabled ? "not-allowed" : "pointer",
-                  opacity: isCodDisabled ? 0.6 : 1,
-                  transition: "all 0.2s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  position: "relative"
-                }}
+                className={`payment-card ${paymentMethod === "COD" ? "active" : ""} ${isCodDisabled ? "disabled" : ""}`}
               >
                 <input
                   type="radio"
@@ -456,13 +434,13 @@ export default function CheckoutPage() {
                   checked={paymentMethod === "COD"}
                   disabled={isCodDisabled}
                   onChange={() => !isCodDisabled && setPaymentMethod("COD")}
-                  style={{ accentColor: "var(--sage-dark, #2d5a27)", width: 18, height: 18 }}
+                  style={{ accentColor: "var(--sage-dark, #2d5a27)", width: 20, height: 20, cursor: isCodDisabled ? "not-allowed" : "pointer" }}
                 />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
                     <span>💵 Cash on Delivery (COD)</span>
                     {codSettings.feeEnabled && codSettings.feeAmount > 0 && (
-                      <span style={{ fontSize: 11, background: "#e0f2fe", color: "#0369a1", padding: "2px 6px", borderRadius: 4 }}>+₹{codSettings.feeAmount} Fee</span>
+                      <span style={{ fontSize: 11, background: "#e0f2fe", color: "#0369a1", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>+₹{codSettings.feeAmount} Fee</span>
                     )}
                   </div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Pay cash at your doorstep</div>
@@ -472,13 +450,13 @@ export default function CheckoutPage() {
 
             {/* COD Disabled Warning Message */}
             {isCodDisabled && (
-              <div style={{ marginTop: 8, padding: "8px 12px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 6, fontSize: 12, color: "#c2410c" }}>
+              <div style={{ marginTop: 10, padding: "10px 14px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, fontSize: 13, color: "#c2410c", lineHeight: 1.4 }}>
                 ℹ️ {getCodDisabledReason()}
               </div>
             )}
           </div>
 
-          <div className="desktop-pay-btn-wrapper">
+          <div className="desktop-pay-btn-wrapper" style={{ marginTop: 20 }}>
             <button
               type="submit"
               className="btn submit-btn"
@@ -522,7 +500,7 @@ export default function CheckoutPage() {
           </div>
         </form>
 
-        <aside className="card pad reveal reveal-delay-1 shop-sidebar order-summary-aside">
+        <aside className="card pad shop-sidebar order-summary-aside">
           <h2 className="summary-heading">Order Summary ({cart.count})</h2>
           <div className="summary-items-container">
             {cart.items.length === 0 ? (
@@ -582,6 +560,13 @@ export default function CheckoutPage() {
       <style jsx>{`
         .checkout-main {
           overflow-x: hidden;
+          overflow-y: auto;
+          min-height: 100dvh;
+          -webkit-overflow-scrolling: touch;
+        }
+        .checkout-form, .order-summary-aside {
+          opacity: 1 !important;
+          transform: none !important;
         }
         .checkout-title {
           font-size: clamp(1.5rem, 4vw, 2.2rem);
@@ -598,12 +583,13 @@ export default function CheckoutPage() {
         }
         .mobile-input {
           min-height: 48px;
-          font-size: 16px !important; /* Prevents auto-zoom on iOS */
+          font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
           padding: 12px 14px;
           width: 100%;
           border-radius: 8px;
-          border: 1px solid var(--line, #e2e8f0);
+          border: 1px solid var(--line, #cbd5e1);
           transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          background: #ffffff;
         }
         .mobile-input:focus {
           outline: none;
@@ -632,9 +618,35 @@ export default function CheckoutPage() {
           grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
           gap: 12px;
         }
+        .payment-methods-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 12px;
+        }
+        .payment-card {
+          padding: 16px;
+          border-radius: 10px;
+          border: 2px solid var(--line, #cbd5e1);
+          background: #ffffff;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-height: 54px;
+        }
+        .payment-card.active {
+          border-color: var(--sage-dark, #2d5a27);
+          background: var(--sage-light, #eaf1ec);
+        }
+        .payment-card.disabled {
+          background: #f8fafc;
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
         .submit-btn {
           width: 100%;
-          min-height: 50px;
+          min-height: 52px;
           font-size: 16px;
           font-weight: 600;
           display: flex;
@@ -658,12 +670,8 @@ export default function CheckoutPage() {
           animation: spin 0.8s linear infinite;
         }
         @keyframes spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
         .summary-heading {
           font-size: 1.25rem;
@@ -740,8 +748,15 @@ export default function CheckoutPage() {
           display: none;
         }
 
-        /* Responsive Breakpoints */
+        /* Responsive Breakpoints & Mobile Enhancements */
         @media (max-width: 768px) {
+          .checkout-main {
+            padding-bottom: calc(140px + env(safe-area-inset-bottom, 20px)) !important;
+          }
+          .summary-items-container {
+            max-height: none !important;
+            overflow-y: visible !important;
+          }
           .desktop-pay-btn-wrapper {
             display: none;
           }
@@ -751,11 +766,13 @@ export default function CheckoutPage() {
             bottom: 0;
             left: 0;
             right: 0;
-            background: #ffffff;
-            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
-            padding: 12px 16px max(12px, env(safe-area-inset-bottom));
-            z-index: 99;
-            border-top: 1px solid var(--line, #e2e8f0);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+            padding: 12px 16px max(14px, env(safe-area-inset-bottom, 14px));
+            z-index: 999;
+            border-top: 1px solid var(--line, #cbd5e1);
           }
           .mobile-sticky-inner {
             display: flex;
@@ -770,7 +787,7 @@ export default function CheckoutPage() {
             flex-direction: column;
           }
           .mobile-sticky-label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--muted, #64748b);
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -785,8 +802,11 @@ export default function CheckoutPage() {
             max-width: 240px;
             min-height: 48px;
           }
-          .checkout-main {
-            padding-bottom: 90px;
+        }
+
+        @media (max-width: 540px) {
+          .payment-methods-grid {
+            grid-template-columns: 1fr !important;
           }
         }
 
