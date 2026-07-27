@@ -23,9 +23,11 @@ export const DEFAULT_SETTINGS = {
   ]),
   legal_entity_name: "Moeen International",
   gstin: "27AHTPG5622L2ZU",
-  registered_address: "502, Villa Rosa, 24 & 30 Road, Bandra West, Mumbai, Maharashtra 400050",
-  support_email: "moeenint@gmail.com",
+  registered_address: "Flat No 10, New Ambe Bhavan, Rd Number 24, Khar W, Mumbai, Maharashtra 400052",
+  support_email: "dd360health@gmail.com",
   support_phone: "9833699887",
+  clinic_doctor: "Dr. Sadaf Yamin",
+  clinic_timing: "12:00 PM to 7:00 PM, Sunday closed",
 };
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

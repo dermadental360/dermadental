@@ -1,14 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { clinic } from "@/lib/constants";
 
 export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [settings, setSettings] = useState<Record<string, string>>({
+    registered_address: clinic.address,
+    support_email: clinic.email,
+    support_phone: clinic.phone,
+    legal_entity_name: clinic.legalEntityName,
+    gstin: clinic.gstin,
+    clinic_doctor: clinic.doctor,
+    clinic_timing: clinic.timing
+  });
 
-  const defaultWhatsappUrl = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data === "object") {
+          setSettings((prev) => ({ ...prev, ...data }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const defaultWhatsappUrl = `https://wa.me/${(settings.support_phone || clinic.phone).replace(/\D/g, "")}?text=${encodeURIComponent(
     `Hello ${clinic.name}, I want to make an inquiry regarding my skin/hair routine.`
   )}`;
 
@@ -56,7 +76,7 @@ export default function ContactPage() {
             <p className="eyebrow">Contact Details</p>
             <h1>Connect with our clinic</h1>
             <p style={{ fontSize: 17, color: "var(--muted)", lineHeight: 1.6 }}>
-              Our dermatology clinic is led by {clinic.doctor}, located in Khar West. Feel free to contact us or send an online inquiry.
+              Our dermatology clinic is led by {settings.clinic_doctor || clinic.doctor}, located in Khar West. Feel free to contact us or send an online inquiry.
             </p>
           </div>
 
@@ -65,22 +85,22 @@ export default function ContactPage() {
               <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>REGISTERED OFFICE & CLINIC LOCATION</span>
               <h3 style={{ fontSize: 18, marginTop: 4 }}>{clinic.name}</h3>
               <p style={{ fontSize: 14, color: "var(--muted)", margin: "4px 0 0 0", lineHeight: 1.5 }}>
-                <strong>Legal Entity:</strong> {clinic.legalEntityName}<br />
-                <strong>GSTIN:</strong> {clinic.gstin}<br />
-                <strong>Address:</strong> {clinic.address}
+                <strong>Legal Entity:</strong> {settings.legal_entity_name || clinic.legalEntityName}<br />
+                <strong>GSTIN:</strong> {settings.gstin || clinic.gstin}<br />
+                <strong>Address:</strong> {settings.registered_address || clinic.address}
               </p>
             </div>
 
             <div className="card pad">
               <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>TIMINGS & CONTACT</span>
-              <h3 style={{ fontSize: 18, marginTop: 4 }}>{clinic.timing}</h3>
+              <h3 style={{ fontSize: 18, marginTop: 4 }}>{settings.clinic_timing || clinic.timing}</h3>
               <p style={{ fontSize: 15, color: "var(--muted)", margin: "4px 0 14px 0" }}>
-                Call or message: {clinic.phone}<br />
-                Email: {clinic.email}
+                Call or message: {settings.support_phone || clinic.phone}<br />
+                Email: {settings.support_email || clinic.email}
               </p>
               <a
                 className="btn secondary"
-                href={`https://wa.me/${clinic.whatsapp}`}
+                href={`https://wa.me/${(settings.support_phone || clinic.phone).replace(/\D/g, "")}`}
                 target="_blank"
                 style={{ padding: "8px 18px", fontSize: 13 }}
               >

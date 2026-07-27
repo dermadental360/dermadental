@@ -5,7 +5,7 @@ export const clinic = {
   doctor: "Dr. Sadaf Yamin",
   phone: "9833699887",
   whatsapp: "919833699887",
-  address: "502, Villa Rosa, 24 & 30 Road, Bandra West, Mumbai, Maharashtra 400050",
+  address: "Flat No 10, New Ambe Bhavan, Rd Number 24, Khar W, Mumbai, Maharashtra 400052",
   timing: "12:00 PM to 7:00 PM, Sunday closed",
   email: "dd360health@gmail.com"
 };

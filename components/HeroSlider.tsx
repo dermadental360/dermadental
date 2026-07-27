@@ -29,15 +29,13 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
   const activeSlides = slides.filter((s) => s.enabled);
 
   useEffect(() => {
-    if (!initialSlides || initialSlides.length === 0) {
-      fetch("/api/slides")
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) setSlides(data);
-        })
-        .catch((err) => console.error("Error fetching slides:", err));
-    }
-  }, [initialSlides]);
+    fetch("/api/slides")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setSlides(data);
+      })
+      .catch((err) => console.error("Error fetching slides:", err));
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
