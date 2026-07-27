@@ -34,82 +34,71 @@ export function AdminLogin() {
   }
 
   return (
-    <div style={{ display: "grid", placeItems: "center", minHeight: "80vh", width: "100%", padding: "20px" }}>
-      <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 p-4 sm:p-6 text-slate-100">
+      <div className="w-full max-w-md flex flex-col gap-6">
         
         {/* Animated welcome header info */}
-        <div style={{ textAlign: "center", animation: "fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}>
-          <p className="eyebrow" style={{ color: "var(--gold)", fontWeight: 700, margin: 0 }}>DermaDental360 Clinic</p>
-          <h1 style={{ fontSize: "clamp(24px, 4.5vw, 36px)", margin: "6px 0 10px 0", fontFamily: "'Playfair Display', serif" }}>
-            Welcome, Dr. Sadaf Yamin
+        <div className="text-center animate-fadeInUp">
+          <div className="w-14 h-14 rounded-full bg-[var(--sage,#14B8C4)] flex items-center justify-center font-bold text-white text-xl mx-auto mb-3 shadow-lg shadow-cyan-500/20">
+            DD
+          </div>
+          <p className="text-xs uppercase tracking-widest text-[var(--primary,#38D9E6)] font-bold mb-1">
+            DermaDental360 Clinic
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-playfair text-white mb-2">
+            Admin Portal Access
           </h1>
-          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5, margin: 0 }}>
-            Manage DermaDental360 products, orders, inquiries, and clinic activity.
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Authorized portal for Dr. Sadaf Yamin and clinic management.
           </p>
         </div>
 
-        {/* Login form card with entrance animation */}
+        {/* Login form card */}
         <form
-          className="card pad form"
+          className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl flex flex-col gap-5 animate-fadeInUp"
           onSubmit={submit}
-          style={{
-            animation: "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-            boxShadow: "var(--shadow-lg)",
-            backgroundColor: "var(--white)"
-          }}
           autoComplete="off"
         >
-          <p className="eyebrow" style={{ margin: 0, fontSize: 11 }}>Secure Authentication</p>
-          <h2 style={{ fontSize: 20, margin: "2px 0 14px 0", fontWeight: 700 }}>Admin Sign In</h2>
+          <div className="border-b border-slate-800 pb-3">
+            <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Authentication</p>
+            <h2 className="text-lg font-bold text-white">Sign In to Dashboard</h2>
+          </div>
           
           {error && (
-            <p style={{ color: "var(--error)", fontSize: 13, background: "rgba(201, 74, 74, 0.08)", padding: "10px 14px", borderRadius: "6px", margin: 0 }}>
+            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs sm:text-sm p-3.5 rounded-xl">
               {error}
-            </p>
+            </div>
           )}
 
-          <div className="field">
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Email Address</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-300">Email Address</label>
             <input
-              className="input"
+              className="w-full bg-slate-950 border border-slate-800 focus:border-[var(--primary,#38D9E6)] rounded-xl px-4 py-3 text-sm text-white outline-none transition-all min-h-[48px]"
               name="email"
               type="email"
-              placeholder="Email address"
+              placeholder="admin@dermadental360.com"
               defaultValue=""
               autoComplete="new-email"
               required
             />
           </div>
 
-          <div className="field">
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Password</label>
-            <div style={{ position: "relative" }}>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-300">Password</label>
+            <div className="relative">
               <input
-                className="input"
+                className="w-full bg-slate-950 border border-slate-800 focus:border-[var(--primary,#38D9E6)] rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all min-h-[48px]"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Password"
+                placeholder="••••••••••••"
                 defaultValue=""
                 autoComplete="new-password"
                 required
-                style={{ paddingRight: 48 }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: "absolute",
-                  right: 12,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: 16,
-                  display: "grid",
-                  placeItems: "center",
-                  padding: 4
-                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-2"
                 title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "👁️" : "🙈"}
@@ -117,8 +106,21 @@ export function AdminLogin() {
             </div>
           </div>
 
-          <button className="btn" style={{ width: "100%", marginTop: 8 }} disabled={loading}>
-            {loading ? "Verifying..." : "Access Dashboard"}
+          <button
+            className="w-full bg-[var(--sage-dark,#0F7F8F)] hover:bg-[var(--sage,#14B8C4)] text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-lg min-h-[48px] flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span>Verifying Credentials...</span>
+              </>
+            ) : (
+              <span>Access Dashboard →</span>
+            )}
           </button>
         </form>
       </div>

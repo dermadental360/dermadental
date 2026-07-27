@@ -1,9 +1,6 @@
-import { AdminLogin } from "@/components/AdminLogin";
 import { AdminInquiries } from "@/components/AdminInquiries";
-import { isAdmin } from "@/lib/auth";
 
-export default async function AdminInquiriesPage() {
-  if (!(await isAdmin())) return <AdminLogin />;
+export default function AdminInquiriesPage() {
   return (
     <div className="page-enter">
       <p className="eyebrow">Admin Portal</p>
