@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
     minimumCacheTTL: 31536000,
   },
+  experimental: {
+    optimizePackageImports: ["framer-motion", "gsap", "lenis"],
+  },
   async headers() {
     return [
       {

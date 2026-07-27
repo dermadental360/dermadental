@@ -4,15 +4,9 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CartProvider } from "@/components/CartProvider";
-import { ScrollReveal } from "@/components/ScrollReveal";
-import { VisitorTracker } from "@/components/VisitorTracker";
-import { FloatingCallWidget } from "@/components/FloatingCallWidget";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { MotionProvider } from "@/components/motion/MotionProvider";
-import { LenisProvider } from "@/components/motion/LenisProvider";
-import { CustomCursor } from "@/components/motion/CustomCursor";
-import { ScrollProgress } from "@/components/motion/ScrollProgress";
-import { AmbientBackground } from "@/components/motion/AmbientBackground";
+import { ClientLayoutWidgets } from "@/components/ClientLayoutWidgets";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -63,19 +57,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider>
           <MotionProvider>
-            <LenisProvider>
-              <ScrollProgress />
-              <CustomCursor />
-              <AmbientBackground />
-              <ScrollReveal />
-              <VisitorTracker />
-              <CartProvider>
+            <CartProvider>
+              <ClientLayoutWidgets>
                 <Header />
                 {children}
                 <Footer />
-              </CartProvider>
-              <FloatingCallWidget />
-            </LenisProvider>
+              </ClientLayoutWidgets>
+            </CartProvider>
           </MotionProvider>
         </ThemeProvider>
       </body>

@@ -24,18 +24,20 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
+  const rafId = useRef<number | null>(null);
 
   // Filter only enabled slides
   const activeSlides = slides.filter((s) => s.enabled);
 
   useEffect(() => {
+    if (initialSlides && initialSlides.length > 0) return;
     fetch("/api/slides")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) setSlides(data);
       })
       .catch((err) => console.error("Error fetching slides:", err));
-  }, []);
+  }, [initialSlides]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -46,13 +48,18 @@ export function HeroSlider({ slides: initialSlides }: HeroSliderProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Mouse Parallax for Desktop Hero
+  // Throttled Mouse Parallax for Desktop Hero
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDesktop || isReducedMotion) return;
-    const { clientX, clientY } = e;
-    const x = (clientX / window.innerWidth - 0.5) * 20;
-    const y = (clientY / window.innerHeight - 0.5) * 20;
-    setMouseOffset({ x, y });
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    if (rafId.current) return;
+    rafId.current = requestAnimationFrame(() => {
+      const x = (clientX / window.innerWidth - 0.5) * 20;
+      const y = (clientY / window.innerHeight - 0.5) * 20;
+      setMouseOffset({ x, y });
+      rafId.current = null;
+    });
   };
 
   // Preload NEXT slide image in background after initial page paint is complete
