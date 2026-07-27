@@ -33,6 +33,21 @@ model Product {
   @@index([published, category, subcategory])
 }
 
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
 model Order {
   id              String   @id @default(cuid())
   customerName    String
@@ -42,13 +57,36 @@ model Order {
   notes           String?  @db.Text
   items           Json
   total           Float
-  status          String   @default("New")
+  status          String   @default("PENDING")
   whatsappSent    Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([status, createdAt])
 }
+
+model Payment {
+  id                String        @id @default(cuid())
+  paymentId         String?       @unique
+  orderId           String
+  razorpayOrderId   String        @unique
+  amount            Int
+  currency          String        @default("INR")
+  status            PaymentStatus @default(CREATED)
+  customerName      String
+  customerEmail     String?
+  customerPhone     String
+  razorpaySignature String?
+  failureReason     String?
+  clientIp          String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([razorpayOrderId])
+  @@index([paymentId])
+  @@index([status])
+}
+
 
 model Admin {
   id           String   @id @default(cuid())
