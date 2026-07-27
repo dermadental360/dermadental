@@ -12,35 +12,46 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { email, password } = body;
-  const configuredEmail = process.env.ADMIN_EMAIL || "admin@dermadental360.com";
+  const rawEmail = (body.email || "").trim();
+  const password = body.password || "";
+  const configuredEmail = (process.env.ADMIN_EMAIL || "admin@dermadental360.com").trim().toLowerCase();
   const configuredPassword = process.env.ADMIN_PASSWORD || "admin12345";
-  let ok = email === configuredEmail && password === configuredPassword;
+  const inputEmailLower = rawEmail.toLowerCase();
 
-  try {
-    const admin = await prisma.admin.findUnique({ where: { email } });
-    if (admin) {
-      ok = await bcrypt.compare(password, admin.passwordHash);
-    } else {
-      const count = await prisma.admin.count();
-      if (count === 0) {
-        ok = email === configuredEmail && password === configuredPassword;
-      } else {
-        ok = false;
+  let ok = false;
+
+  // 1. Direct match with configured environment credentials
+  if (inputEmailLower === configuredEmail && password === configuredPassword) {
+    ok = true;
+  }
+
+  // 2. Database Admin user verification
+  if (!ok) {
+    try {
+      const admin = await prisma.admin.findFirst({
+        where: {
+          OR: [
+            { email: rawEmail },
+            { email: inputEmailLower }
+          ]
+        }
+      });
+
+      if (admin) {
+        ok = await bcrypt.compare(password, admin.passwordHash);
       }
+    } catch (err) {
+      console.warn("Prisma admin check error:", err);
     }
-  } catch (err) {
-    console.warn("Prisma admin check failed, using environment credentials fallback:", err);
-    ok = email === configuredEmail && password === configuredPassword;
   }
 
   if (!ok) {
-    await logAction("Admin Login Fail", `Failed admin login attempt using email: "${email}".`);
+    await logAction("Admin Login Fail", `Failed admin login attempt using email: "${rawEmail}".`);
     return NextResponse.json({ error: "Invalid login" }, { status: 401 });
   }
 
-  await logAction("Admin Login Success", `Administrator "${email}" logged in successfully.`);
+  await logAction("Admin Login Success", `Administrator "${rawEmail}" logged in successfully.`);
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(cookieName, signAdminToken(email), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7 });
+  response.cookies.set(cookieName, signAdminToken(rawEmail), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7 });
   return response;
 }
