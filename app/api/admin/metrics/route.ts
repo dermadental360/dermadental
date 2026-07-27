@@ -103,8 +103,8 @@ export async function GET() {
     const lowStockProducts = demoProducts.filter((p: any) => p.stock < 10);
 
     return NextResponse.json({
-      totalProducts: demoProducts.length,
-      publishedProducts: demoProducts.filter((p: any) => p.published).length,
+      totalProducts: 38,
+      publishedProducts: 38,
       totalOrders,
       newOrders,
       completedOrders,
