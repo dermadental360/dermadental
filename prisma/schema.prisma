@@ -76,6 +76,8 @@ model Order {
   @@index([status, createdAt])
   @@index([paymentMethod])
   @@index([paymentStatus])
+  @@index([customerEmail])
+  @@index([customerPhone])
 }
 
 model Payment {
@@ -241,6 +243,7 @@ model Notification {
 
   @@index([isRead, createdAt])
   @@index([category, createdAt])
+  @@index([category, isRead])
   @@index([priority])
   @@index([orderId])
 }

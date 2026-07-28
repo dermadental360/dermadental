@@ -37,32 +37,35 @@ export const DEFAULT_SETTINGS = {
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;
 
-export const getSetting = cache(async function getSetting(key: SettingKey): Promise<string> {
-  try {
-    const setting = await prisma.setting.findUnique({
-      where: { key },
-    });
-    return setting ? setting.value : DEFAULT_SETTINGS[key];
-  } catch (err) {
-    console.warn(`Prisma failed fetching setting "${key}":`, err);
-    return DEFAULT_SETTINGS[key];
-  }
-});
+let settingsCache: { data: Record<string, string>; expiresAt: number } | null = null;
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
 
 export const getAllSettings = cache(async function getAllSettings() {
+  const now = Date.now();
+  if (settingsCache && settingsCache.expiresAt > now) {
+    return settingsCache.data;
+  }
+
   const result: Record<string, string> = { ...DEFAULT_SETTINGS };
   try {
     const settings = await prisma.setting.findMany();
     for (const s of settings) {
       result[s.key] = s.value;
     }
+    settingsCache = { data: result, expiresAt: now + CACHE_TTL_MS };
   } catch (err) {
     console.warn("Prisma failed to fetch settings:", err);
   }
   return result;
 });
 
+export const getSetting = cache(async function getSetting(key: SettingKey): Promise<string> {
+  const all = await getAllSettings();
+  return all[key] !== undefined ? all[key] : DEFAULT_SETTINGS[key];
+});
+
 export async function setSetting(key: SettingKey, value: string) {
+  settingsCache = null; // Invalidate cache on setting update
   return prisma.setting.upsert({
     where: { key },
     update: { value },

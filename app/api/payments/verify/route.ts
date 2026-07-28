@@ -167,8 +167,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Non-blocking Admin Email dispatch
-    try {
-      await sendAdminOrderEmail({
+    // Non-blocking Async Email dispatch in background microtask
+    setImmediate(() => {
+      sendAdminOrderEmail({
         orderId: orderId,
         customerName: customerName,
         customerPhone: customerPhone,
@@ -179,15 +180,10 @@ export async function POST(request: NextRequest) {
         paymentStatus: "PAID",
         paymentTime: paymentTimeString,
         paymentId: razorpay_payment_id
-      });
-    } catch (emailErr: any) {
-      console.warn("Could not send admin email:", emailErr?.message || emailErr);
-    }
+      }).catch((emailErr: any) => console.warn("Could not send admin email:", emailErr?.message || emailErr));
 
-    // Non-blocking Customer Order Confirmation Email dispatch
-    if (customerEmail) {
-      try {
-        await sendCustomerOrderEmail({
+      if (customerEmail) {
+        sendCustomerOrderEmail({
           orderId: orderId,
           customerName: customerName,
           customerPhone: customerPhone,
@@ -199,11 +195,9 @@ export async function POST(request: NextRequest) {
           paymentTime: paymentTimeString,
           paymentId: razorpay_payment_id,
           stage: "ORDER_CONFIRMED"
-        });
-      } catch (custEmailErr: any) {
-        console.warn("Could not send customer confirmation email:", custEmailErr?.message || custEmailErr);
+        }).catch((custEmailErr: any) => console.warn("Could not send customer email:", custEmailErr?.message || custEmailErr));
       }
-    }
+    });
 
     await logAction(
       "Payment Verified Success",

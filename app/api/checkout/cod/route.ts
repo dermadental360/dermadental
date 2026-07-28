@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSetting } from "@/lib/settings";
+import { getAllSettings } from "@/lib/settings";
 import { logAction } from "@/lib/auditLogger";
 import { createNotification } from "@/lib/notifications";
 import { sendAdminOrderEmail, sendCustomerOrderEmail } from "@/lib/email";
@@ -52,18 +52,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Fetch COD Configuration Settings
-  const codEnabledStr = await getSetting("cod_enabled");
-  const codMinStr = await getSetting("cod_min_amount");
-  const codMaxStr = await getSetting("cod_max_amount");
-  const codFeeEnabledStr = await getSetting("cod_fee_enabled");
-  const codFeeAmountStr = await getSetting("cod_fee_amount");
+  // Bulk fetch cached settings (60s TTL in memory)
+  const settings = await getAllSettings();
 
-  const codEnabled = codEnabledStr === "true";
-  const codMinAmount = parseFloat(codMinStr) || 500;
-  const codMaxAmount = parseFloat(codMaxStr) || 5000;
-  const codFeeEnabled = codFeeEnabledStr === "true";
-  const codFeeAmount = codFeeEnabled ? (parseFloat(codFeeAmountStr) || 0) : 0;
+  const codEnabled = settings.cod_enabled === "true";
+  const codMinAmount = parseFloat(settings.cod_min_amount) || 500;
+  const codMaxAmount = parseFloat(settings.cod_max_amount) || 5000;
+  const codFeeEnabled = settings.cod_fee_enabled === "true";
+  const codFeeAmount = codFeeEnabled ? (parseFloat(settings.cod_fee_amount) || 0) : 0;
 
   if (!codEnabled) {
     return NextResponse.json({
