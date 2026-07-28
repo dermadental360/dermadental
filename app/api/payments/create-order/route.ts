@@ -5,6 +5,7 @@ import { fallbackStore } from "@/lib/fallbackStore";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { logAction } from "@/lib/auditLogger";
 import { calculateShippingDetails } from "@/lib/constants";
+import { calculatePricingDetails } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 
@@ -74,13 +75,9 @@ export async function POST(request: NextRequest) {
 
     const subtotalRupees = calculatedSubtotalPaise / 100;
 
-    // Server-Side Shipping Charge Calculation (Ignore client payload)
-    const shippingInfo = calculateShippingDetails(subtotalRupees);
-    const shippingChargeRupees = shippingInfo.shippingCharge;
-    const shippingChargePaise = Math.round(shippingChargeRupees * 100);
-
-    const grandTotalPaise = calculatedSubtotalPaise + shippingChargePaise;
-    const grandTotalRupees = grandTotalPaise / 100;
+    // Centralized Pricing Breakdown with 5% Prepaid Discount for online payments
+    const pricing = calculatePricingDetails(subtotalRupees, true);
+    const grandTotalPaise = Math.round(pricing.finalAmount * 100);
 
     const keyId = process.env.RAZORPAY_KEY_ID;
     if (!keyId) {
@@ -91,7 +88,7 @@ export async function POST(request: NextRequest) {
     // Initialize Razorpay SDK instance
     const razorpay = getRazorpayInstance();
 
-    // Create Razorpay Order securely on backend (Grand Total in Paise)
+    // Create Razorpay Order securely on backend (Discounted Grand Total in Paise)
     const razorpayOrder = await razorpay.orders.create({
       amount: grandTotalPaise,
       currency: "INR",
@@ -100,8 +97,12 @@ export async function POST(request: NextRequest) {
         customerName: customer.name,
         customerPhone: customer.phone,
         customerEmail: customer.email || "",
-        subtotal: subtotalRupees,
-        shipping: shippingChargeRupees
+        subtotal: pricing.subtotal,
+        discountType: pricing.discountType || "PREPAID",
+        discountPercentage: pricing.discountPercentage,
+        discountAmount: pricing.discountAmount,
+        shipping: pricing.shippingCharge,
+        grandTotal: pricing.finalAmount
       }
     });
 
@@ -117,9 +118,15 @@ export async function POST(request: NextRequest) {
           customerAddress: customer.address,
           notes: customer.notes || null,
           items: verifiedItems,
-          subtotal: subtotalRupees,
-          shippingCharge: shippingChargeRupees,
-          total: grandTotalRupees,
+          subtotal: pricing.subtotal,
+          discountType: pricing.discountType,
+          discountPercentage: pricing.discountPercentage,
+          discountAmount: pricing.discountAmount,
+          shippingCharge: pricing.shippingCharge,
+          total: pricing.finalAmount,
+          finalAmount: pricing.finalAmount,
+          paymentMethod: "RAZORPAY",
+          paymentStatus: "PENDING",
           status: "PENDING"
         }
       });
@@ -150,7 +157,15 @@ export async function POST(request: NextRequest) {
           notes: customer.notes || ""
         },
         items: verifiedItems,
-        total: grandTotalRupees,
+        subtotal: pricing.subtotal,
+        discountType: pricing.discountType,
+        discountPercentage: pricing.discountPercentage,
+        discountAmount: pricing.discountAmount,
+        shippingCharge: pricing.shippingCharge,
+        total: pricing.finalAmount,
+        finalAmount: pricing.finalAmount,
+        paymentMethod: "RAZORPAY",
+        paymentStatus: "PENDING",
         status: "PENDING",
         createdAt: new Date().toISOString()
       });
@@ -158,14 +173,18 @@ export async function POST(request: NextRequest) {
 
     await logAction(
       "Create Razorpay Order",
-      `Order ID "${internalOrderId}" created. Subtotal: ₹${subtotalRupees}, Shipping: ₹${shippingChargeRupees}, Grand Total: ₹${grandTotalRupees} (${grandTotalPaise} paise). IP: ${ip}`
+      `Order ID "${internalOrderId}" created. Subtotal: ₹${pricing.subtotal}, Prepaid Discount (5%): -₹${pricing.discountAmount}, Shipping: ₹${pricing.shippingCharge}, Grand Total: ₹${pricing.finalAmount} (${grandTotalPaise} paise). IP: ${ip}`
     );
 
     return NextResponse.json({
       orderId: internalOrderId,
       razorpayOrderId: razorpayOrder.id,
-      subtotal: subtotalRupees,
-      shippingCharge: shippingChargeRupees,
+      subtotal: pricing.subtotal,
+      discountType: pricing.discountType,
+      discountPercentage: pricing.discountPercentage,
+      discountAmount: pricing.discountAmount,
+      shippingCharge: pricing.shippingCharge,
+      finalAmount: pricing.finalAmount,
       amount: grandTotalPaise,
       currency: "INR",
       key: keyId

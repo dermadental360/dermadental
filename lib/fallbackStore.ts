@@ -33,7 +33,16 @@ export interface FallbackOrder {
     price: number;
     quantity: number;
   }>;
+  subtotal?: number;
+  discountType?: string | null;
+  discountPercentage?: number;
+  discountAmount?: number;
+  shippingCharge?: number;
+  codFee?: number;
   total: number;
+  finalAmount?: number;
+  paymentMethod?: string;
+  paymentStatus?: string;
   status: string;
   whatsappSent?: boolean;
   createdAt: string;

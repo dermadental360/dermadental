@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
-import { Product } from "./demo";
+import { Product, demoProducts } from "./demo";
 
 const LEAN_PRODUCT_SELECT = {
   id: true,
@@ -65,10 +65,13 @@ export const getFeaturedProducts = cache(async function getFeaturedProducts(limi
       select: LEAN_PRODUCT_SELECT,
       orderBy: { createdAt: "desc" }
     });
+    if (products.length === 0) {
+      return demoProducts.filter(p => p.published && p.featured).slice(0, limit);
+    }
     return products.map(normalize);
   } catch (error) {
     console.error("Prisma getFeaturedProducts failed:", error);
-    return [];
+    return demoProducts.filter(p => p.published && p.featured).slice(0, limit);
   }
 });
 
@@ -78,40 +81,95 @@ const CATEGORY_MAP: Record<string, string> = {
   "oral care": "Oral Care",
   "hair": "Hair",
   "supplements": "Supplements",
+  "luxe": "Luxe",
 };
 
 export const getProducts = cache(async function getProducts(filters: Record<string, string | undefined> = {}) {
+  const qTrim = filters.q?.trim();
+  const targetCategory = filters.category ? (CATEGORY_MAP[filters.category.toLowerCase()] || filters.category) : undefined;
+  const targetSubcategory = filters.subcategory;
+  const targetConcern = filters.concern?.toLowerCase();
+
+  const filterList = (list: Product[]): Product[] => {
+    let res = list.filter(p => p.published !== false);
+
+    if (targetCategory) {
+      const catLower = targetCategory.toLowerCase();
+      res = res.filter(p => p.category.toLowerCase().includes(catLower));
+    }
+
+    if (targetSubcategory) {
+      const subLower = targetSubcategory.toLowerCase();
+      res = res.filter(p => p.subcategory.toLowerCase().includes(subLower));
+    }
+
+    if (qTrim) {
+      const qLower = qTrim.toLowerCase();
+      res = res.filter(p => {
+        const matchName = p.name.toLowerCase().includes(qLower);
+        const matchBrand = p.brand.toLowerCase().includes(qLower);
+        const matchCat = p.category.toLowerCase().includes(qLower);
+        const matchSub = p.subcategory.toLowerCase().includes(qLower);
+        const matchDesc = p.description.toLowerCase().includes(qLower);
+        const matchIngr = p.ingredients.toLowerCase().includes(qLower);
+        const matchConcern = p.concerns.some(c => c.toLowerCase().includes(qLower));
+        return matchName || matchBrand || matchCat || matchSub || matchDesc || matchIngr || matchConcern;
+      });
+    }
+
+    if (targetConcern) {
+      res = res.filter(p => p.concerns.some(c => c.toLowerCase().includes(targetConcern)));
+    }
+
+    return res;
+  };
+
   try {
     const where: any = { published: true };
-    if (filters.category) {
-      const rawCat = filters.category.toLowerCase();
-      const mappedCat = CATEGORY_MAP[rawCat] || filters.category;
-      where.category = { contains: mappedCat };
+    if (targetCategory) {
+      where.category = { contains: targetCategory, mode: "insensitive" };
     }
-    if (filters.subcategory) {
-      where.subcategory = { contains: filters.subcategory };
+    if (targetSubcategory) {
+      where.subcategory = { contains: targetSubcategory, mode: "insensitive" };
     }
-    if (filters.q) {
+    if (qTrim) {
       where.OR = [
-        { name: { contains: filters.q } },
-        { brand: { contains: filters.q } }
+        { name: { contains: qTrim, mode: "insensitive" } },
+        { brand: { contains: qTrim, mode: "insensitive" } },
+        { category: { contains: qTrim, mode: "insensitive" } },
+        { subcategory: { contains: qTrim, mode: "insensitive" } },
+        { description: { contains: qTrim, mode: "insensitive" } },
+        { ingredients: { contains: qTrim, mode: "insensitive" } },
       ];
     }
+
     const products = await prisma.product.findMany({
       where,
       select: LEAN_PRODUCT_SELECT,
       orderBy: { createdAt: "desc" }
     });
-    
-    let results = products.map(normalize);
-    if (filters.concern) {
-      const targetConcern = filters.concern.toLowerCase();
-      results = results.filter(p => p.concerns.some(c => c.toLowerCase().includes(targetConcern)));
+
+    if (products.length === 0) {
+      // If DB has no matches or is unseeded, fall back to demoProducts
+      return filterList(demoProducts);
     }
+
+    let results = products.map(normalize);
+
+    // If query string q is specified, check concerns array on DB results as well
+    if (qTrim || targetConcern) {
+      const allDbProducts = await prisma.product.findMany({
+        where: { published: true },
+        select: LEAN_PRODUCT_SELECT,
+        orderBy: { createdAt: "desc" }
+      });
+      return filterList(allDbProducts.map(normalize));
+    }
+
     return results;
   } catch (error) {
-    console.error("Prisma getProducts failed:", error);
-    return [];
+    console.error("Prisma getProducts failed, falling back to demo products:", error);
+    return filterList(demoProducts);
   }
 });
 

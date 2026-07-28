@@ -153,6 +153,17 @@ function PaymentSuccessContent() {
                   ₹{order.subtotal || order.items?.reduce((s: number, i: any) => s + i.price * i.quantity, 0) || order.total}
                 </span>
               </div>
+
+              {(order.discountAmount > 0 || order.discountType === "PREPAID") && (
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#16a34a", fontWeight: 600 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>Prepaid Discount (5%):</span>
+                    <span style={{ background: "#16a34a", color: "#ffffff", fontSize: 10, padding: "1px 6px", borderRadius: 4, fontWeight: 800 }}>5% OFF</span>
+                  </div>
+                  <span>-₹{order.discountAmount || Math.round((order.subtotal || order.total) * 0.05)}</span>
+                </div>
+              )}
+
               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
                 <span>Shipping Charge:</span>
                 {order.shippingCharge === 0 || (order.subtotal || order.total) >= 1499 ? (
@@ -161,6 +172,12 @@ function PaymentSuccessContent() {
                   <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{order.shippingCharge || 99}</span>
                 )}
               </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
+                <span>Taxes:</span>
+                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹0</span>
+              </div>
+
               {order.codFee > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
                   <span>COD Handling Fee:</span>
@@ -171,7 +188,7 @@ function PaymentSuccessContent() {
 
             <div className="total-row">
               <span>{isCod ? "Total Payable Amount:" : "Grand Total Paid:"}</span>
-              <span className="total-amount">₹{order.total}</span>
+              <span className="total-amount">₹{order.finalAmount || order.total}</span>
             </div>
           </div>
         )}

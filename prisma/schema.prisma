@@ -57,9 +57,13 @@ model Order {
   notes           String?  @db.Text
   items           Json
   subtotal        Float    @default(0)
+  discountType    String?  @default("NONE")
+  discountPercentage Float  @default(0)
+  discountAmount  Float    @default(0)
   shippingCharge  Float    @default(0)
   codFee          Float    @default(0)
   total           Float
+  finalAmount     Float?
   paymentMethod   String   @default("RAZORPAY")
   paymentStatus   String   @default("PENDING")
   status          String   @default("PLACED")

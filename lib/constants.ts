@@ -27,7 +27,7 @@ export function calculateShippingDetails(subtotal: number) {
   };
 }
 
-export const categories = ["Skin", "Oral Care", "Hair", "Supplements", "Luxe"];
+export const categories = ["Skin", "Oral Care", "Hair", "Supplements"/*, "Luxe"*/];
 
 export const subcategoriesMap: Record<string, string[]> = {
   "Skin": [

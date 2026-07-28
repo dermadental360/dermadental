@@ -24,6 +24,9 @@ export interface CustomerOrderEmailData {
     price: number;
   }>;
   subtotal?: number;
+  discountType?: string;
+  discountPercentage?: number;
+  discountAmount?: number;
   shippingCharge?: number;
   total: number;
   paymentStatus: string;
@@ -44,6 +47,9 @@ export interface AdminOrderEmailData {
     price: number;
   }>;
   subtotal?: number;
+  discountType?: string;
+  discountPercentage?: number;
+  discountAmount?: number;
   shippingCharge?: number;
   total: number;
   paymentStatus: string;
@@ -276,6 +282,16 @@ export function generateCustomerOrderEmailHtml(data: CustomerOrderEmailData): st
                       ₹${itemsSubtotal.toLocaleString("en-IN")}
                     </td>
                   </tr>
+                  ${((data.discountAmount && data.discountAmount > 0) || data.discountType === "PREPAID") ? `
+                  <tr>
+                    <td colspan="2" align="left" style="padding: 10px 16px; font-size: 14px; color: #16a34a; font-weight: 600;">
+                      Prepaid Discount (5%):
+                    </td>
+                    <td align="right" style="padding: 10px 16px; font-size: 14px; font-weight: 700; color: #16a34a;">
+                      -₹${(data.discountAmount || Math.round(itemsSubtotal * 0.05)).toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                  ` : ""}
                   <tr>
                     <td colspan="2" align="left" style="padding: 10px 16px; font-size: 14px; color: #64748b;">
                       Shipping Charge:
@@ -409,6 +425,12 @@ export function generateAdminOrderEmailHtml(data: AdminOrderEmailData): string {
                     <td colspan="2" align="left" style="padding: 8px 12px; font-size: 13px; color: #64748b;">Subtotal:</td>
                     <td align="right" style="padding: 8px 12px; font-size: 13px; font-weight: 600;">₹${itemsSubtotal.toLocaleString("en-IN")}</td>
                   </tr>
+                  ${((data.discountAmount && data.discountAmount > 0) || data.discountType === "PREPAID") ? `
+                  <tr>
+                    <td colspan="2" align="left" style="padding: 8px 12px; font-size: 13px; color: #16a34a; font-weight: 600;">Prepaid Discount (5%):</td>
+                    <td align="right" style="padding: 8px 12px; font-size: 13px; font-weight: 700; color: #16a34a;">-₹${(data.discountAmount || Math.round(itemsSubtotal * 0.05)).toLocaleString("en-IN")}</td>
+                  </tr>
+                  ` : ""}
                   <tr>
                     <td colspan="2" align="left" style="padding: 8px 12px; font-size: 13px; color: #64748b;">Shipping:</td>
                     <td align="right" style="padding: 8px 12px; font-size: 13px; font-weight: 700; color: ${finalShippingCharge === 0 ? "#16a34a" : "#0f172a"};">${shippingDisplay}</td>

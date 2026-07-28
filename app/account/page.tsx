@@ -33,7 +33,10 @@ export default async function AccountPage() {
         notes: o.notes
       },
       items: typeof o.items === "string" ? JSON.parse(o.items) : o.items,
-      total: o.total,
+      subtotal: o.subtotal,
+      discountType: o.discountType,
+      discountAmount: o.discountAmount,
+      total: o.finalAmount || o.total,
       status: o.status,
       createdAt: o.createdAt
     }));
@@ -46,7 +49,9 @@ export default async function AccountPage() {
 
   const plainOrders = orders.map((o) => ({
     _id: String(o._id),
-    total: o.total,
+    total: o.finalAmount || o.total,
+    discountAmount: o.discountAmount || 0,
+    discountType: o.discountType || null,
     status: o.status || "New",
     createdAt: o.createdAt 
       ? (o.createdAt instanceof Date ? o.createdAt.toISOString() : String(o.createdAt)) 

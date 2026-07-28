@@ -5,6 +5,7 @@ import { logAction } from "@/lib/auditLogger";
 import { createNotification } from "@/lib/notifications";
 import { sendAdminOrderEmail, sendCustomerOrderEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimiter";
+import { calculatePricingDetails } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 
@@ -87,8 +88,9 @@ export async function POST(request: NextRequest) {
     }, { status: 400 });
   }
 
-  const shippingCharge = calculatedSubtotal >= 1499 ? 0 : 99;
-  const grandTotal = calculatedSubtotal + shippingCharge + codFeeAmount;
+  // COD is prepaid = false (Not eligible for 5% prepaid discount)
+  const pricing = calculatePricingDetails(calculatedSubtotal, false, codFeeAmount);
+  const grandTotal = pricing.finalAmount;
 
   try {
     const order = await prisma.order.create({
@@ -99,10 +101,14 @@ export async function POST(request: NextRequest) {
         customerAddress: customer.address,
         notes: customer.notes || "",
         items: items,
-        subtotal: calculatedSubtotal,
-        shippingCharge: shippingCharge,
-        codFee: codFeeAmount,
+        subtotal: pricing.subtotal,
+        discountType: pricing.discountType,
+        discountPercentage: pricing.discountPercentage,
+        discountAmount: pricing.discountAmount,
+        shippingCharge: pricing.shippingCharge,
+        codFee: pricing.codFee,
         total: grandTotal,
+        finalAmount: grandTotal,
         paymentMethod: "COD",
         paymentStatus: "PENDING",
         status: "PLACED",
@@ -138,7 +144,9 @@ export async function POST(request: NextRequest) {
           customerAddress: customer.address,
           items: items,
           subtotal: calculatedSubtotal,
-          shippingCharge: shippingCharge,
+          discountAmount: pricing.discountAmount,
+          discountType: pricing.discountType || undefined,
+          shippingCharge: pricing.shippingCharge,
           total: grandTotal,
           paymentStatus: "PENDING",
           paymentTime: paymentTimeString,
@@ -158,7 +166,9 @@ export async function POST(request: NextRequest) {
         customerAddress: customer.address,
         items: items,
         subtotal: calculatedSubtotal,
-        shippingCharge: shippingCharge,
+        discountAmount: pricing.discountAmount,
+        discountType: pricing.discountType || undefined,
+        shippingCharge: pricing.shippingCharge,
         total: grandTotal,
         paymentStatus: "PENDING (COD)",
         paymentTime: paymentTimeString

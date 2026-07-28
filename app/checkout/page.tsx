@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
+import { calculatePricingDetails } from "@/lib/pricing";
 
 declare global {
   interface Window {
@@ -86,9 +87,11 @@ export default function CheckoutPage() {
     return "";
   };
 
-  // Calculate final total including COD fee if applicable
-  const codFee = (paymentMethod === "COD" && codSettings.feeEnabled) ? codSettings.feeAmount : 0;
-  const grandTotal = cart.total + codFee;
+  // Centralized pricing calculation based on current payment method selection
+  const isPrepaid = paymentMethod === "ONLINE";
+  const codFeeAmount = (paymentMethod === "COD" && codSettings.feeEnabled) ? codSettings.feeAmount : 0;
+  const pricing = calculatePricingDetails(cart.subtotal, isPrepaid, codFeeAmount);
+  const grandTotal = pricing.finalAmount;
 
   async function handlePayment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -418,8 +421,11 @@ export default function CheckoutPage() {
                   onChange={() => setPaymentMethod("ONLINE")}
                   style={{ accentColor: "var(--sage-dark, #2d5a27)", width: 20, height: 20, cursor: "pointer" }}
                 />
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>💳 Pay Online (Razorpay)</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                    <span>💳 Pay Online (Razorpay)</span>
+                    <span className="badge-prepaid-discount">5% OFF</span>
+                  </div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>UPI, Credit/Debit Cards, NetBanking</div>
                 </div>
               </div>
@@ -448,6 +454,13 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
+
+            {/* Prepaid Highlighted Discount Banner */}
+            {isPrepaid && (
+              <div className="prepaid-congrats-banner" role="status" aria-live="polite">
+                🎉 Congratulations! You saved 5% by choosing a prepaid payment.
+              </div>
+            )}
 
             {/* COD Disabled Warning Message */}
             {isCodDisabled && (
@@ -507,21 +520,34 @@ export default function CheckoutPage() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "1px solid var(--line, #e2e8f0)", paddingTop: 12, fontSize: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
-              <span>Products Total</span>
-              <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{cart.subtotal}</span>
+              <span>Subtotal</span>
+              <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{pricing.subtotal}</span>
             </div>
+
+            {/* Prepaid Discount Row */}
+            {isPrepaid && pricing.discountAmount > 0 && (
+              <div className="animated-discount-row">
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>Prepaid Discount (5%)</span>
+                  <span className="badge-prepaid-pill">5% OFF</span>
+                </div>
+                <span style={{ fontWeight: 700, color: "#16a34a" }}>-₹{pricing.discountAmount}</span>
+              </div>
+            )}
+
             <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
               <span>Shipping</span>
-              {cart.isFreeShipping ? (
+              {pricing.isFreeShipping ? (
                 <span style={{ color: "#16a34a", fontWeight: 700 }}>FREE</span>
               ) : (
-                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{cart.shippingCharge}</span>
+                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{pricing.shippingCharge}</span>
               )}
             </div>
-            {paymentMethod === "COD" && codFee > 0 && (
+
+            {paymentMethod === "COD" && codFeeAmount > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
                 <span>COD Handling Fee</span>
-                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>+₹{codFee}</span>
+                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>+₹{codFeeAmount}</span>
               </div>
             )}
           </div>
@@ -815,6 +841,75 @@ export default function CheckoutPage() {
             flex: 1;
             max-width: 240px;
             min-height: 48px;
+          }
+        }
+
+        .badge-prepaid-discount {
+          background-color: #16a34a;
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 800;
+          padding: 2px 8px;
+          border-radius: 999px;
+          letter-spacing: 0.5px;
+          white-space: nowrap;
+        }
+
+        .prepaid-congrats-banner {
+          margin-top: 12px;
+          padding: 12px 16px;
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #15803d;
+          line-height: 1.4;
+          animation: fadeInBanner 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .animated-discount-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #f0fdf4;
+          padding: 6px 10px;
+          border-radius: 6px;
+          border: 1px dashed #86efac;
+          animation: pulseInDiscount 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+          color: #15803d;
+          font-size: 14px;
+        }
+
+        .badge-prepaid-pill {
+          background-color: #16a34a;
+          color: #ffffff;
+          font-size: 10px;
+          font-weight: 800;
+          padding: 1px 6px;
+          border-radius: 4px;
+          text-transform: uppercase;
+        }
+
+        @keyframes fadeInBanner {
+          from {
+            opacity: 0;
+            transform: translateY(-6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes pulseInDiscount {
+          from {
+            opacity: 0;
+            transform: scale(0.96);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
           }
         }
 

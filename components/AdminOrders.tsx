@@ -182,6 +182,28 @@ export function AdminOrders() {
                   </div>
 
                   <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>DISCOUNT APPLIED</span>
+                    {(order.discountAmount > 0 || order.discountType === "PREPAID") ? (
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 8px", borderRadius: 6, background: "#dcfce7", color: "#15803d", display: "inline-block", marginTop: 2 }}>
+                        ✅ Yes (5% Prepaid)
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 8px", borderRadius: 6, background: "#f1f5f9", color: "#64748b", display: "inline-block", marginTop: 2 }}>
+                        ❌ No
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>DISCOUNT AMOUNT</span>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: (order.discountAmount > 0 || order.discountType === "PREPAID") ? "#16a34a" : "var(--muted)" }}>
+                      {(order.discountAmount > 0 || order.discountType === "PREPAID")
+                        ? `-₹${order.discountAmount || Math.round((order.subtotal || order.total) * 0.05)}`
+                        : "₹0"}
+                    </span>
+                  </div>
+
+                  <div>
                     <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>PAYMENT STATUS</span>
                     <span style={{
                       fontSize: 12,
@@ -198,8 +220,8 @@ export function AdminOrders() {
                   </div>
 
                   <div>
-                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>ORDER TOTAL</span>
-                    <span style={{ fontWeight: 800, fontSize: 16, color: "var(--sage-dark)" }}>₹{order.total}</span>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>FINAL AMOUNT</span>
+                    <span style={{ fontWeight: 800, fontSize: 16, color: "var(--sage-dark)" }}>₹{order.finalAmount || order.total}</span>
                     {order.codFee > 0 && (
                       <span style={{ fontSize: 11, color: "var(--muted)", display: "block" }}>
                         (Includes ₹{order.codFee} COD Fee)
