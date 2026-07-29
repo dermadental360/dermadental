@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProduct, getProducts } from "@/lib/products";
+import { getProduct, getProducts, getFrequentlyBoughtTogether } from "@/lib/products";
 import { ProductDetailPageClient } from "@/components/ProductDetailPageClient";
 import { getAllSettings } from "@/lib/settings";
 
@@ -15,10 +15,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const product = await getProduct(id);
   if (!product) notFound();
 
-  // Fetch related products and settings in parallel
-  const [allProducts, settings] = await Promise.all([
+  // Fetch related products, FBT products, and settings in parallel
+  const [allProducts, settings, fbtProducts] = await Promise.all([
     getProducts({ category: product.category }),
-    getAllSettings()
+    getAllSettings(),
+    getFrequentlyBoughtTogether(product._id, 3)
   ]);
 
   const relatedProducts = allProducts
@@ -30,6 +31,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       <ProductDetailPageClient 
         product={product} 
         relatedProducts={relatedProducts} 
+        fbtProducts={fbtProducts}
         shippingHighlightsStr={settings.shipping_highlights}
       />
     </main>

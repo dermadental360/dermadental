@@ -185,4 +185,108 @@ export const getProduct = cache(async function getProduct(id: string) {
   }
 });
 
+export const getFrequentlyBoughtTogether = cache(async function getFrequentlyBoughtTogether(productId: string, limit = 3): Promise<Product[]> {
+  try {
+    // 1. Check for manual admin assignments (key: fbt_<productId>)
+    const manualSetting = await prisma.setting.findUnique({
+      where: { key: `fbt_${productId}` }
+    });
+
+    if (manualSetting && manualSetting.value) {
+      try {
+        const assignedIds: string[] = JSON.parse(manualSetting.value);
+        if (Array.isArray(assignedIds) && assignedIds.length > 0) {
+          const manualProducts: Product[] = [];
+          for (const id of assignedIds) {
+            if (id === productId) continue;
+            const p = await getProduct(id);
+            if (p) manualProducts.push(p);
+            else {
+              const demoP = demoProducts.find(dp => dp._id === id);
+              if (demoP) manualProducts.push(demoP);
+            }
+          }
+          if (manualProducts.length > 0) {
+            return manualProducts.slice(0, limit);
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing manual FBT setting:", e);
+      }
+    }
+
+    // 2. Data-driven: analyze purchase history from Order records
+    try {
+      const orders = await prisma.order.findMany({
+        take: 200,
+        orderBy: { createdAt: "desc" },
+        select: { items: true }
+      });
+
+      const coOccurrenceCounts: Record<string, number> = {};
+
+      for (const order of orders) {
+        let orderItems: any[] = [];
+        try {
+          orderItems = typeof order.items === "string" ? JSON.parse(order.items) : (Array.isArray(order.items) ? order.items : []);
+        } catch {
+          orderItems = [];
+        }
+
+        const containsTarget = orderItems.some((item: any) => String(item.productId || item.id) === productId);
+        if (containsTarget) {
+          for (const item of orderItems) {
+            const itemProdId = String(item.productId || item.id);
+            if (itemProdId && itemProdId !== productId) {
+              coOccurrenceCounts[itemProdId] = (coOccurrenceCounts[itemProdId] || 0) + 1;
+            }
+          }
+        }
+      }
+
+      const sortedCoOccurringIds = Object.keys(coOccurrenceCounts).sort(
+        (a, b) => coOccurrenceCounts[b] - coOccurrenceCounts[a]
+      );
+
+      if (sortedCoOccurringIds.length > 0) {
+        const coProducts: Product[] = [];
+        for (const id of sortedCoOccurringIds) {
+          const p = await getProduct(id);
+          if (p) coProducts.push(p);
+          else {
+            const demoP = demoProducts.find(dp => dp._id === id);
+            if (demoP) coProducts.push(demoP);
+          }
+          if (coProducts.length >= limit) break;
+        }
+        if (coProducts.length > 0) {
+          return coProducts;
+        }
+      }
+    } catch (e) {
+      console.warn("Order co-occurrence query failed, falling back to smart recommendation:", e);
+    }
+
+    // 3. Fallback: Smart complementary selection based on category/concerns
+    const targetProduct = (await getProduct(productId)) || demoProducts.find(p => p._id === productId);
+    const allProducts = await getProducts();
+    
+    let candidates = allProducts.filter(p => p._id !== productId);
+
+    if (targetProduct) {
+      // Prioritize products from same category or complementary concerns
+      const sameCat = candidates.filter(p => p.category === targetProduct.category);
+      if (sameCat.length >= limit) {
+        candidates = sameCat;
+      }
+    }
+
+    return candidates.slice(0, limit);
+  } catch (error) {
+    console.error("getFrequentlyBoughtTogether failed:", error);
+    return demoProducts.filter(p => p._id !== productId).slice(0, limit);
+  }
+});
+
+
 

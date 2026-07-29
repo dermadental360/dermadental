@@ -33,6 +33,13 @@ export function AdminProducts() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Frequently Bought Together Modal State
+  const [fbtModalProduct, setFbtModalProduct] = useState<Product | null>(null);
+  const [fbtSelectedIds, setFbtSelectedIds] = useState<string[]>([]);
+  const [fbtLoading, setFbtLoading] = useState(false);
+  const [fbtSaving, setFbtSaving] = useState(false);
+  const [fbtSearch, setFbtSearch] = useState("");
+
   const getConcernsForCategory = (category: string) => {
     if (category === "Skin") return skincareConcerns;
     if (category === "Oral Care") return oralCareConcerns;
@@ -79,6 +86,65 @@ export function AdminProducts() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function openFbtModal(product: Product) {
+    setFbtModalProduct(product);
+    setFbtLoading(true);
+    setFbtSearch("");
+    try {
+      const res = await fetch(`/api/admin/products/frequently-bought?productId=${product._id}`);
+      if (res.ok) {
+        const data = await res.json();
+        const ids = data.manualIds && data.manualIds.length > 0
+          ? data.manualIds
+          : (data.products || []).map((p: Product) => p._id);
+        setFbtSelectedIds(ids);
+      }
+    } catch (err) {
+      console.error("Failed to load FBT data:", err);
+    } finally {
+      setFbtLoading(false);
+    }
+  }
+
+  async function saveFbtModal() {
+    if (!fbtModalProduct) return;
+    setFbtSaving(true);
+    try {
+      const res = await fetch("/api/admin/products/frequently-bought", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: fbtModalProduct._id,
+          assignedIds: fbtSelectedIds
+        })
+      });
+      if (res.ok) {
+        setSuccess(`Frequently Bought Together bundle updated for "${fbtModalProduct.name}"!`);
+        setFbtModalProduct(null);
+      } else {
+        const err = await res.json();
+        setError(err.error || "Failed to update bundle");
+      }
+    } catch (err) {
+      console.error("Failed to save FBT data:", err);
+    } finally {
+      setFbtSaving(false);
+    }
+  }
+
+  function toggleFbtProduct(id: string) {
+    if (fbtSelectedIds.includes(id)) {
+      setFbtSelectedIds(fbtSelectedIds.filter(item => item !== id));
+    } else {
+      if (fbtSelectedIds.length >= 3) {
+        setError("You can assign up to 3 complementary products per bundle.");
+        return;
+      }
+      setError("");
+      setFbtSelectedIds([...fbtSelectedIds, id]);
+    }
+  }
 
   async function uploadMultiple(files?: FileList | null) {
     if (!files || files.length === 0) return;
@@ -450,7 +516,10 @@ export function AdminProducts() {
                     )}
                   </p>
                 </div>
-                <div className="actions" style={{ gap: 8 }}>
+                <div className="actions" style={{ gap: 8, flexWrap: "wrap" }}>
+                  <button className="btn secondary" style={{ padding: "8px 12px", fontSize: 12, borderColor: "var(--sage)" }} onClick={() => openFbtModal(product)}>
+                    🛒 FBT Bundle
+                  </button>
                   <button className="btn secondary" style={{ padding: "8px 12px", fontSize: 12 }} onClick={() => startEdit(product)}>
                     Edit
                   </button>
@@ -463,6 +532,134 @@ export function AdminProducts() {
           })}
         </div>
       </div>
+
+      {/* Frequently Bought Together Manager Modal Overlay */}
+      {fbtModalProduct && (
+        <div 
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(6px)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20
+          }}
+        >
+          <div
+            className="card pad"
+            style={{
+              width: "100%",
+              maxWidth: 640,
+              maxHeight: "90vh",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+              backgroundColor: "#ffffff",
+              borderRadius: 20,
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--line)", paddingBottom: 14 }}>
+              <div>
+                <p className="eyebrow" style={{ margin: 0 }}>Bundle Recommendations</p>
+                <h3 style={{ margin: "2px 0 0 0", fontSize: 18, fontWeight: 700 }}>
+                  Manage FBT for "{fbtModalProduct.name}"
+                </h3>
+              </div>
+              <button 
+                onClick={() => setFbtModalProduct(null)} 
+                style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "var(--muted)" }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <p style={{ fontSize: 13.5, color: "var(--muted)", margin: 0 }}>
+              Select 1 to 3 complementary products to pair with <strong>{fbtModalProduct.name}</strong> on the storefront. Selected products appear checked by default in the "Frequently Bought Together" widget.
+            </p>
+
+            <input
+              className="input"
+              type="text"
+              placeholder="Search products to add..."
+              value={fbtSearch}
+              onChange={(e) => setFbtSearch(e.target.value)}
+            />
+
+            {fbtLoading ? (
+              <p style={{ textAlign: "center", padding: 20, color: "var(--muted)" }}>Loading recommendations...</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 320, overflowY: "auto", paddingRight: 4 }}>
+                {products
+                  .filter((p) => p._id !== fbtModalProduct._id)
+                  .filter((p) => !fbtSearch || p.name.toLowerCase().includes(fbtSearch.toLowerCase()) || p.category.toLowerCase().includes(fbtSearch.toLowerCase()))
+                  .map((product) => {
+                    const isSelected = fbtSelectedIds.includes(product._id);
+                    return (
+                      <div
+                        key={product._id}
+                        onClick={() => toggleFbtProduct(product._id)}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "auto 44px 1fr auto",
+                          gap: 12,
+                          alignItems: "center",
+                          padding: 10,
+                          borderRadius: 10,
+                          border: `1px solid ${isSelected ? "var(--sage-dark)" : "var(--line)"}`,
+                          backgroundColor: isSelected ? "var(--blush-light)" : "#ffffff",
+                          cursor: "pointer",
+                          transition: "var(--transition-smooth)"
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          style={{ width: 18, height: 18, accentColor: "var(--sage-dark)", cursor: "pointer" }}
+                        />
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line)" }}
+                        />
+                        <div>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: 0, color: "var(--ink)" }}>
+                            {product.name}
+                          </p>
+                          <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                            {product.brand} · {product.category}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--sage-dark)" }}>
+                          ₹{product.discountedPrice || product.price}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
+                Selected: {fbtSelectedIds.length} / 3 products
+              </span>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button className="btn secondary" onClick={() => setFbtModalProduct(null)} disabled={fbtSaving}>
+                  Cancel
+                </button>
+                <button className="btn" onClick={saveFbtModal} disabled={fbtSaving || fbtLoading}>
+                  {fbtSaving ? "Saving..." : "Save FBT Bundle"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

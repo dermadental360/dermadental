@@ -13,7 +13,6 @@ export const ProductCard = React.memo(function ProductCard({ product }: { produc
   const cart = useCart();
   const router = useRouter();
   const isOutOfStock = product.stock <= 0;
-  const isLowStock = product.stock > 0 && product.stock < 10;
   const hasDiscount = product.price > product.discountedPrice;
   const discountPercent = hasDiscount
     ? Math.round(((product.price - product.discountedPrice) / product.price) * 100)
@@ -26,9 +25,7 @@ export const ProductCard = React.memo(function ProductCard({ product }: { produc
           <div className="badge-container">
             {hasDiscount && <span className="badge discount">{discountPercent}% OFF</span>}
             {isOutOfStock ? (
-              <span className="badge out-of-stock">Sold Out</span>
-            ) : isLowStock ? (
-              <span className="badge low-stock">Only {product.stock} Left</span>
+              <span className="badge out-of-stock">Out of Stock</span>
             ) : (
               <span className="badge stock">In Stock</span>
             )}

@@ -7,6 +7,7 @@ import type { Product } from "@/lib/demo";
 import { useCart } from "./CartProvider";
 import { ProductImages } from "./ProductImages";
 import { ProductCard } from "./ProductCard";
+import { FrequentlyBoughtTogether } from "./FrequentlyBoughtTogether";
 
 const ProductReviews = dynamic(
   () => import("./ProductReviews").then((mod) => mod.ProductReviews),
@@ -18,10 +19,11 @@ const ProductReviews = dynamic(
 interface ProductDetailPageClientProps {
   product: Product;
   relatedProducts: Product[];
+  fbtProducts?: Product[];
   shippingHighlightsStr?: string;
 }
 
-export function ProductDetailPageClient({ product, relatedProducts, shippingHighlightsStr }: ProductDetailPageClientProps) {
+export function ProductDetailPageClient({ product, relatedProducts, fbtProducts = [], shippingHighlightsStr }: ProductDetailPageClientProps) {
   const cart = useCart();
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
@@ -44,7 +46,6 @@ export function ProductDetailPageClient({ product, relatedProducts, shippingHigh
   }
 
   const isOutOfStock = product.stock <= 0;
-  const isLowStock = product.stock > 0 && product.stock < 10;
   const hasDiscount = product.price > product.discountedPrice;
   const discountAmt = product.price - product.discountedPrice;
   const discountPercent = hasDiscount
@@ -139,9 +140,7 @@ export function ProductDetailPageClient({ product, relatedProducts, shippingHigh
               {product.brand} &middot; {product.category}
             </span>
             {isOutOfStock ? (
-              <span className="badge out-of-stock" style={{ padding: "4px 10px", fontSize: 11 }}>Sold Out</span>
-            ) : isLowStock ? (
-              <span className="badge low-stock" style={{ padding: "4px 10px", fontSize: 11 }}>Only {product.stock} Left</span>
+              <span className="badge out-of-stock" style={{ padding: "4px 10px", fontSize: 11 }}>Out of Stock</span>
             ) : (
               <span className="badge stock" style={{ padding: "4px 10px", fontSize: 11 }}>In Stock</span>
             )}
@@ -402,7 +401,7 @@ export function ProductDetailPageClient({ product, relatedProducts, shippingHigh
                     </tr>
                     <tr>
                       <td>Availability</td>
-                      <td>{product.stock > 0 ? `${product.stock} Units In Stock` : "Temporarily Out of Stock"}</td>
+                      <td>{product.stock > 0 ? "In Stock" : "Out of Stock"}</td>
                     </tr>
                     <tr>
                       <td>Intended Concerns</td>
@@ -415,6 +414,11 @@ export function ProductDetailPageClient({ product, relatedProducts, shippingHigh
           </div>
         </div>
       </div>
+
+      {/* Frequently Bought Together Section */}
+      {fbtProducts && fbtProducts.length > 0 && (
+        <FrequentlyBoughtTogether mainProduct={product} complementaryProducts={fbtProducts} />
+      )}
 
       {/* Reviews Section */}
       <div id="reviews-section" style={{ marginTop: 64, paddingTop: 40, borderTop: "1px solid var(--line)" }}>

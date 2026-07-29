@@ -26,6 +26,7 @@ type CartContextValue = {
   remainingForFreeShipping: number;
   total: number; // Grand Total = subtotal + shippingCharge
   add: (product: Product, quantity?: number) => void;
+  addMultiple: (products: Product[]) => void;
   update: (productId: string, quantity: number) => void;
   remove: (productId: string) => void;
   clear: () => void;
@@ -86,6 +87,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           ];
         });
         showToast(`Added "${product.name}" to cart`);
+      },
+      addMultiple(products) {
+        if (!products.length) return;
+        setItems((current) => {
+          let updated = [...current];
+          for (const product of products) {
+            const foundIdx = updated.findIndex((item) => item.productId === product._id);
+            if (foundIdx >= 0) {
+              updated[foundIdx] = { ...updated[foundIdx], quantity: updated[foundIdx].quantity + 1 };
+            } else {
+              updated.push({
+                productId: product._id,
+                name: product.name,
+                price: product.discountedPrice || product.price,
+                image: product.images[0],
+                quantity: 1,
+              });
+            }
+          }
+          return updated;
+        });
+        showToast(`Added ${products.length} items to cart`);
       },
       update(productId, quantity) {
         setItems((current) =>
