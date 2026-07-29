@@ -1,5 +1,5 @@
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -165,7 +165,7 @@ model Review {
 
 model Setting {
   key   String @id
-  value String @db.LongText
+  value String @db.Text
 }
 
 model LegalPage {

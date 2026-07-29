@@ -135,7 +135,7 @@ export async function GET() {
       recentOrders
     });
   } catch (error: any) {
-    console.error("GET /api/admin/metrics MySQL calculation error:", error?.message || error);
+    console.error("GET /api/admin/metrics PostgreSQL error:", error?.message || error);
     return NextResponse.json({ error: "Failed to load dynamic metrics from database." }, { status: 500 });
   }
 }

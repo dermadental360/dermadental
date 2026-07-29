@@ -43,7 +43,7 @@ export async function GET() {
     }));
     return NextResponse.json(formatted);
   } catch (error: any) {
-    console.error("GET /api/orders MySQL failed:", error?.message || error);
+    console.error("GET /api/orders PostgreSQL failed:", error?.message || error);
     return NextResponse.json({ error: "Failed to fetch orders from database." }, { status: 500 });
   }
 }
