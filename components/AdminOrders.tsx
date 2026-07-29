@@ -157,11 +157,17 @@ export function AdminOrders() {
                     </span>
                   </div>
 
-                  <div>
+                  <div style={{ maxWidth: 280 }}>
                     <span style={{ fontSize: 12, color: "var(--muted)", display: "block" }}>CUSTOMER DETAILS</span>
-                    <span style={{ fontWeight: 600, display: "block" }}>{order.customer?.name}</span>
-                    <span style={{ fontSize: 13, color: "var(--muted)" }}>
-                      {order.customer?.phone} {order.customer?.email ? `· ${order.customer.email}` : ""}
+                    <span style={{ fontWeight: 600, display: "block", fontSize: 15 }}>{order.customerName || order.customer?.name || "Guest Customer"}</span>
+                    <span style={{ fontSize: 13, color: "var(--muted)", display: "block", marginTop: 2 }}>
+                      📞 {order.customerPhone || order.customer?.phone || "N/A"}
+                    </span>
+                    <span style={{ fontSize: 12, color: "var(--muted)", display: "block", wordBreak: "break-all" }}>
+                      ✉ {order.customerEmail || order.customer?.email || "N/A"}
+                    </span>
+                    <span style={{ fontSize: 12, color: "#1e293b", fontWeight: 500, display: "block", marginTop: 4, background: "#f1f5f9", padding: "4px 8px", borderRadius: 4 }}>
+                      📍 {order.customerAddress || order.customer?.address || "No address specified"}
                     </span>
                   </div>
 
@@ -237,9 +243,23 @@ export function AdminOrders() {
                   paymentStatus={order.paymentStatus}
                 />
 
-                {order.customer?.notes && (
+                <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px 16px", borderRadius: "8px", fontSize: 14 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: "#0f172a", marginBottom: 6, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase" }}>
+                    📍 Full Shipping & Delivery Address
+                  </div>
+                  <div style={{ color: "#1e293b", fontSize: 14, fontWeight: 500, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+                    {order.customerAddress || order.customer?.address || "No delivery address specified."}
+                  </div>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 8, fontSize: 13, color: "#475569", borderTop: "1px dashed #cbd5e1", paddingTop: 8 }}>
+                    <span>👤 Customer: <strong>{order.customerName || order.customer?.name || "N/A"}</strong></span>
+                    <span>📞 Phone: <strong>{order.customerPhone || order.customer?.phone || "N/A"}</strong></span>
+                    <span>✉ Email: <strong>{order.customerEmail || order.customer?.email || "N/A"}</strong></span>
+                  </div>
+                </div>
+
+                {(order.notes || order.customer?.notes) && (
                   <div style={{ backgroundColor: "var(--bg-secondary)", padding: "10px 14px", borderRadius: "6px", fontSize: 14 }}>
-                    <strong>Notes:</strong> {order.customer.notes}
+                    <strong>Notes:</strong> {order.notes || order.customer?.notes}
                   </div>
                 )}
 
