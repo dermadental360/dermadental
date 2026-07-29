@@ -58,6 +58,8 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
     if (path.startsWith("/admin/notifications")) return "Notifications";
     if (path.startsWith("/admin/products")) return "Products";
     if (path.startsWith("/admin/orders")) return "Orders";
+    if (path.startsWith("/admin/customers")) return "Customer Database";
+    if (path.startsWith("/admin/pricing")) return "Pricing & Shipping Rules";
     if (path.startsWith("/admin/inquiries")) return "Inquiries";
     if (path.startsWith("/admin/reviews")) return "Reviews";
     if (path.startsWith("/admin/logs")) return "Audit Logs";
@@ -74,6 +76,8 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
     { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
     { href: "/admin/products", label: "Products", icon: "🧴" },
     { href: "/admin/orders", label: "Orders", icon: "📦" },
+    { href: "/admin/customers", label: "Customer Database", icon: "👥" },
+    { href: "/admin/pricing", label: "Pricing & Shipping", icon: "💳" },
     { href: "/admin/inquiries", label: "Inquiries", icon: "💬" },
     { href: "/admin/reviews", label: "Reviews", icon: "⭐️" },
     { href: "/admin/logs", label: "Audit Logs", icon: "📋" },
