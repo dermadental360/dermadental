@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { prisma } from "./prisma";
 
-// Default settings matching current website defaults
+// Default settings matching database defaults
 export const DEFAULT_SETTINGS = {
   hero_eyebrow: "Dermatology-led care in Khar West",
   hero_title: "Skin and hair routines chosen with clinical calm.",
@@ -45,38 +45,32 @@ export const DEFAULT_SETTINGS = {
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;
 
 let settingsCache: { data: Record<string, string>; expiresAt: number } | null = null;
-const CACHE_TTL_MS = 10 * 1000; // Fast 10 seconds TTL for instant dynamic updates
 
 export function clearSettingsCache() {
   settingsCache = null;
 }
 
-export const getAllSettings = cache(async function getAllSettings() {
-  const now = Date.now();
-  if (settingsCache && settingsCache.expiresAt > now) {
-    return settingsCache.data;
-  }
-
+export const getAllSettings = async function getAllSettings() {
+  // Always query database live to guarantee 100% instant sync with Admin Panel
   const result: Record<string, string> = { ...DEFAULT_SETTINGS };
   try {
     const settings = await prisma.setting.findMany();
     for (const s of settings) {
       result[s.key] = s.value;
     }
-    settingsCache = { data: result, expiresAt: now + CACHE_TTL_MS };
   } catch (err) {
     console.warn("Prisma failed to fetch settings:", err);
   }
   return result;
-});
+};
 
-export const getSetting = cache(async function getSetting(key: SettingKey): Promise<string> {
+export const getSetting = async function getSetting(key: SettingKey): Promise<string> {
   const all = await getAllSettings();
   return all[key] !== undefined ? all[key] : DEFAULT_SETTINGS[key];
-});
+};
 
 export async function setSetting(key: SettingKey, value: string) {
-  clearSettingsCache(); // Invalidate cache immediately on setting update
+  clearSettingsCache();
   return prisma.setting.upsert({
     where: { key },
     update: { value },

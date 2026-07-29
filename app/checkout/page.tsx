@@ -544,29 +544,33 @@ export default function CheckoutPage() {
             </div>
 
             {/* Prepaid Discount Row */}
-            {isPrepaid && pricing.discountAmount > 0 && (
+            {isPrepaid && pricingOptions.enablePrepaidDiscount && pricing.discountAmount > 0 && (
               <div className="animated-discount-row">
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span>Prepaid Discount (5%)</span>
-                  <span className="badge-prepaid-pill">5% OFF</span>
+                  <span>Prepaid Discount ({pricing.discountPercentage}%)</span>
+                  <span className="badge-prepaid-pill">{pricing.discountPercentage}% OFF</span>
                 </div>
                 <span style={{ fontWeight: 700, color: "#16a34a" }}>-₹{pricing.discountAmount}</span>
               </div>
             )}
 
+            {/* Shipping Row */}
             <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
               <span>Shipping</span>
-              {pricing.isFreeShipping ? (
+              {!pricingOptions.enableFreeShipping ? (
+                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹0</span>
+              ) : pricing.isFreeShipping ? (
                 <span style={{ color: "#16a34a", fontWeight: 700 }}>FREE</span>
               ) : (
                 <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{pricing.shippingCharge}</span>
               )}
             </div>
 
-            {paymentMethod === "COD" && codFeeAmount > 0 && (
+            {/* COD Handling Fee Row */}
+            {paymentMethod === "COD" && pricingOptions.enableCodFee && pricing.codFee > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
                 <span>COD Handling Fee</span>
-                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>+₹{codFeeAmount}</span>
+                <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>+₹{pricing.codFee}</span>
               </div>
             )}
           </div>

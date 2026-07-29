@@ -1,5 +1,3 @@
-import { calculateShippingDetails } from "./constants";
-
 export interface PricingBreakdown {
   subtotal: number;
   discountType: "PREPAID" | null;
@@ -23,9 +21,8 @@ export interface PricingOptions {
 }
 
 /**
- * Centralized Pricing Calculator
- * Computes subtotal, dynamic prepaid discount %, shipping, tax, COD fees, and final grand total.
- * Dynamically evaluates Admin settings when options are provided.
+ * Single Source of Truth Pricing & Shipping Calculator
+ * Strictly follows Admin Panel toggles and database values.
  */
 export function calculatePricingDetails(
   subtotal: number,
@@ -38,29 +35,61 @@ export function calculatePricingDetails(
 
   const cleanSubtotal = round(Math.max(0, subtotal));
   const cleanTax = round(Math.max(0, tax));
-  
-  // Evaluate Prepaid Discount Rule
-  const isPrepaidDiscountAllowed = options?.enablePrepaidDiscount !== false;
-  const configuredDiscountPct = options?.prepaidDiscountPercentage ?? 5;
-  const discountPercentage = (isPrepaid && isPrepaidDiscountAllowed) ? configuredDiscountPct : 0;
-  const discountType = (isPrepaid && isPrepaidDiscountAllowed && discountPercentage > 0) ? "PREPAID" : null;
-  const discountAmount = discountPercentage > 0 ? round(cleanSubtotal * (discountPercentage / 100)) : 0;
 
-  // Evaluate Shipping Rule
-  const isFreeShippingAllowed = options?.enableFreeShipping !== false;
-  const configuredFreeThreshold = options?.freeShippingThreshold ?? 999;
-  const configuredFlatRate = options?.shippingFlatRate ?? 99;
+  // 1. ONLINE PREPAID DISCOUNT RULE
+  // If "Enable Discount" is OFF:
+  // - Do NOT calculate any discount.
+  // - Discount amount must be ₹0.
+  // - Do NOT subtract any amount.
+  const isPrepaidDiscountEnabled = options?.enablePrepaidDiscount === true;
+  const configuredDiscountPct = options?.prepaidDiscountPercentage ?? 0;
 
-  let shippingCharge = configuredFlatRate;
-  let isFreeShipping = false;
+  let discountPercentage = 0;
+  let discountType: "PREPAID" | null = null;
+  let discountAmount = 0;
 
-  if (isFreeShippingAllowed && cleanSubtotal >= configuredFreeThreshold) {
-    shippingCharge = 0;
-    isFreeShipping = true;
+  if (isPrepaid && isPrepaidDiscountEnabled && configuredDiscountPct > 0) {
+    discountPercentage = configuredDiscountPct;
+    discountType = "PREPAID";
+    discountAmount = round(cleanSubtotal * (discountPercentage / 100));
   }
 
-  const cleanCodFee = (!isPrepaid && options?.enableCodFee !== false) ? round(Math.max(0, codFee)) : 0;
+  // 2. FREE SHIPPING & SHIPPING CHARGES RULE
+  // If "Enable Free Shipping Rule" is OFF:
+  // - Shipping must ALWAYS be ₹0.
+  // - Do NOT check any minimum order threshold.
+  // - Do NOT apply any free shipping logic.
+  const isFreeShippingRuleEnabled = options?.enableFreeShipping === true;
+  const configuredFreeThreshold = options?.freeShippingThreshold ?? 0;
+  const configuredFlatRate = options?.shippingFlatRate ?? 0;
 
+  let shippingCharge = 0;
+  let isFreeShipping = false;
+
+  if (isFreeShippingRuleEnabled) {
+    if (cleanSubtotal >= configuredFreeThreshold) {
+      shippingCharge = 0;
+      isFreeShipping = true;
+    } else {
+      shippingCharge = configuredFlatRate;
+      isFreeShipping = false;
+    }
+  } else {
+    // If OFF -> Shipping = ₹0
+    shippingCharge = 0;
+    isFreeShipping = false;
+  }
+
+  // 3. COD HANDLING FEE RULE
+  // If "Enable COD Fee" is OFF:
+  // - COD Fee = ₹0.
+  const isCodFeeEnabled = options?.enableCodFee === true;
+  let cleanCodFee = 0;
+  if (!isPrepaid && isCodFeeEnabled) {
+    cleanCodFee = round(Math.max(0, codFee));
+  }
+
+  // 4. GRAND TOTAL CALCULATION
   const finalAmount = round(
     cleanSubtotal - discountAmount + shippingCharge + cleanTax + cleanCodFee
   );

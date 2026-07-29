@@ -13,11 +13,35 @@ export const clinic = {
 export const FREE_SHIPPING_THRESHOLD = 999;
 export const SHIPPING_CHARGE = 99;
 
-export function calculateShippingDetails(subtotal: number) {
-  const isFree = subtotal >= FREE_SHIPPING_THRESHOLD;
-  const shippingCharge = isFree ? 0 : SHIPPING_CHARGE;
-  const remainingForFreeShipping = isFree ? 0 : Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+export function calculateShippingDetails(
+  subtotal: number,
+  options?: {
+    freeShippingThreshold?: number;
+    shippingFlatRate?: number;
+    enableFreeShipping?: boolean;
+  }
+) {
+  const isFreeShippingAllowed = options?.enableFreeShipping !== false;
+  const threshold = options?.freeShippingThreshold ?? 999;
+  const flatRate = options?.shippingFlatRate ?? 99;
+
+  let isFree = false;
+  let shippingCharge = flatRate;
+
+  if (isFreeShippingAllowed) {
+    if (subtotal >= threshold) {
+      isFree = true;
+      shippingCharge = 0;
+    }
+  } else {
+    // Rule OFF -> Shipping is ALWAYS ₹0
+    isFree = false;
+    shippingCharge = 0;
+  }
+
+  const remainingForFreeShipping = (isFree || !isFreeShippingAllowed) ? 0 : Math.max(0, threshold - subtotal);
   const grandTotal = subtotal + shippingCharge;
+
   return {
     subtotal,
     shippingCharge,
