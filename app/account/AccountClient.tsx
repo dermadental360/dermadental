@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function AccountClient() {
+export function AccountClient({ customer, orders }: { customer?: any; orders?: any[] }) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 

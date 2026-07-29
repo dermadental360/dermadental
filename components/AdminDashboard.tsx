@@ -35,6 +35,11 @@ export function AdminDashboard() {
         fetch("/api/admin/analytics")
       ]);
 
+      if (resMetrics.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
       if (resMetrics.ok) {
         setMetrics(await resMetrics.json());
       }

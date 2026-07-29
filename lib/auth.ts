@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
-import { fallbackStore } from "./fallbackStore";
 
 const cookieName = "dd360_admin";
 const customerCookieName = "dd360_customer";
@@ -42,39 +41,21 @@ export async function getCustomer() {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     if (!decoded || decoded.role !== "customer") return null;
 
-    try {
-      const customer = await prisma.customer.findUnique({
-        where: { id: decoded.id }
-      });
-      if (customer) {
-        return {
-          _id: customer.id,
-          name: customer.name,
-          email: customer.email,
-          phone: customer.phone
-        };
-      }
-    } catch (err) {
-      console.warn("Prisma getCustomer failed, using fallback:", err);
-    }
+    const customer = await prisma.customer.findUnique({
+      where: { id: decoded.id }
+    });
 
-    // In-memory lookup fallback
-    const localCustomer = fallbackStore.customers.find((c: any) => c._id === decoded.id);
-    if (localCustomer) {
+    if (customer) {
       return {
-        _id: localCustomer._id,
-        name: localCustomer.name,
-        email: localCustomer.email,
-        phone: localCustomer.phone
+        id: customer.id,
+        _id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone
       };
     }
 
-    return {
-      _id: "demo-customer",
-      name: "Demo Customer",
-      email: decoded.email || "customer@example.com",
-      phone: "9876543210"
-    };
+    return null;
   } catch {
     return null;
   }

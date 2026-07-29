@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPaymentSignature, fetchRazorpayPayment } from "@/lib/razorpay";
 import { prisma } from "@/lib/prisma";
-import { fallbackStore } from "@/lib/fallbackStore";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { logAction } from "@/lib/auditLogger";
 import { sendAdminOrderEmail, sendCustomerOrderEmail } from "@/lib/email";
@@ -29,28 +28,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Attempt checking DB records
-    let existingPayment: any = null;
-    let existingOrder: any = null;
+    const existingPayment = await prisma.payment.findUnique({
+      where: { razorpayOrderId: razorpay_order_id }
+    });
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
 
-    try {
-      existingPayment = await prisma.payment.findUnique({
-        where: { razorpayOrderId: razorpay_order_id }
-      });
-      existingOrder = await prisma.order.findUnique({
-        where: { id: orderId }
-      });
-    } catch (dbErr: any) {
-      console.warn("Prisma verification lookup warning:", dbErr?.message || dbErr);
-    }
-
-    // Check in-memory store if DB lookup returned null
     if (!existingOrder) {
-      existingOrder = fallbackStore.orders.find((o) => String(o._id) === String(orderId));
+      return NextResponse.json({ error: "Order record not found" }, { status: 404 });
     }
 
-    // Idempotency check: return existing success response if already marked paid
-    if (existingPayment?.status === "CAPTURED" || existingOrder?.status === "PAID") {
+    if (existingPayment?.status === "CAPTURED" || existingOrder.status === "PAID") {
       await logAction(
         "Duplicate Payment Verification",
         `Order ID "${orderId}" / Razorpay Order "${razorpay_order_id}" verification re-triggered. Returned existing success. IP: ${ip}`
@@ -58,12 +47,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "Payment already verified successfully.",
-        orderId: existingOrder?._id || existingOrder?.id || orderId,
+        orderId: existingOrder.id,
         paymentId: existingPayment?.paymentId || razorpay_payment_id
       });
     }
 
-    // Step 1: Verify HMAC SHA256 Signature
     const isSignatureValid = verifyPaymentSignature(
       razorpay_order_id,
       razorpay_payment_id,
@@ -86,7 +74,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Payment verification failed due to invalid signature." }, { status: 400 });
     }
 
-    // Step 2: Additional verification via Razorpay API
     let razorpayPayment: any;
     try {
       razorpayPayment = await fetchRazorpayPayment(razorpay_payment_id);
@@ -102,54 +89,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Payment validation failed against payment gateway records." }, { status: 400 });
     }
 
-    // Step 3: Update records & Decrement Inventory Stock
-    try {
-      const items = typeof existingOrder?.items === "string" ? JSON.parse(existingOrder.items) : (existingOrder?.items || []);
+    const items = typeof existingOrder.items === "string" ? JSON.parse(existingOrder.items) : (existingOrder.items || []);
 
-      await prisma.$transaction(async (tx) => {
-        if (existingPayment?.id) {
-          await tx.payment.update({
-            where: { id: existingPayment.id },
-            data: {
-              paymentId: razorpay_payment_id,
-              razorpaySignature: razorpay_signature,
-              status: "CAPTURED"
-            }
-          });
-        }
-
-        await tx.order.update({
-          where: { id: orderId },
-          data: { status: "PAID" }
+    await prisma.$transaction(async (tx) => {
+      if (existingPayment?.id) {
+        await tx.payment.update({
+          where: { id: existingPayment.id },
+          data: {
+            paymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
+            status: "CAPTURED"
+          }
         });
+      }
 
-        if (Array.isArray(items)) {
-          for (const item of items) {
-            if (item.productId) {
-              try {
-                await tx.product.update({
-                  where: { id: String(item.productId) },
-                  data: { stock: { decrement: Math.max(1, Number(item.quantity) || 1) } }
-                });
-              } catch {}
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "PAID", paymentStatus: "PAID" }
+      });
+
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          if (item.productId || item.id) {
+            const pId = String(item.productId || item.id);
+            try {
+              await tx.product.update({
+                where: { id: pId },
+                data: { stock: { decrement: Math.max(1, Number(item.quantity) || 1) } }
+              });
+            } catch (pErr) {
+              console.warn(`Could not decrement stock for product ${pId}:`, pErr);
             }
           }
         }
-      });
-    } catch (dbTxErr: any) {
-      console.warn("DB transaction warning in verify API, updating fallback store:", dbTxErr?.message || dbTxErr);
-      if (existingOrder) {
-        existingOrder.status = "PAID";
       }
-    }
+    });
 
-    // Step 4: Create Admin Notification & Send Email Alerts
-    const customerName = existingOrder?.customerName || existingOrder?.customer?.name || "Customer";
-    const customerEmail = existingOrder?.customerEmail || existingOrder?.customer?.email || "";
-    const customerPhone = existingOrder?.customerPhone || existingOrder?.customer?.phone || "";
-    const customerAddress = existingOrder?.customerAddress || existingOrder?.customer?.address || "";
-    const totalAmount = existingOrder?.total || 0;
-    const itemsList = typeof existingOrder?.items === "string" ? JSON.parse(existingOrder.items) : (existingOrder?.items || []);
+    const customerName = existingOrder.customerName || "Customer";
+    const customerEmail = existingOrder.customerEmail || "";
+    const customerPhone = existingOrder.customerPhone || "";
+    const customerAddress = existingOrder.customerAddress || "";
+    const totalAmount = existingOrder.total || 0;
+    const itemsList = items;
     const paymentTimeString = new Date().toLocaleString();
 
     try {
@@ -166,8 +147,6 @@ export async function POST(request: NextRequest) {
       console.warn("Could not trigger payment notification:", notifErr?.message || notifErr);
     }
 
-    // Non-blocking Admin Email dispatch
-    // Non-blocking Async Email dispatch in background microtask
     setImmediate(() => {
       sendAdminOrderEmail({
         orderId: orderId,

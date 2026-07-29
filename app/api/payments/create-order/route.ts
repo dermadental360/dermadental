@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRazorpayInstance } from "@/lib/razorpay";
 import { prisma } from "@/lib/prisma";
-import { fallbackStore } from "@/lib/fallbackStore";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { logAction } from "@/lib/auditLogger";
-import { calculateShippingDetails } from "@/lib/constants";
 import { calculatePricingDetails } from "@/lib/pricing";
 
 export const runtime = "nodejs";
@@ -30,28 +28,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Attempt DB product lookup, fallback gracefully if DB is uninitialized or protocol differs
-    let dbProducts: any[] = [];
-    try {
-      const itemIds = items.map((i: any) => String(i.productId || i.id));
-      dbProducts = await prisma.product.findMany({
-        where: { id: { in: itemIds } }
-      });
-    } catch (dbErr: any) {
-      console.warn("Prisma product lookup warning (using item payload fallback):", dbErr?.message || dbErr);
-    }
+    const itemIds = items.map((i: any) => String(i.productId || i.id));
+    const dbProducts = await prisma.product.findMany({
+      where: { id: { in: itemIds } }
+    });
 
     const productMap = new Map(dbProducts.map(p => [p.id, p]));
 
     let calculatedSubtotalPaise = 0;
-    const verifiedItems = [];
+    const verifiedItems: any[] = [];
 
     for (const item of items) {
       const pid = String(item.productId || item.id);
       const product = productMap.get(pid);
       const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
 
-      // Determine unit price: DB product discountedPrice/price if available, else item.price
       const unitPrice = product
         ? (product.discountedPrice > 0 ? product.discountedPrice : product.price)
         : Number(item.price || 0);
@@ -74,8 +65,6 @@ export async function POST(request: NextRequest) {
     }
 
     const subtotalRupees = calculatedSubtotalPaise / 100;
-
-    // Centralized Pricing Breakdown with 5% Prepaid Discount for online payments
     const pricing = calculatePricingDetails(subtotalRupees, true);
     const grandTotalPaise = Math.round(pricing.finalAmount * 100);
 
@@ -85,10 +74,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Razorpay Key ID is not configured in server environment." }, { status: 500 });
     }
 
-    // Initialize Razorpay SDK instance
     const razorpay = getRazorpayInstance();
-
-    // Create Razorpay Order securely on backend (Discounted Grand Total in Paise)
     const razorpayOrder = await razorpay.orders.create({
       amount: grandTotalPaise,
       currency: "INR",
@@ -106,15 +92,31 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    let internalOrderId = "ord-" + Date.now();
+    const customerEmail = customer.email ? String(customer.email).trim().toLowerCase() : "";
 
-    // Try saving internal Order & Payment to DB, fallback to in-memory store if DB error occurs
-    try {
-      const order = await prisma.order.create({
+    if (customerEmail) {
+      try {
+        await prisma.customer.upsert({
+          where: { email: customerEmail },
+          update: { name: customer.name, phone: customer.phone },
+          create: {
+            email: customerEmail,
+            name: customer.name,
+            phone: customer.phone,
+            passwordHash: "direct-order-guest"
+          }
+        });
+      } catch (cErr) {
+        console.warn("Customer upsert in online payment warning:", cErr);
+      }
+    }
+
+    const { order, payment } = await prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
         data: {
           customerName: customer.name,
           customerPhone: customer.phone,
-          customerEmail: customer.email || null,
+          customerEmail: customerEmail,
           customerAddress: customer.address,
           notes: customer.notes || null,
           items: verifiedItems,
@@ -130,54 +132,31 @@ export async function POST(request: NextRequest) {
           status: "PENDING"
         }
       });
-      internalOrderId = order.id;
 
-      await prisma.payment.create({
+      const createdPayment = await tx.payment.create({
         data: {
-          orderId: order.id,
+          orderId: createdOrder.id,
           razorpayOrderId: razorpayOrder.id,
           amount: grandTotalPaise,
           currency: razorpayOrder.currency || "INR",
           status: "CREATED",
           customerName: customer.name,
-          customerEmail: customer.email || null,
+          customerEmail: customerEmail,
           customerPhone: customer.phone,
           clientIp: ip
         }
       });
-    } catch (dbSaveErr: any) {
-      console.warn("DB save warning in create-order, using fallbackStore:", dbSaveErr?.message || dbSaveErr);
-      fallbackStore.orders.push({
-        _id: internalOrderId,
-        customer: {
-          name: customer.name,
-          phone: customer.phone,
-          email: customer.email || "",
-          address: customer.address,
-          notes: customer.notes || ""
-        },
-        items: verifiedItems,
-        subtotal: pricing.subtotal,
-        discountType: pricing.discountType,
-        discountPercentage: pricing.discountPercentage,
-        discountAmount: pricing.discountAmount,
-        shippingCharge: pricing.shippingCharge,
-        total: pricing.finalAmount,
-        finalAmount: pricing.finalAmount,
-        paymentMethod: "RAZORPAY",
-        paymentStatus: "PENDING",
-        status: "PENDING",
-        createdAt: new Date().toISOString()
-      });
-    }
+
+      return { order: createdOrder, payment: createdPayment };
+    });
 
     await logAction(
       "Create Razorpay Order",
-      `Order ID "${internalOrderId}" created. Subtotal: ₹${pricing.subtotal}, Prepaid Discount (5%): -₹${pricing.discountAmount}, Shipping: ₹${pricing.shippingCharge}, Grand Total: ₹${pricing.finalAmount} (${grandTotalPaise} paise). IP: ${ip}`
+      `Order ID "${order.id}" created. Subtotal: ₹${pricing.subtotal}, Prepaid Discount (5%): -₹${pricing.discountAmount}, Shipping: ₹${pricing.shippingCharge}, Grand Total: ₹${pricing.finalAmount} (${grandTotalPaise} paise). IP: ${ip}`
     );
 
     return NextResponse.json({
-      orderId: internalOrderId,
+      orderId: order.id,
       razorpayOrderId: razorpayOrder.id,
       subtotal: pricing.subtotal,
       discountType: pricing.discountType,

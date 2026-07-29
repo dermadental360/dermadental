@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { fallbackStore } from "@/lib/fallbackStore";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +18,7 @@ export async function GET() {
     });
     const plainLogs = logs.map(l => ({
       _id: l.id,
+      id: l.id,
       action: l.action,
       details: l.details,
       timestamp: l.timestamp.toISOString()
@@ -26,8 +26,7 @@ export async function GET() {
 
     return NextResponse.json(plainLogs);
   } catch (error: any) {
-    console.warn("Prisma audit logs failed, using fallback:", error);
-    const sorted = [...fallbackStore.auditLogs].reverse();
-    return NextResponse.json(sorted);
+    console.error("GET /api/admin/logs error:", error?.message || error);
+    return NextResponse.json({ error: "Failed to fetch audit logs" }, { status: 500 });
   }
 }
