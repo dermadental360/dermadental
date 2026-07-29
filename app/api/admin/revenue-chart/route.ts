@@ -150,7 +150,7 @@ export async function GET(req: NextRequest) {
     // Fetch all non-cancelled orders in a wide window covering both periods
     const allOrders = await prisma.order.findMany({
       where: {
-        status: { notIn: ["Cancelled"] },
+        status: { notIn: ["CANCELLED", "Cancelled", "FAILED", "REFUNDED"] },
         createdAt: { gte: previous[0] }
       },
       select: { total: true, status: true, createdAt: true }
@@ -191,52 +191,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ labels, data, total, prevTotal, changePct, period });
   } catch (error: any) {
-    console.error("Revenue chart Prisma query failed, using fallback:", error);
-
-    // Fallback using in-memory store
-    const orders = fallbackStore.orders.filter(
-      (o: any) => o.status !== "Cancelled"
-    );
-
-    const { current, previous } = getPeriodRange(period);
-    const buckets = buildBuckets(period);
-
-    const currentOrders = orders.filter(
-      (o: any) =>
-        o.createdAt &&
-        new Date(o.createdAt) >= current[0] &&
-        new Date(o.createdAt) <= current[1]
-    );
-    const previousOrders = orders.filter(
-      (o: any) =>
-        o.createdAt &&
-        new Date(o.createdAt) >= previous[0] &&
-        new Date(o.createdAt) <= previous[1]
-    );
-
-    for (const order of currentOrders) {
-      const key = getBucketKey(new Date(order.createdAt), period);
-      if (buckets.has(key)) {
-        buckets.get(key)!.revenue += order.total || 0;
-      }
-    }
-
-    const labels: string[] = [];
-    const data: number[] = [];
-    for (const bucket of buckets.values()) {
-      labels.push(bucket.label);
-      data.push(Math.round(bucket.revenue));
-    }
-
-    const total = data.reduce((s, v) => s + v, 0);
-    const prevTotal = previousOrders.reduce((s: number, o: any) => s + (o.total || 0), 0);
-    const changePct =
-      prevTotal === 0
-        ? total > 0
-          ? 100
-          : 0
-        : Math.round(((total - prevTotal) / prevTotal) * 100);
-
-    return NextResponse.json({ labels, data, total, prevTotal, changePct, period });
+    console.error("Revenue chart query error:", error?.message || error);
+    return NextResponse.json({ error: "Failed to load revenue chart" }, { status: 500 });
   }
 }

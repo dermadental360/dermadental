@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-import { fallbackStore } from "@/lib/fallbackStore";
 import { logAction } from "@/lib/auditLogger";
+
+export const dynamic = "force-dynamic";
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -19,11 +20,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     });
     await logAction("Delete Inquiry", `Inquiry ID "${id}" was deleted by Administrator.`);
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.warn("Failed to delete inquiry in SQLite, falling back to memory:", error);
-    fallbackStore.inquiries = fallbackStore.inquiries.filter((inq: any) => inq._id !== id);
-    await logAction("Delete Inquiry", `Inquiry ID "${id}" was deleted by Administrator (Offline).`);
-    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error(`DELETE /api/inquiries/${id} error:`, error?.message || error);
+    return NextResponse.json({ error: "Failed to delete inquiry from database" }, { status: 500 });
   }
 }
 
@@ -35,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const { id } = await params;
-  
+
   let body;
   try {
     body = await request.json();
@@ -46,19 +45,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const { status } = body;
 
   try {
-    await prisma.inquiry.update({
+    const updated = await prisma.inquiry.update({
       where: { id },
-      data: { status }
+      data: { status: status || "Resolved" }
     });
-    await logAction("Update Inquiry", `Inquiry ID "${id}" status updated to "${status}".`);
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.warn("Failed to update inquiry in SQLite, falling back to memory:", error);
-    const inq = fallbackStore.inquiries.find((x: any) => x._id === id);
-    if (inq) {
-      inq.status = status;
-    }
-    await logAction("Update Inquiry", `Inquiry ID "${id}" status updated to "${status}" (Offline).`);
-    return NextResponse.json({ success: true });
+    await logAction("Update Inquiry", `Inquiry ID "${id}" status updated to "${status || 'Resolved'}".`);
+    return NextResponse.json({ success: true, inquiry: { ...updated, _id: updated.id } });
+  } catch (error: any) {
+    console.error(`PUT /api/inquiries/${id} error:`, error?.message || error);
+    return NextResponse.json({ error: "Failed to update inquiry status" }, { status: 500 });
   }
 }

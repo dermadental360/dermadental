@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -165,14 +165,14 @@ model Review {
 
 model Setting {
   key   String @id
-  value String
+  value String @db.LongText
 }
 
 model LegalPage {
   id             String              @id @default(cuid())
   title          String
   slug           String              @unique
-  content        String
+  content        String              @db.Text
   seoTitle       String              @default("")
   seoDescription String              @default("")
   keywords       String              @default("")
@@ -197,7 +197,7 @@ model LegalPageRevision {
   legalPageId   String
   legalPage     LegalPage @relation(fields: [legalPageId], references: [id], onDelete: Cascade)
   title         String
-  content       String
+  content       String    @db.Text
   seoTitle      String    @default("")
   seoDescription String   @default("")
   keywords      String    @default("")

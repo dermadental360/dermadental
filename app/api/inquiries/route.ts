@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-import { fallbackStore } from "@/lib/fallbackStore";
 import { logAction } from "@/lib/auditLogger";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -16,6 +17,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" }
     });
     const formatted = inquiries.map(i => ({
+      id: i.id,
       _id: i.id,
       name: i.name,
       phone: i.phone,
@@ -26,9 +28,9 @@ export async function GET() {
       updatedAt: i.updatedAt.toISOString()
     }));
     return NextResponse.json(formatted);
-  } catch (error) {
-    console.error("GET /api/inquiries failed:", error);
-    return NextResponse.json(fallbackStore.inquiries);
+  } catch (error: any) {
+    console.error("GET /api/inquiries MySQL failed:", error?.message || error);
+    return NextResponse.json({ error: "Failed to fetch inquiries from database" }, { status: 500 });
   }
 }
 
@@ -45,39 +47,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
     }
 
-    let saved: any = null;
-    try {
-      const inq = await prisma.inquiry.create({
-        data: {
-          name,
-          phone,
-          email,
-          message,
-          status: "New"
-        }
-      });
-      saved = {
-        _id: inq.id,
-        name: inq.name,
-        phone: inq.phone,
-        email: inq.email,
-        message: inq.message,
-        status: inq.status,
-        createdAt: inq.createdAt.toISOString()
-      };
-    } catch (error) {
-      console.warn("Failed to save inquiry to SQLite, using fallback:", error);
-      saved = {
-        _id: "inq-" + Date.now(),
+    const inq = await prisma.inquiry.create({
+      data: {
         name,
         phone,
         email,
         message,
-        status: "New",
-        createdAt: new Date().toISOString()
-      };
-      fallbackStore.inquiries.push(saved);
-    }
+        status: "New"
+      }
+    });
+
+    const saved = {
+      id: inq.id,
+      _id: inq.id,
+      name: inq.name,
+      phone: inq.phone,
+      email: inq.email,
+      message: inq.message,
+      status: inq.status,
+      createdAt: inq.createdAt.toISOString()
+    };
 
     await logAction("Create Inquiry", `Inquiry ID "${saved._id}" submitted by "${name}" (${email}).`);
 
@@ -97,6 +86,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, inquiry: saved });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });
+    console.error("POST /api/inquiries MySQL failed:", error?.message || error);
+    return NextResponse.json({ error: error.message || "Failed to submit inquiry" }, { status: 500 });
   }
 }

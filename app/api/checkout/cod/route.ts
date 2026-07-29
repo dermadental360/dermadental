@@ -89,28 +89,73 @@ export async function POST(request: NextRequest) {
   const grandTotal = pricing.finalAmount;
 
   try {
-    const order = await prisma.order.create({
-      data: {
-        customerName: customer.name,
-        customerPhone: customer.phone,
-        customerEmail: customer.email || "",
-        customerAddress: customer.address,
-        notes: customer.notes || "",
-        items: items,
-        subtotal: pricing.subtotal,
-        discountType: pricing.discountType,
-        discountPercentage: pricing.discountPercentage,
-        discountAmount: pricing.discountAmount,
-        shippingCharge: pricing.shippingCharge,
-        codFee: pricing.codFee,
-        total: grandTotal,
-        finalAmount: grandTotal,
-        paymentMethod: "COD",
-        paymentStatus: "PENDING",
-        status: "PLACED",
-        idempotencyKey: idempotencyKey || `cod-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        whatsappSent: false
+    const customerEmail = customer.email ? String(customer.email).trim().toLowerCase() : "";
+
+    // 1. Upsert customer in Customer table if email is present
+    if (customerEmail) {
+      try {
+        await prisma.customer.upsert({
+          where: { email: customerEmail },
+          update: {
+            name: customer.name,
+            phone: customer.phone
+          },
+          create: {
+            email: customerEmail,
+            name: customer.name,
+            phone: customer.phone,
+            passwordHash: "direct-order-guest"
+          }
+        });
+      } catch (cErr) {
+        console.warn("Customer upsert in COD warning:", cErr);
       }
+    }
+
+    // 2. Create Order in MySQL & decrement inventory stock in a transaction
+    const order = await prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
+        data: {
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          customerEmail: customerEmail,
+          customerAddress: customer.address,
+          notes: customer.notes || "",
+          items: items,
+          subtotal: pricing.subtotal,
+          discountType: pricing.discountType,
+          discountPercentage: pricing.discountPercentage,
+          discountAmount: pricing.discountAmount,
+          shippingCharge: pricing.shippingCharge,
+          codFee: pricing.codFee,
+          total: grandTotal,
+          finalAmount: grandTotal,
+          paymentMethod: "COD",
+          paymentStatus: "PENDING",
+          status: "PLACED",
+          idempotencyKey: idempotencyKey || `cod-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          whatsappSent: false
+        }
+      });
+
+      // Decrement stock for ordered items
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          if (item.productId || item.id) {
+            const pId = String(item.productId || item.id);
+            try {
+              await tx.product.update({
+                where: { id: pId },
+                data: { stock: { decrement: Math.max(1, Number(item.quantity) || 1) } }
+              });
+            } catch (pErr) {
+              console.warn(`Could not decrement stock for product ${pId}:`, pErr);
+            }
+          }
+        }
+      }
+
+      return createdOrder;
     });
 
     const paymentTimeString = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clinic } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
-import { fallbackStore } from "@/lib/fallbackStore";
 import { logAction } from "@/lib/auditLogger";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -10,13 +11,18 @@ export async function GET() {
       orderBy: { createdAt: "desc" }
     });
     const formatted = orders.map(o => ({
+      id: o.id,
       _id: o.id,
+      customerName: o.customerName,
+      customerPhone: o.customerPhone,
+      customerEmail: o.customerEmail,
+      customerAddress: o.customerAddress,
       customer: {
         name: o.customerName,
         phone: o.customerPhone,
-        email: o.customerEmail,
+        email: o.customerEmail || "",
         address: o.customerAddress,
-        notes: o.notes
+        notes: o.notes || ""
       },
       items: typeof o.items === "string" ? JSON.parse(o.items) : o.items,
       subtotal: o.subtotal,
@@ -30,14 +36,15 @@ export async function GET() {
       paymentMethod: o.paymentMethod,
       paymentStatus: o.paymentStatus,
       status: o.status,
+      trackingNumber: o.trackingNumber,
       whatsappSent: o.whatsappSent,
       createdAt: o.createdAt.toISOString(),
       updatedAt: o.updatedAt.toISOString()
     }));
     return NextResponse.json(formatted);
-  } catch (error) {
-    console.error("GET /api/orders failed:", error);
-    return NextResponse.json(fallbackStore.orders);
+  } catch (error: any) {
+    console.error("GET /api/orders MySQL failed:", error?.message || error);
+    return NextResponse.json({ error: "Failed to fetch orders from database." }, { status: 500 });
   }
 }
 
@@ -50,70 +57,118 @@ export async function POST(request: NextRequest) {
   }
 
   if (!body.customer?.name || !body.customer?.phone || !body.items?.length) {
-    return NextResponse.json({ error: "Missing order details" }, { status: 400 });
+    return NextResponse.json({ error: "Missing required order details." }, { status: 400 });
   }
 
-  let saved: any = null;
   try {
-    const order = await prisma.order.create({
-      data: {
-        customerName: body.customer.name,
-        customerPhone: body.customer.phone,
-        customerEmail: body.customer.email || "",
-        customerAddress: body.customer.address,
-        notes: body.customer.notes || "",
-        items: body.items,
-        total: Number(body.total),
-        status: "New",
-        whatsappSent: false
+    const items = body.items;
+    const totalAmount = Number(body.total) || 0;
+    const customerEmail = body.customer.email ? String(body.customer.email).trim().toLowerCase() : "";
+
+    // 1. Upsert customer in Customer table if email is present
+    if (customerEmail) {
+      try {
+        await prisma.customer.upsert({
+          where: { email: customerEmail },
+          update: {
+            name: body.customer.name,
+            phone: body.customer.phone
+          },
+          create: {
+            email: customerEmail,
+            name: body.customer.name,
+            phone: body.customer.phone,
+            passwordHash: "direct-order-guest"
+          }
+        });
+      } catch (cErr: any) {
+        console.warn("Customer upsert warning:", cErr?.message || cErr);
       }
+    }
+
+    // 2. Create Order in MySQL & decrement inventory stock in a transaction
+    const order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          customerName: body.customer.name,
+          customerPhone: body.customer.phone,
+          customerEmail: customerEmail,
+          customerAddress: body.customer.address || "",
+          notes: body.customer.notes || "",
+          items: items,
+          subtotal: Number(body.subtotal) || totalAmount,
+          total: totalAmount,
+          finalAmount: totalAmount,
+          paymentMethod: body.paymentMethod || "DIRECT",
+          paymentStatus: body.paymentStatus || "PENDING",
+          status: body.status || "PLACED",
+          whatsappSent: false
+        }
+      });
+
+      // Decrement stock for ordered items
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          if (item.productId || item.id) {
+            const pId = String(item.productId || item.id);
+            try {
+              await tx.product.update({
+                where: { id: pId },
+                data: { stock: { decrement: Math.max(1, Number(item.quantity) || 1) } }
+              });
+            } catch (pErr) {
+              console.warn(`Could not decrement stock for product ${pId}:`, pErr);
+            }
+          }
+        }
+      }
+
+      return created;
     });
-    saved = {
+
+    await logAction("Create Order", `New order ID "${order.id}" placed by "${body.customer.name}" (total: ₹${totalAmount}).`);
+
+    // 3. Create Admin Notification
+    try {
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification({
+        title: "🔔 New Order Received",
+        message: `Order #${order.id} placed by ${body.customer.name} for ₹${totalAmount}.`,
+        category: "ORDERS",
+        priority: "HIGH",
+        orderId: order.id,
+        link: `/admin/orders?search=${order.id}`
+      });
+    } catch (err) {
+      console.warn("Failed to trigger order notification:", err);
+    }
+
+    const lines = [
+      `New DermaDental360 Order`,
+      `Order ID: ${order.id}`,
+      `Name: ${body.customer.name}`,
+      `Phone: ${body.customer.phone}`,
+      `Address: ${body.customer.address}`,
+      `Items:`,
+      ...items.map((item: any) => `- ${item.quantity} x ${item.name} @ Rs ${item.price}`),
+      `Total: Rs ${totalAmount}`,
+      body.customer.notes ? `Notes: ${body.customer.notes}` : ""
+    ].filter(Boolean);
+    const whatsappUrl = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`;
+
+    return NextResponse.json({
+      success: true,
       _id: order.id,
-      ...body,
-      status: order.status,
-      createdAt: order.createdAt.toISOString()
-    };
-  } catch (error) {
-    console.warn("Failed to save order to SQLite, using fallback:", error);
-    saved = {
-      _id: "ord-" + Date.now(),
-      ...body,
-      status: "New",
-      createdAt: new Date().toISOString()
-    };
-    fallbackStore.orders.push(saved);
-  }
-
-  await logAction("Create Order", `New order ID "${saved._id}" placed by "${body.customer.name}" (total: ₹${body.total}).`);
-
-  // Create DB Notification & Broadcast real-time event via createNotification helper
-  try {
-    const { createNotification } = await import("@/lib/notifications");
-    await createNotification({
-      title: "🔔 New Order Received",
-      message: `Order #${saved._id} placed by ${body.customer.name} for ₹${body.total}.`,
-      category: "ORDERS",
-      priority: "HIGH",
-      orderId: String(saved._id),
-      link: `/admin/orders?search=${saved._id}`
+      orderId: order.id,
+      order: {
+        ...order,
+        _id: order.id,
+        customer: body.customer
+      },
+      whatsappUrl
     });
-  } catch (err) {
-    console.warn("Failed to trigger order notification:", err);
+  } catch (error: any) {
+    console.error("POST /api/orders MySQL failed:", error?.message || error);
+    return NextResponse.json({ error: "Failed to save order to database: " + (error?.message || "Internal error") }, { status: 500 });
   }
-
-  const lines = [
-    `New DermaDental360 Order`,
-    `Order ID: ${saved._id}`,
-    `Name: ${body.customer.name}`,
-    `Phone: ${body.customer.phone}`,
-    `Address: ${body.customer.address}`,
-    `Items:`,
-    ...body.items.map((item: any) => `- ${item.quantity} x ${item.name} @ Rs ${item.price}`),
-    `Total: Rs ${body.total}`,
-    body.customer.notes ? `Notes: ${body.customer.notes}` : ""
-  ].filter(Boolean);
-  const whatsappUrl = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`;
-  
-  return NextResponse.json({ _id: String(saved._id), whatsappUrl });
 }
