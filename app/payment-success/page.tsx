@@ -166,7 +166,7 @@ function PaymentSuccessContent() {
 
               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
                 <span>Shipping Charge:</span>
-                {order.shippingCharge === 0 || (order.subtotal || order.total) >= 1499 ? (
+                {order.shippingCharge === 0 || (order.subtotal || order.total) >= 999 ? (
                   <span style={{ color: "#16a34a", fontWeight: 700 }}>FREE</span>
                 ) : (
                   <span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>₹{order.shippingCharge || 99}</span>

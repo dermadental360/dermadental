@@ -32,7 +32,7 @@ export function ProductDetailPageClient({ product, relatedProducts, fbtProducts 
 
   // Parse shipping highlights or fallback to default
   let shippingHighlights = [
-    { icon: "🚚", title: "Free Express Shipping", text: "On orders above ₹499. Same day dispatch." },
+    { icon: "🚚", title: "Free Express Shipping", text: "On orders above ₹999. Same day dispatch." },
     { icon: "📦", title: "Secure Delivery", text: "Standard delivery in 3 to 5 business days." },
     { icon: "🛡️", title: "Authentic Clinic Sourced", text: "Directly selected and recommended by our medical experts." }
   ];

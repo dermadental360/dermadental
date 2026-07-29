@@ -93,7 +93,7 @@ export function AdminSettings() {
         consultation_subtitle: data.consultation_subtitle || "",
         consultation_image: data.consultation_image || "",
         shipping_highlights: data.shipping_highlights || JSON.stringify([
-          { icon: "🚚", title: "Free Express Shipping", text: "On orders above ₹499. Same day dispatch." },
+          { icon: "🚚", title: "Free Express Shipping", text: "On orders above ₹999. Same day dispatch." },
           { icon: "📦", title: "Secure Delivery", text: "Standard delivery in 3 to 5 business days." },
           { icon: "🛡️", title: "Authentic Clinic Sourced", text: "Directly selected and recommended by our medical experts." }
         ]),

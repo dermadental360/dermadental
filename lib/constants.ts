@@ -10,7 +10,7 @@ export const clinic = {
   email: "dd360health@gmail.com"
 };
 
-export const FREE_SHIPPING_THRESHOLD = 1499;
+export const FREE_SHIPPING_THRESHOLD = 999;
 export const SHIPPING_CHARGE = 99;
 
 export function calculateShippingDetails(subtotal: number) {
