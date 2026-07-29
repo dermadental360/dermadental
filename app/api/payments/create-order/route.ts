@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { logAction } from "@/lib/auditLogger";
 import { calculatePricingDetails } from "@/lib/pricing";
+import { getAllSettings } from "@/lib/settings";
 
 export const runtime = "nodejs";
 
@@ -64,8 +65,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid order subtotal amount calculation." }, { status: 400 });
     }
 
+    const settings = await getAllSettings();
+    const pricingOptions = {
+      freeShippingThreshold: parseFloat(settings.free_shipping_threshold) || 999,
+      shippingFlatRate: parseFloat(settings.shipping_flat_rate) || 99,
+      prepaidDiscountPercentage: parseFloat(settings.prepaid_discount_percentage) || 5,
+      enablePrepaidDiscount: settings.enable_prepaid_discount !== "false",
+      enableFreeShipping: settings.enable_free_shipping !== "false",
+      enableCodFee: settings.enable_cod_fee === "true"
+    };
+
     const subtotalRupees = calculatedSubtotalPaise / 100;
-    const pricing = calculatePricingDetails(subtotalRupees, true);
+    const pricing = calculatePricingDetails(subtotalRupees, true, 0, 0, pricingOptions);
     const grandTotalPaise = Math.round(pricing.finalAmount * 100);
 
     const keyId = process.env.RAZORPAY_KEY_ID;

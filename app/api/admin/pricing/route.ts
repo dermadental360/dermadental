@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAction } from "@/lib/auditLogger";
+import { setSetting, SettingKey } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const updates = [
+    const updates: { key: SettingKey; value: string }[] = [
       { key: "free_shipping_threshold", value: String(body.freeShippingThreshold ?? 999) },
       { key: "shipping_flat_rate", value: String(body.shippingFlatRate ?? 99) },
       { key: "prepaid_discount_percentage", value: String(body.prepaidDiscountPercentage ?? 5) },
@@ -72,11 +73,7 @@ export async function POST(request: NextRequest) {
     ];
 
     for (const item of updates) {
-      await prisma.setting.upsert({
-        where: { key: item.key },
-        update: { value: item.value },
-        create: { key: item.key, value: item.value }
-      });
+      await setSetting(item.key, item.value);
     }
 
     await logAction(

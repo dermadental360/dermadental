@@ -33,12 +33,23 @@ export const DEFAULT_SETTINGS = {
   cod_max_amount: "5000",
   cod_fee_enabled: "false",
   cod_fee_amount: "0",
+  free_shipping_threshold: "999",
+  shipping_flat_rate: "99",
+  prepaid_discount_percentage: "5",
+  cod_fee: "0",
+  enable_prepaid_discount: "true",
+  enable_free_shipping: "true",
+  enable_cod_fee: "false"
 };
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;
 
 let settingsCache: { data: Record<string, string>; expiresAt: number } | null = null;
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
+const CACHE_TTL_MS = 10 * 1000; // Fast 10 seconds TTL for instant dynamic updates
+
+export function clearSettingsCache() {
+  settingsCache = null;
+}
 
 export const getAllSettings = cache(async function getAllSettings() {
   const now = Date.now();
@@ -65,7 +76,7 @@ export const getSetting = cache(async function getSetting(key: SettingKey): Prom
 });
 
 export async function setSetting(key: SettingKey, value: string) {
-  settingsCache = null; // Invalidate cache on setting update
+  clearSettingsCache(); // Invalidate cache immediately on setting update
   return prisma.setting.upsert({
     where: { key },
     update: { value },

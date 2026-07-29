@@ -84,8 +84,17 @@ export async function POST(request: NextRequest) {
     }, { status: 400 });
   }
 
-  // COD is prepaid = false (Not eligible for 5% prepaid discount)
-  const pricing = calculatePricingDetails(calculatedSubtotal, false, codFeeAmount);
+  const pricingOptions = {
+    freeShippingThreshold: parseFloat(settings.free_shipping_threshold) || 999,
+    shippingFlatRate: parseFloat(settings.shipping_flat_rate) || 99,
+    prepaidDiscountPercentage: parseFloat(settings.prepaid_discount_percentage) || 5,
+    enablePrepaidDiscount: settings.enable_prepaid_discount !== "false",
+    enableFreeShipping: settings.enable_free_shipping !== "false",
+    enableCodFee: settings.enable_cod_fee === "true"
+  };
+
+  // COD is prepaid = false
+  const pricing = calculatePricingDetails(calculatedSubtotal, false, codFeeAmount, 0, pricingOptions);
   const grandTotal = pricing.finalAmount;
 
   try {

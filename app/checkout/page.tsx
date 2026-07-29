@@ -22,6 +22,16 @@ export default function CheckoutPage() {
   // Payment Method state: "ONLINE" (Razorpay) | "COD"
   const [paymentMethod, setPaymentMethod] = useState<"ONLINE" | "COD">("ONLINE");
 
+  // Dynamic Admin Pricing Options state
+  const [pricingOptions, setPricingOptions] = useState({
+    freeShippingThreshold: 999,
+    shippingFlatRate: 99,
+    prepaidDiscountPercentage: 5,
+    enablePrepaidDiscount: true,
+    enableFreeShipping: true,
+    enableCodFee: false,
+  });
+
   // COD Admin Settings state
   const [codSettings, setCodSettings] = useState({
     enabled: true,
@@ -53,6 +63,15 @@ export default function CheckoutPage() {
             maxAmount: parseFloat(data.cod_max_amount) || 5000,
             feeEnabled: data.cod_fee_enabled === "true",
             feeAmount: data.cod_fee_enabled === "true" ? (parseFloat(data.cod_fee_amount) || 0) : 0
+          });
+
+          setPricingOptions({
+            freeShippingThreshold: parseFloat(data.free_shipping_threshold) || 999,
+            shippingFlatRate: parseFloat(data.shipping_flat_rate) || 99,
+            prepaidDiscountPercentage: parseFloat(data.prepaid_discount_percentage) || 5,
+            enablePrepaidDiscount: data.enable_prepaid_discount !== "false",
+            enableFreeShipping: data.enable_free_shipping !== "false",
+            enableCodFee: data.enable_cod_fee === "true"
           });
         }
       })
@@ -87,10 +106,10 @@ export default function CheckoutPage() {
     return "";
   };
 
-  // Centralized pricing calculation based on current payment method selection
+  // Centralized pricing calculation based on current payment method selection & dynamic admin settings
   const isPrepaid = paymentMethod === "ONLINE";
   const codFeeAmount = (paymentMethod === "COD" && codSettings.feeEnabled) ? codSettings.feeAmount : 0;
-  const pricing = calculatePricingDetails(cart.subtotal, isPrepaid, codFeeAmount);
+  const pricing = calculatePricingDetails(cart.subtotal, isPrepaid, codFeeAmount, 0, pricingOptions);
   const grandTotal = pricing.finalAmount;
 
   async function handlePayment(event: React.FormEvent<HTMLFormElement>) {
