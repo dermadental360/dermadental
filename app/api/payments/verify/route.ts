@@ -31,12 +31,40 @@ export async function POST(request: NextRequest) {
     const existingPayment = await prisma.payment.findUnique({
       where: { razorpayOrderId: razorpay_order_id }
     });
-    const existingOrder = await prisma.order.findUnique({
+    let existingOrder: any = await prisma.order.findUnique({
       where: { id: orderId }
     });
 
     if (!existingOrder) {
-      return NextResponse.json({ error: "Order record not found" }, { status: 404 });
+      // Self-healing fallback: fetch details from Razorpay and recreate order
+      try {
+        const razorpayPayment: any = await fetchRazorpayPayment(razorpay_payment_id);
+        const notes = razorpayPayment.notes || {};
+        const customerName = String(notes.customerName || razorpayPayment.email || "Customer");
+        const customerEmail = String(notes.customerEmail || razorpayPayment.email || "");
+        const customerPhone = String(notes.customerPhone || razorpayPayment.contact || "");
+        const paidAmount = Number(razorpayPayment.amount || 0) / 100;
+
+        existingOrder = await prisma.order.create({
+          data: {
+            id: orderId,
+            customerName: customerName,
+            customerPhone: customerPhone,
+            customerEmail: customerEmail,
+            customerAddress: "Online Delivery",
+            items: [],
+            total: paidAmount,
+            finalAmount: paidAmount,
+            paymentMethod: "RAZORPAY",
+            paymentStatus: "PAID",
+            status: "PAID",
+            idempotencyKey: razorpay_order_id
+          }
+        });
+      } catch (recoveryErr) {
+        console.error("Order self-healing failed in verify API:", recoveryErr);
+        return NextResponse.json({ error: "Order record not found and could not be recovered." }, { status: 404 });
+      }
     }
 
     if (existingPayment?.status === "CAPTURED" || existingOrder.status === "PAID") {
