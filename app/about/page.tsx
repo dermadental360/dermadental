@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { clinic } from "@/lib/constants";
 import { getAllSettings } from "@/lib/settings";
 
@@ -27,8 +28,15 @@ export default async function AboutPage() {
             </p>
           </div>
         </div>
-        <div className="hero-card">
-          <img src={settings.about_image} alt={settings.about_title} />
+        <div className="hero-card" style={{ position: "relative" }}>
+          <Image 
+            src={settings.about_image} 
+            alt={settings.about_title}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            style={{ objectFit: "cover" }}
+            priority
+          />
         </div>
       </div>
     </main>

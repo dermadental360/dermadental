@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { demoProducts } from "@/lib/demo";
@@ -97,6 +98,14 @@ export async function POST(request: NextRequest) {
       console.warn("Failed to trigger product notification:", err);
     }
     
+    try {
+      revalidatePath("/");
+      revalidatePath("/shop");
+      revalidatePath("/category/[slug]", "page");
+    } catch (e) {
+      console.warn("revalidatePath failed:", e);
+    }
+
     return NextResponse.json({
       ...product,
       _id: product.id,

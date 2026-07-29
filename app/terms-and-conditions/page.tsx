@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getLegalPage, calcReadingTime, sanitizeHtml } from "@/lib/legal";
 import { PrintButton } from "@/components/PrintButton";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getLegalPage("terms-and-conditions");

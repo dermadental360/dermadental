@@ -3,7 +3,7 @@ import { ShopFilters } from "@/components/ShopFilters";
 import { getProducts } from "@/lib/products";
 import Link from "next/link";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { clinic } from "@/lib/constants";
 import { getAllSettings } from "@/lib/settings";
 
@@ -19,8 +20,15 @@ export default async function ConsultationPage() {
             Book Appointment on WhatsApp
           </a>
         </div>
-        <div className="hero-card">
-          <img src={settings.consultation_image} alt={settings.consultation_title} />
+        <div className="hero-card" style={{ position: "relative" }}>
+          <Image 
+            src={settings.consultation_image} 
+            alt={settings.consultation_title}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            style={{ objectFit: "cover" }}
+            priority
+          />
         </div>
       </div>
     </main>

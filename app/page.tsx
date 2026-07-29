@@ -6,7 +6,7 @@ import { ShopGrid } from "@/components/ShopGrid";
 import { HeroSlider } from "@/components/HeroSlider";
 import { getSlides } from "@/lib/slides";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export default async function HomePage() {
   const [featured, slides] = await Promise.all([

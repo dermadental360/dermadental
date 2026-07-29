@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAction } from "@/lib/auditLogger";
@@ -44,6 +45,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     await logAction("Update Product", `Product "${product.name}" details updated by Administrator.`);
     
+    try {
+      revalidatePath("/");
+      revalidatePath("/shop");
+      revalidatePath(`/product/${id}`);
+      revalidatePath("/category/[slug]", "page");
+    } catch (e) {
+      console.warn("revalidatePath failed:", e);
+    }
+
     return NextResponse.json({
       ...product,
       _id: product.id,
@@ -73,6 +83,16 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       where: { id }
     });
     await logAction("Delete Product", `Product ID "${id}" was deleted from the catalog.`);
+    
+    try {
+      revalidatePath("/");
+      revalidatePath("/shop");
+      revalidatePath(`/product/${id}`);
+      revalidatePath("/category/[slug]", "page");
+    } catch (e) {
+      console.warn("revalidatePath failed:", e);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error: any) {
     console.error("DELETE /api/products/[id] failed:", error);

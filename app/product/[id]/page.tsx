@@ -3,7 +3,7 @@ import { getProduct, getProducts, getFrequentlyBoughtTogether } from "@/lib/prod
 import { ProductDetailPageClient } from "@/components/ProductDetailPageClient";
 import { getAllSettings } from "@/lib/settings";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   const products = await getProducts();

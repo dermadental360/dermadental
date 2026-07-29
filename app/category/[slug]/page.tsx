@@ -3,7 +3,7 @@ import { categories, subcategoriesMap, slugify } from "@/lib/constants";
 import { getProducts } from "@/lib/products";
 import Link from "next/link";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   return categories.map((c) => ({ slug: slugify(c) }));
