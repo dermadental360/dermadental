@@ -5,6 +5,7 @@ import { checkRateLimit } from "@/lib/rateLimiter";
 import { logAction } from "@/lib/auditLogger";
 import { calculatePricingDetails } from "@/lib/pricing";
 import { getAllSettings } from "@/lib/settings";
+import { validateCoupon, recordCouponUsage } from "@/lib/coupons";
 
 export const runtime = "nodejs";
 
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { customer, items } = body;
+  const { customer, items, couponCode } = body;
 
   if (!customer?.name || !customer?.phone || !customer?.address || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Missing required customer or items details." }, { status: 400 });
@@ -77,7 +78,34 @@ export async function POST(request: NextRequest) {
 
     const subtotalRupees = calculatedSubtotalPaise / 100;
     const pricing = calculatePricingDetails(subtotalRupees, true, 0, 0, pricingOptions);
-    const grandTotalPaise = Math.round(pricing.finalAmount * 100);
+    const customerEmail = customer.email ? String(customer.email).trim().toLowerCase() : "";
+
+    // Server-side coupon validation
+    let couponDiscountAmount = 0;
+    let validatedCouponObj: any = null;
+
+    if (couponCode) {
+      const couponVal = await validateCoupon({
+        code: couponCode,
+        cartItems: verifiedItems.map((i: any) => ({
+          productId: String(i.productId),
+          price: Number(i.price || 0),
+          quantity: Number(i.quantity || 1)
+        })),
+        subtotal: subtotalRupees,
+        customerEmail,
+        customerPhone: customer.phone,
+      });
+
+      if (couponVal.valid) {
+        couponDiscountAmount = couponVal.discountAmount;
+        validatedCouponObj = couponVal.coupon;
+      }
+    }
+
+    const finalDiscountAmount = pricing.discountAmount + couponDiscountAmount;
+    const finalAmountRupees = Math.max(0, Math.round((pricing.finalAmount - couponDiscountAmount) * 100) / 100);
+    const grandTotalPaise = Math.round(finalAmountRupees * 100);
 
     const keyId = process.env.RAZORPAY_KEY_ID;
     if (!keyId) {
@@ -95,15 +123,13 @@ export async function POST(request: NextRequest) {
         customerPhone: customer.phone,
         customerEmail: customer.email || "",
         subtotal: pricing.subtotal,
-        discountType: pricing.discountType || "PREPAID",
+        discountType: validatedCouponObj?.code ? `COUPON_${validatedCouponObj.code}` : (pricing.discountType || "PREPAID"),
         discountPercentage: pricing.discountPercentage,
-        discountAmount: pricing.discountAmount,
+        discountAmount: finalDiscountAmount,
         shipping: pricing.shippingCharge,
-        grandTotal: pricing.finalAmount
+        grandTotal: finalAmountRupees
       }
     });
-
-    const customerEmail = customer.email ? String(customer.email).trim().toLowerCase() : "";
 
     if (customerEmail) {
       try {
@@ -132,12 +158,12 @@ export async function POST(request: NextRequest) {
           notes: customer.notes || null,
           items: verifiedItems,
           subtotal: pricing.subtotal,
-          discountType: pricing.discountType,
+          discountType: validatedCouponObj?.code ? `COUPON_${validatedCouponObj.code}` : pricing.discountType,
           discountPercentage: pricing.discountPercentage,
-          discountAmount: pricing.discountAmount,
+          discountAmount: finalDiscountAmount,
           shippingCharge: pricing.shippingCharge,
-          total: pricing.finalAmount,
-          finalAmount: pricing.finalAmount,
+          total: finalAmountRupees,
+          finalAmount: finalAmountRupees,
           paymentMethod: "RAZORPAY",
           paymentStatus: "PENDING",
           status: "PENDING"
@@ -160,6 +186,10 @@ export async function POST(request: NextRequest) {
 
       return { order: createdOrder, payment: createdPayment };
     });
+
+    if (validatedCouponObj?.id) {
+      await recordCouponUsage(validatedCouponObj.id, order.id, customerEmail, customer.phone, couponDiscountAmount);
+    }
 
     await logAction(
       "Create Razorpay Order",

@@ -6,6 +6,7 @@ import { createNotification } from "@/lib/notifications";
 import { sendAdminOrderEmail, sendCustomerOrderEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { calculatePricingDetails } from "@/lib/pricing";
+import { validateCoupon, recordCouponUsage } from "@/lib/coupons";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
   }
 
-  const { customer, items, idempotencyKey } = body;
+  const { customer, items, idempotencyKey, couponCode } = body;
 
   if (!customer?.name || !customer?.phone || !customer?.address || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Missing required order details" }, { status: 400 });
@@ -95,11 +96,36 @@ export async function POST(request: NextRequest) {
 
   // COD is prepaid = false
   const pricing = calculatePricingDetails(calculatedSubtotal, false, codFeeAmount, 0, pricingOptions);
-  const grandTotal = pricing.finalAmount;
+  const customerEmail = customer.email ? String(customer.email).trim().toLowerCase() : "";
+
+  // Server-side coupon validation
+  let couponDiscountAmount = 0;
+  let validatedCouponObj: any = null;
+
+  if (couponCode) {
+    const couponVal = await validateCoupon({
+      code: couponCode,
+      cartItems: items.map((i: any) => ({
+        productId: String(i.productId || i.id),
+        category: i.category,
+        price: Number(i.price || 0),
+        quantity: Number(i.quantity || 1)
+      })),
+      subtotal: calculatedSubtotal,
+      customerEmail,
+      customerPhone: customer.phone,
+    });
+
+    if (couponVal.valid) {
+      couponDiscountAmount = couponVal.discountAmount;
+      validatedCouponObj = couponVal.coupon;
+    }
+  }
+
+  const finalDiscountAmount = pricing.discountAmount + couponDiscountAmount;
+  const grandTotal = Math.max(0, Math.round((pricing.finalAmount - couponDiscountAmount) * 100) / 100);
 
   try {
-    const customerEmail = customer.email ? String(customer.email).trim().toLowerCase() : "";
-
     // 1. Upsert customer in Customer table if email is present
     if (customerEmail) {
       try {
@@ -132,9 +158,9 @@ export async function POST(request: NextRequest) {
           notes: customer.notes || "",
           items: items,
           subtotal: pricing.subtotal,
-          discountType: pricing.discountType,
+          discountType: validatedCouponObj?.code ? `COUPON_${validatedCouponObj.code}` : pricing.discountType,
           discountPercentage: pricing.discountPercentage,
-          discountAmount: pricing.discountAmount,
+          discountAmount: finalDiscountAmount,
           shippingCharge: pricing.shippingCharge,
           codFee: pricing.codFee,
           total: grandTotal,
@@ -166,6 +192,10 @@ export async function POST(request: NextRequest) {
 
       return createdOrder;
     });
+
+    if (validatedCouponObj?.id) {
+      await recordCouponUsage(validatedCouponObj.id, order.id, customerEmail, customer.phone, couponDiscountAmount);
+    }
 
     const paymentTimeString = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 

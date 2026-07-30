@@ -41,6 +41,17 @@ export default function CheckoutPage() {
     feeAmount: 0
   });
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    coupon?: any;
+  } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
   // Idempotency Key ref (persisted across retries, regenerated on form change)
   const idempotencyKeyRef = useState(() => `checkout-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`)[0];
 
@@ -78,6 +89,65 @@ export default function CheckoutPage() {
       .catch(() => {});
   }, []);
 
+  // Coupon validation handler
+  async function handleApplyCoupon(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    if (!couponInput.trim()) return;
+
+    setValidatingCoupon(true);
+    setCouponError(null);
+    setCouponSuccess(null);
+
+    const formEl = document.getElementById("checkout-form") as HTMLFormElement | null;
+    const formData = formEl ? new FormData(formEl) : null;
+    const typedEmail = (formData?.get("email") as string || customer?.email || "").trim();
+    const typedPhone = (formData?.get("phone") as string || customer?.phone || "").trim();
+
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponInput.trim(),
+          subtotal: cart.subtotal,
+          cartItems: cart.items.map((i: any) => ({
+            productId: i.productId,
+            category: i.category,
+            price: i.price,
+            quantity: i.quantity,
+          })),
+          customerEmail: typedEmail,
+          customerPhone: typedPhone,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.valid) {
+        setAppliedCoupon({
+          code: data.coupon?.code || couponInput.trim().toUpperCase(),
+          discountAmount: data.discountAmount || 0,
+          coupon: data.coupon,
+        });
+        setCouponSuccess(`Coupon "${data.coupon?.code || couponInput.trim().toUpperCase()}" applied! Saved ₹${data.discountAmount}`);
+        setCouponInput("");
+      } else {
+        setCouponError(data.message || "Invalid coupon code");
+        setAppliedCoupon(null);
+      }
+    } catch (err: any) {
+      setCouponError("Failed to validate coupon code.");
+    } finally {
+      setValidatingCoupon(false);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setAppliedCoupon(null);
+    setCouponSuccess(null);
+    setCouponError(null);
+  }
+
   // Dynamically load Razorpay SDK Script
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -110,7 +180,8 @@ export default function CheckoutPage() {
   const isPrepaid = paymentMethod === "ONLINE";
   const codFeeAmount = (paymentMethod === "COD" && codSettings.feeEnabled) ? codSettings.feeAmount : 0;
   const pricing = calculatePricingDetails(cart.subtotal, isPrepaid, codFeeAmount, 0, pricingOptions);
-  const grandTotal = pricing.finalAmount;
+  const couponDiscountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const grandTotal = Math.max(0, Math.round((pricing.finalAmount - couponDiscountAmount) * 100) / 100);
 
   async function handlePayment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -155,7 +226,8 @@ export default function CheckoutPage() {
           body: JSON.stringify({
             customer: customerDetails,
             items: cart.items,
-            idempotencyKey: idempotencyKeyRef
+            idempotencyKey: idempotencyKeyRef,
+            couponCode: appliedCoupon?.code,
           }),
         });
 
@@ -194,6 +266,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           customer: customerDetails,
           items: cart.items,
+          couponCode: appliedCoupon?.code,
         }),
       });
 
@@ -537,6 +610,62 @@ export default function CheckoutPage() {
               ))
             )}
           </div>
+          {/* Coupon Code Input Section */}
+          <div style={{ borderTop: "1px solid var(--line, #e2e8f0)", paddingTop: 14, marginBottom: 14 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink, #0f172a)", display: "block", marginBottom: 8 }}>
+              Have a Coupon?
+            </span>
+            {!appliedCoupon ? (
+              <form onSubmit={handleApplyCoupon} style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="Enter coupon code"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  className="mobile-input"
+                  style={{ minHeight: 40, fontSize: 13, textTransform: "uppercase", fontFamily: "monospace", fontWeight: 700, flex: 1 }}
+                />
+                <button
+                  type="submit"
+                  disabled={validatingCoupon || !couponInput.trim()}
+                  className="btn"
+                  style={{ borderRadius: 8, padding: "8px 16px", fontSize: 13, whiteSpace: "nowrap" }}
+                >
+                  {validatingCoupon ? "Applying..." : "Apply"}
+                </button>
+              </form>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f0fdf4", border: "1px border #86efac", padding: "8px 12px", borderRadius: 8 }}>
+                <div>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "#16a34a", fontFamily: "monospace" }}>
+                    🎟️ {appliedCoupon.code}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#15803d", display: "block" }}>
+                    Save ₹{appliedCoupon.discountAmount}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  style={{ background: "none", border: "none", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+
+            {couponError && (
+              <p style={{ color: "#dc2626", fontSize: 12, marginTop: 6, margin: "6px 0 0 0", fontWeight: 600 }}>
+                ⚠️ {couponError}
+              </p>
+            )}
+            {couponSuccess && (
+              <p style={{ color: "#16a34a", fontSize: 12, marginTop: 6, margin: "6px 0 0 0", fontWeight: 600 }}>
+                ✅ {couponSuccess}
+              </p>
+            )}
+          </div>
+
           <div style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "1px solid var(--line, #e2e8f0)", paddingTop: 12, fontSize: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted, #64748b)" }}>
               <span>Subtotal</span>
@@ -551,6 +680,17 @@ export default function CheckoutPage() {
                   <span className="badge-prepaid-pill">{pricing.discountPercentage}% OFF</span>
                 </div>
                 <span style={{ fontWeight: 700, color: "#16a34a" }}>-₹{pricing.discountAmount}</span>
+              </div>
+            )}
+
+            {/* Coupon Discount Row */}
+            {appliedCoupon && appliedCoupon.discountAmount > 0 && (
+              <div className="animated-discount-row" style={{ backgroundColor: "#f0fdf4", borderColor: "#86efac" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>Coupon ({appliedCoupon.code})</span>
+                  <span className="badge-prepaid-pill" style={{ background: "#16a34a" }}>APPLIED</span>
+                </div>
+                <span style={{ fontWeight: 700, color: "#16a34a" }}>-₹{appliedCoupon.discountAmount}</span>
               </div>
             )}
 
