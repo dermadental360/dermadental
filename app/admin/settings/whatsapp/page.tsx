@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface WhatsAppLog {
   id: string;
@@ -20,7 +19,6 @@ export default function WhatsAppSettingsPage() {
   const [testing, setTesting] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   // Logs state
   const [logs, setLogs] = useState<WhatsAppLog[]>([]);
@@ -102,7 +100,6 @@ export default function WhatsAppSettingsPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    setStatusMessage(null);
 
     const payload = {
       whatsapp_provider: provider,
@@ -132,13 +129,13 @@ export default function WhatsAppSettingsPage() {
       });
 
       if (res.ok) {
-        setStatusMessage({ text: "WhatsApp API credentials and notification triggers saved successfully!", type: "success" });
+        alert("WhatsApp settings saved successfully!");
       } else {
         const errData = await res.json();
-        setStatusMessage({ text: errData.error || "Failed to save settings", type: "error" });
+        alert(errData.error || "Failed to save settings");
       }
     } catch (err: any) {
-      setStatusMessage({ text: err.message || "Failed to save settings", type: "error" });
+      alert(err.message || "Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -146,19 +143,12 @@ export default function WhatsAppSettingsPage() {
 
   async function handleTestConnection() {
     setTesting(true);
-    setStatusMessage(null);
-
     try {
       const res = await fetch("/api/admin/whatsapp/test-connection", { method: "POST" });
       const data = await res.json();
-
-      if (data.success) {
-        setStatusMessage({ text: data.message, type: "success" });
-      } else {
-        setStatusMessage({ text: data.message || "Connection test failed", type: "error" });
-      }
+      alert(data.message || (data.success ? "Connection successful!" : "Connection failed"));
     } catch (err: any) {
-      setStatusMessage({ text: err.message || "Failed to test connection", type: "error" });
+      alert(err.message || "Failed to test connection");
     } finally {
       setTesting(false);
     }
@@ -166,13 +156,11 @@ export default function WhatsAppSettingsPage() {
 
   async function handleSendTestMessage() {
     if (!testPhone) {
-      alert("Please enter a target phone number for test message");
+      alert("Please enter a recipient phone number for the test message");
       return;
     }
 
     setSendingTest(true);
-    setStatusMessage(null);
-
     try {
       const res = await fetch("/api/admin/whatsapp/send-test", {
         method: "POST",
@@ -182,19 +170,18 @@ export default function WhatsAppSettingsPage() {
       const data = await res.json();
 
       if (data.success) {
-        setStatusMessage({ text: data.message, type: "success" });
+        alert(data.message || "Test message sent!");
         fetchLogs();
       } else {
-        setStatusMessage({ text: data.error || "Failed to send test message", type: "error" });
+        alert(data.error || "Failed to send test message");
       }
     } catch (err: any) {
-      setStatusMessage({ text: err.message || "Failed to send test message", type: "error" });
+      alert(err.message || "Failed to send test message");
     } finally {
       setSendingTest(false);
     }
   }
 
-  // Calculate stats
   const totalSent = logs.length;
   const deliveredCount = logs.filter((l) => l.status === "SENT" || l.status === "DELIVERED").length;
   const failedCount = logs.filter((l) => l.status === "FAILED").length;
@@ -206,277 +193,345 @@ export default function WhatsAppSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] p-8 flex flex-col items-center justify-center font-sans">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-10 h-10 border-4 border-[#14B8A6] border-t-transparent rounded-full mb-4" />
-        <p className="text-slate-500 font-medium text-sm">Loading WhatsApp Automation Engine...</p>
+      <div className="card pad" style={{ textAlign: "center", padding: 48 }}>
+        <h3>Loading WhatsApp Settings...</h3>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8 font-sans text-slate-800">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* TOP HERO SECTION */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0F766E] via-[#14B8A6] to-[#0F766E] p-8 sm:p-10 text-white shadow-xl shadow-teal-900/10">
-          <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex items-start gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-3xl shadow-inner shrink-0">
-                💬
-              </div>
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider text-teal-100 border border-white/20">
-                    Medical SaaS Automation
-                  </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1.5 ${isConnected ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40" : "bg-amber-400/20 text-amber-200 border border-amber-400/40"}`}>
-                    <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
-                    {isConnected ? "Cloud API Connected" : "Configuration Needed"}
-                  </span>
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">WhatsApp Business Automation</h1>
-                <p className="text-teal-100 text-sm sm:text-base mt-1 max-w-2xl font-normal">
-                  Configure Meta WhatsApp Cloud API, customer order notifications, multi-admin notifications, and dynamic messaging logs.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} type="button" onClick={handleTestConnection} disabled={testing} className="px-5 py-3 bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/30 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-50 flex items-center gap-2">
-                {testing ? "Testing..." : "⚡ Test Connection"}
-              </motion.button>
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} type="button" onClick={handleSave} disabled={saving} className="px-6 py-3 bg-white text-[#0F766E] hover:bg-teal-50 rounded-xl text-sm font-bold shadow-lg transition disabled:opacity-50 flex items-center gap-2">
-                {saving ? "Saving..." : "💾 Save Settings"}
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Navigation Sub-Tabs */}
-          <div className="flex items-center gap-2 mt-8 pt-6 border-t border-white/15">
-            <button onClick={() => setActiveTab("settings")} className={`px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 ${activeTab === "settings" ? "bg-white text-[#0F766E] shadow-sm" : "text-teal-100 hover:bg-white/10"}`}>
-              ⚙️ Provider & Notification Settings
-            </button>
-            <button onClick={() => setActiveTab("logs")} className={`px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 ${activeTab === "logs" ? "bg-white text-[#0F766E] shadow-sm" : "text-teal-100 hover:bg-white/10"}`}>
-              📋 Message Activity Logs ({logs.length})
-            </button>
-          </div>
-        </motion.div>
-
-        {/* STATUS MESSAGE ALERT */}
-        <AnimatePresence>
-          {statusMessage && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`p-4 rounded-2xl text-sm font-medium border flex items-center justify-between shadow-sm ${statusMessage.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-red-50 text-red-800 border-red-200"}`}>
-              <div className="flex items-center gap-2">
-                <span>{statusMessage.type === "success" ? "✅" : "⚠️"}</span>
-                <span>{statusMessage.text}</span>
-              </div>
-              <button onClick={() => setStatusMessage(null)} className="text-xs opacity-60 hover:opacity-100">Dismiss</button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* STATS CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm border-l-4 border-l-[#14B8A6]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Dispatches</span>
-              <span className="p-2 rounded-xl bg-teal-50 text-[#14B8A6]">📨</span>
-            </div>
-            <p className="text-3xl font-extrabold text-slate-900 mt-3">{totalSent}</p>
-            <span className="text-xs text-slate-400 mt-1 block">Recorded in database</span>
-          </motion.div>
-
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm border-l-4 border-l-emerald-500">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Delivered</span>
-              <span className="p-2 rounded-xl bg-emerald-50 text-emerald-600">✅</span>
-            </div>
-            <p className="text-3xl font-extrabold text-emerald-600 mt-3">{deliveredCount}</p>
-            <span className="text-xs text-emerald-600 font-semibold mt-1 block">Successful deliveries</span>
-          </motion.div>
-
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm border-l-4 border-l-amber-500">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Failed</span>
-              <span className="p-2 rounded-xl bg-amber-50 text-amber-600">⚠️</span>
-            </div>
-            <p className="text-3xl font-extrabold text-amber-600 mt-3">{failedCount}</p>
-            <span className="text-xs text-slate-400 mt-1 block">Invalid numbers / API errors</span>
-          </motion.div>
-
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm border-l-4 border-l-[#0F766E]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">API Health</span>
-              <span className="p-2 rounded-xl bg-teal-50 text-[#0F766E]">📡</span>
-            </div>
-            <p className={`text-2xl font-bold mt-3 ${isConnected ? "text-emerald-600" : "text-amber-500"}`}>
-              {isConnected ? "Healthy (100%)" : "Setup Required"}
-            </p>
-            <span className="text-xs text-slate-400 mt-1 block">Meta Graph v18.0</span>
-          </motion.div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Header & Sub-Navigation */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <p className="eyebrow">Admin Center</p>
+          <h1 style={{ margin: "4px 0 0 0", fontSize: 28 }}>WhatsApp Settings & Controls</h1>
         </div>
 
-        {/* TAB CONTENTS */}
-        {activeTab === "settings" ? (
-          <form onSubmit={handleSave} className="space-y-8">
-            {/* Section 1: Provider Credentials */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                <span className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-700 font-bold">1</span>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">API Provider Configuration</h2>
-                  <p className="text-xs text-slate-500">Choose your provider and set up credentials. Never hardcoded.</p>
-                </div>
-              </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            className={`btn ${activeTab === "settings" ? "" : "secondary"}`}
+            onClick={() => setActiveTab("settings")}
+            style={{ borderRadius: 8, padding: "8px 16px", fontSize: 13 }}
+          >
+            ⚙️ Configuration & Triggers
+          </button>
+          <button
+            className={`btn ${activeTab === "logs" ? "" : "secondary"}`}
+            onClick={() => setActiveTab("logs")}
+            style={{ borderRadius: 8, padding: "8px 16px", fontSize: 13 }}
+          >
+            📋 Dispatch Logs ({logs.length})
+          </button>
+        </div>
+      </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">WhatsApp Provider</label>
-                  <select value={provider} onChange={(e) => setProvider(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#14B8A6] outline-none transition">
-                    <option value="META">Meta WhatsApp Cloud API (Recommended for Live Business)</option>
-                    <option value="TWILIO">Twilio WhatsApp Sandbox / API</option>
-                    <option value="CUSTOM_WEBHOOK">Custom Gateway Webhook</option>
-                  </select>
-                </div>
+      {/* Statistics Cards Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+        <div className="card pad" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span style={{ fontSize: 28 }}>💬</span>
+          <div>
+            <span style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", fontWeight: 700 }}>Connection Status</span>
+            <h3 style={{ margin: "2px 0 0 0", fontSize: 18, fontWeight: 800, color: isConnected ? "#16a34a" : "#d97706" }}>
+              {isConnected ? "CONNECTED" : "NOT CONFIGURED"}
+            </h3>
+            <span style={{ fontSize: 11, color: "var(--muted)" }}>Meta WhatsApp Cloud API</span>
+          </div>
+        </div>
 
-                {provider === "META" && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Phone Number ID</label>
-                      <input type="text" placeholder="e.g. 104829104920194" value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#14B8A6] outline-none transition font-mono" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">WhatsApp Business Account ID</label>
-                      <input type="text" placeholder="e.g. 984029481948291" value={businessAccountId} onChange={(e) => setBusinessAccountId(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#14B8A6] outline-none transition font-mono" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Permanent System Access Token</label>
-                      <div className="relative">
-                        <input type={showPassword ? "text" : "password"} placeholder="EAA..." value={accessToken} onChange={(e) => setAccessToken(e.target.value)} className="w-full p-3 pr-12 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-[#14B8A6] outline-none transition" />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600">
-                          {showPassword ? "Hide" : "Show"}
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Webhook Verify Token</label>
-                      <input type="text" value={verifyToken} onChange={(e) => setVerifyToken(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-[#14B8A6] outline-none transition" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Webhook Callback URL</label>
-                      <input type="text" placeholder="https://dd360health.com/api/webhooks/whatsapp" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#14B8A6] outline-none transition" />
-                    </div>
-                  </>
-                )}
-              </div>
-            </motion.div>
+        <div className="card pad" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span style={{ fontSize: 28 }}>📨</span>
+          <div>
+            <span style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", fontWeight: 700 }}>Total Dispatches</span>
+            <h3 style={{ margin: "2px 0 0 0", fontSize: 24, fontWeight: 800, color: "var(--ink)" }}>{totalSent}</h3>
+            <span style={{ fontSize: 11, color: "var(--muted)" }}>Messages logged</span>
+          </div>
+        </div>
 
-            {/* Section 2: Admin Recipients */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                <span className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-700 font-bold">2</span>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Admin Notification Recipients</h2>
-                  <p className="text-xs text-slate-500">Supports multiple recipient numbers separated by commas for instant new order alerts.</p>
-                </div>
-              </div>
-              <input type="text" placeholder="9833699887, 9876543210" value={adminNumbers} onChange={(e) => setAdminNumbers(e.target.value)} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-[#14B8A6] outline-none transition" />
-            </motion.div>
+        <div className="card pad" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span style={{ fontSize: 28 }}>✅</span>
+          <div>
+            <span style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", fontWeight: 700 }}>Delivered</span>
+            <h3 style={{ margin: "2px 0 0 0", fontSize: 24, fontWeight: 800, color: "#16a34a" }}>{deliveredCount}</h3>
+            <span style={{ fontSize: 11, color: "var(--muted)" }}>Successful dispatches</span>
+          </div>
+        </div>
 
-            {/* Section 3: Notification Event Toggles */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                <span className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-700 font-bold">3</span>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Automated Notification Triggers</h2>
-                  <p className="text-xs text-slate-500">Toggle active events that automatically dispatch WhatsApp customer/admin notifications.</p>
-                </div>
-              </div>
+        <div className="card pad" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span style={{ fontSize: 28 }}>⚠️</span>
+          <div>
+            <span style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", fontWeight: 700 }}>Failed</span>
+            <h3 style={{ margin: "2px 0 0 0", fontSize: 24, fontWeight: 800, color: "#dc2626" }}>{failedCount}</h3>
+            <span style={{ fontSize: 11, color: "var(--muted)" }}>Delivery errors</span>
+          </div>
+        </div>
+      </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  { label: "🛍️ New Order (Admin Alert)", state: enableNewOrder, setter: setEnableNewOrder },
-                  { label: "📩 New Inquiry Alert", state: enableNewInquiry, setter: setEnableNewInquiry },
-                  { label: "✅ Payment Success / Confirmed", state: enablePaymentSuccess, setter: setEnablePaymentSuccess },
-                  { label: "📦 Order Packed", state: enableOrderPacked, setter: setEnableOrderPacked },
-                  { label: "🚚 Order Shipped", state: enableOrderShipped, setter: setEnableOrderShipped },
-                  { label: "🛵 Out For Delivery", state: enableOutForDelivery, setter: setEnableOutForDelivery },
-                  { label: "🎉 Order Delivered", state: enableDelivered, setter: setEnableDelivered },
-                  { label: "❌ Order Cancelled", state: enableCancelled, setter: setEnableCancelled },
-                  { label: "💸 Payment Refunded", state: enableRefunded, setter: setEnableRefunded },
-                  { label: "🛒 Abandoned Cart Reminder", state: enableAbandonedCart, setter: setEnableAbandonedCart },
-                ].map((item, idx) => (
-                  <label key={idx} className={`flex items-center justify-between p-4 rounded-2xl border transition cursor-pointer ${item.state ? "bg-teal-50/50 border-teal-200" : "bg-slate-50 border-slate-200 opacity-60"}`}>
-                    <span className="text-xs font-bold text-slate-800">{item.label}</span>
-                    <input type="checkbox" checked={item.state} onChange={(e) => item.setter(e.target.checked)} className="w-5 h-5 accent-[#14B8A6] rounded cursor-pointer" />
-                  </label>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Section 4: Live Test Message */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                <span className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-700 font-bold">4</span>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Send Live Test Message</h2>
-                  <p className="text-xs text-slate-500">Dispatch a test message to verify end-to-end delivery.</p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input type="text" placeholder="Recipient Phone (e.g. 9833699887)" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#14B8A6]" />
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={handleSendTestMessage} disabled={sendingTest} className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold transition disabled:opacity-50">
-                  {sendingTest ? "Sending..." : "📤 Send Test Message"}
-                </motion.button>
-              </div>
-            </motion.div>
-          </form>
-        ) : (
-          /* LOGS TAB */
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">WhatsApp Dispatch Logs</h2>
-                <p className="text-xs text-slate-500">Real-time audit trail of all messages sent from PostgreSQL.</p>
-              </div>
-              <input type="text" placeholder="Search logs by phone or message..." value={logSearch} onChange={(e) => setLogSearch(e.target.value)} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full sm:w-72 outline-none focus:ring-2 focus:ring-[#14B8A6]" />
+      {activeTab === "settings" ? (
+        <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {/* Card 1: API Configuration */}
+          <div className="card pad" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <h3 style={{ fontSize: 18, margin: "0 0 4px 0" }}>1. API Provider Credentials</h3>
+              <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
+                Configure Meta WhatsApp Cloud API or Twilio parameters. Credentials are securely stored in PostgreSQL.
+              </p>
             </div>
 
-            {filteredLogs.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 font-medium">No WhatsApp dispatches recorded yet.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                      <th className="p-4">Recipient</th>
-                      <th className="p-4">Template</th>
-                      <th className="p-4">Message Preview</th>
-                      <th className="p-4">Status</th>
-                      <th className="p-4 text-right">Timestamp</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
-                    {filteredLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50/80 transition">
-                        <td className="p-4 font-mono font-semibold text-slate-900">{log.recipientPhone}</td>
-                        <td className="p-4"><span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">{log.templateName || "custom"}</span></td>
-                        <td className="p-4 max-w-md truncate text-slate-600">{log.message}</td>
-                        <td className="p-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${log.status === "SENT" || log.status === "DELIVERED" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
-                            {log.status}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right text-xs text-slate-400">{new Date(log.createdAt).toLocaleString("en-IN")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: 6 }}>WhatsApp Provider</label>
+                <select
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value)}
+                  className="input"
+                  style={{ padding: "10px 14px", fontSize: 14 }}
+                >
+                  <option value="META">Meta WhatsApp Cloud API (Recommended)</option>
+                  <option value="TWILIO">Twilio WhatsApp API</option>
+                  <option value="CUSTOM_WEBHOOK">Custom Gateway Webhook</option>
+                </select>
               </div>
+
+              {provider === "META" && (
+                <>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: 6 }}>Phone Number ID</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 104829104920194"
+                      value={phoneNumberId}
+                      onChange={(e) => setPhoneNumberId(e.target.value)}
+                      className="input"
+                      style={{ padding: "10px 14px", fontSize: 14 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: 6 }}>WhatsApp Business Account ID</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 984029481948291"
+                      value={businessAccountId}
+                      onChange={(e) => setBusinessAccountId(e.target.value)}
+                      className="input"
+                      style={{ padding: "10px 14px", fontSize: 14 }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Permanent Access Token</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{ background: "none", border: "none", color: "var(--sage-dark)", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
+                      >
+                        {showPassword ? "Hide Token" : "Show Token"}
+                      </button>
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="EAA..."
+                      value={accessToken}
+                      onChange={(e) => setAccessToken(e.target.value)}
+                      className="input"
+                      style={{ padding: "10px 14px", fontSize: 14, fontFamily: "monospace" }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={handleTestConnection}
+                disabled={testing}
+                style={{ borderRadius: 8, padding: "8px 16px", fontSize: 13 }}
+              >
+                {testing ? "Testing..." : "⚡ Test Connection"}
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Webhook & Admin Recipients */}
+          <div className="card pad" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <h3 style={{ fontSize: 18, margin: "0 0 4px 0" }}>2. Webhook & Admin Recipients</h3>
+              <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
+                Configure incoming webhook verify parameters and phone numbers receiving business alerts.
+              </p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: 6 }}>Webhook Verify Token</label>
+                <input
+                  type="text"
+                  value={verifyToken}
+                  onChange={(e) => setVerifyToken(e.target.value)}
+                  className="input"
+                  style={{ padding: "10px 14px", fontSize: 14 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: 6 }}>Webhook Callback URL</label>
+                <input
+                  type="text"
+                  placeholder="https://dd360health.com/api/webhooks/whatsapp"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  className="input"
+                  style={{ padding: "10px 14px", fontSize: 14 }}
+                />
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: 6 }}>
+                  Admin Recipient Phone Numbers (Comma-separated)
+                </label>
+                <input
+                  type="text"
+                  placeholder="9833699887, 9876543210"
+                  value={adminNumbers}
+                  onChange={(e) => setAdminNumbers(e.target.value)}
+                  className="input"
+                  style={{ padding: "10px 14px", fontSize: 14, fontFamily: "monospace" }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Automated Event Notification Triggers */}
+          <div className="card pad" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <h3 style={{ fontSize: 18, margin: "0 0 4px 0" }}>3. Automated Notification Triggers</h3>
+              <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
+                Enable or disable automated WhatsApp dispatches for specific customer & admin order events.
+              </p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+              {[
+                { label: "🛍️ New Order WhatsApp (Admin Alert)", value: enableNewOrder, setter: setEnableNewOrder },
+                { label: "📩 New Inquiry WhatsApp Alert", value: enableNewInquiry, setter: setEnableNewInquiry },
+                { label: "✅ Payment Success / Order Confirmed", value: enablePaymentSuccess, setter: setEnablePaymentSuccess },
+                { label: "📦 Order Packed Alert", value: enableOrderPacked, setter: setEnableOrderPacked },
+                { label: "🚚 Order Shipped Alert", value: enableOrderShipped, setter: setEnableOrderShipped },
+                { label: "🛵 Out For Delivery Alert", value: enableOutForDelivery, setter: setEnableOutForDelivery },
+                { label: "🎉 Order Delivered Alert", value: enableDelivered, setter: setEnableDelivered },
+                { label: "❌ Order Cancelled Alert", value: enableCancelled, setter: setEnableCancelled },
+                { label: "💸 Order Refunded Alert", value: enableRefunded, setter: setEnableRefunded },
+                { label: "🛒 Abandoned Cart Recovery Alert", value: enableAbandonedCart, setter: setEnableAbandonedCart },
+              ].map((item, idx) => (
+                <label key={idx} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, cursor: "pointer", background: "var(--bg-secondary)", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                  <input
+                    type="checkbox"
+                    checked={item.value}
+                    onChange={(e) => item.setter(e.target.checked)}
+                    style={{ width: 18, height: 18, cursor: "pointer" }}
+                  />
+                  <span>{item.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Card 4: Send Live Test Message */}
+          <div className="card pad" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <h3 style={{ fontSize: 18, margin: 0 }}>4. Send Live Test Message</h3>
+            <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
+              Send an instant test message to any phone number to verify provider API connectivity.
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+              <input
+                type="text"
+                placeholder="Target Phone Number (e.g. 9833699887)"
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+                className="input"
+                style={{ flex: 1, minWidth: 240, padding: "8px 14px", fontSize: 14 }}
+              />
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={handleSendTestMessage}
+                disabled={sendingTest}
+                style={{ borderRadius: 8, padding: "8px 16px", fontSize: 13 }}
+              >
+                {sendingTest ? "Sending..." : "📤 Send Test Message"}
+              </button>
+            </div>
+          </div>
+
+          {/* Form Submit Bar */}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button type="submit" className="btn" disabled={saving} style={{ borderRadius: 8, padding: "12px 28px", fontSize: 15 }}>
+              {saving ? "Saving Settings..." : "💾 Save WhatsApp Settings"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        /* Card 5: Recent Message Logs Table */
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="card pad" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <input
+              type="text"
+              placeholder="Search logs by phone number or text..."
+              value={logSearch}
+              onChange={(e) => setLogSearch(e.target.value)}
+              className="input"
+              style={{ width: 320, padding: "8px 14px", fontSize: 13 }}
+            />
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>Showing {filteredLogs.length} of {logs.length} dispatches</span>
+          </div>
+
+          <div className="table-container">
+            {filteredLogs.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 48 }}>
+                <h3>No WhatsApp Dispatches Found</h3>
+                <p style={{ color: "var(--muted)", marginTop: 8 }}>Dispatched WhatsApp messages will be logged here automatically.</p>
+              </div>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Recipient Phone</th>
+                    <th>Template</th>
+                    <th>Message Preview</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: "right" }}>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td style={{ fontWeight: 700, fontFamily: "monospace" }}>{log.recipientPhone}</td>
+                      <td>
+                        <span className="status-pill new">{log.templateName || "custom"}</span>
+                      </td>
+                      <td style={{ maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--muted)" }}>
+                        {log.message}
+                      </td>
+                      <td>
+                        <span className={`status-pill ${log.status === "SENT" || log.status === "DELIVERED" ? "completed" : "cancelled"}`}>
+                          {log.status}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: "right", color: "var(--muted)", fontSize: 12 }}>
+                        {new Date(log.createdAt).toLocaleString("en-IN")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
-          </motion.div>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
