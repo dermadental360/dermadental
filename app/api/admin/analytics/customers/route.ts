@@ -6,6 +6,10 @@ export async function GET() {
   try {
     await requireAdmin();
 
+    const registeredCustomers = await prisma.customer.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -27,18 +31,41 @@ export async function GET() {
         abandonedCartCount: number;
         couponUsageCount: number;
         purchasedProducts: Record<string, number>;
+        createdAt: string;
       }
     > = {};
 
+    // 1. Populate registered customers from Customer table
+    for (const c of registeredCustomers) {
+      const emailKey = (c.email || "").toLowerCase().trim();
+      if (emailKey) {
+        customerMap[emailKey] = {
+          id: c.id,
+          name: c.name || "Customer",
+          email: c.email,
+          phone: c.phone || "N/A",
+          totalSpent: 0,
+          ordersCount: 0,
+          averageOrderValue: 0,
+          lastPurchase: "No Orders",
+          abandonedCartCount: 0,
+          couponUsageCount: 0,
+          purchasedProducts: {},
+          createdAt: new Date(c.createdAt).toISOString(),
+        };
+      }
+    }
+
+    // 2. Process orders (including guest buyers and registered buyers)
     for (const order of orders) {
       const emailKey = (order.customerEmail || order.customerPhone || order.customerName).toLowerCase().trim();
 
       if (!customerMap[emailKey]) {
         customerMap[emailKey] = {
           id: order.id,
-          name: order.customerName,
+          name: order.customerName || "Customer",
           email: order.customerEmail || "N/A",
-          phone: order.customerPhone,
+          phone: order.customerPhone || "N/A",
           totalSpent: 0,
           ordersCount: 0,
           averageOrderValue: 0,
@@ -46,12 +73,17 @@ export async function GET() {
           abandonedCartCount: 0,
           couponUsageCount: 0,
           purchasedProducts: {},
+          createdAt: new Date(order.createdAt).toISOString(),
         };
+      } else if (customerMap[emailKey].lastPurchase === "No Orders") {
+        customerMap[emailKey].lastPurchase = new Date(order.createdAt).toISOString();
       }
 
       const cust = customerMap[emailKey];
       cust.totalSpent += order.total;
       cust.ordersCount += 1;
+      if (order.customerName && cust.name === "Customer") cust.name = order.customerName;
+      if (order.customerPhone && cust.phone === "N/A") cust.phone = order.customerPhone;
 
       // Track item frequencies
       const items = (order.items as any[]) || [];
@@ -61,7 +93,7 @@ export async function GET() {
       }
     }
 
-    // Attach abandoned cart counts
+    // 3. Attach abandoned cart counts
     for (const cart of abandonedCarts) {
       if (cart.email) {
         const key = cart.email.toLowerCase().trim();
@@ -71,7 +103,7 @@ export async function GET() {
       }
     }
 
-    // Attach coupon usages
+    // 4. Attach coupon usages
     for (const usage of couponUsages) {
       if (usage.customerEmail) {
         const key = usage.customerEmail.toLowerCase().trim();
@@ -82,7 +114,7 @@ export async function GET() {
     }
 
     const customersList = Object.values(customerMap).map((c) => {
-      c.averageOrderValue = Math.round((c.totalSpent / c.ordersCount) * 100) / 100;
+      c.averageOrderValue = c.ordersCount > 0 ? Math.round((c.totalSpent / c.ordersCount) * 100) / 100 : 0;
       const topProd = Object.entries(c.purchasedProducts).sort((a, b) => b[1] - a[1])[0];
       return {
         ...c,
@@ -93,7 +125,7 @@ export async function GET() {
     const repeatCustomersCount = customersList.filter((c) => c.ordersCount > 1).length;
     const totalCustomersCount = customersList.length;
     const overallTotalRevenue = customersList.reduce((acc, c) => acc + c.totalSpent, 0);
-    const overallAOV = totalCustomersCount > 0 ? Math.round(overallTotalRevenue / orders.length) : 0;
+    const overallAOV = orders.length > 0 ? Math.round(overallTotalRevenue / orders.length) : 0;
 
     return NextResponse.json({
       customers: customersList,

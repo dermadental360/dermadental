@@ -77,7 +77,7 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
     { href: "/admin/abandoned-carts", label: "Abandoned Carts", icon: "🛒" },
     { href: "/admin/coupons", label: "Coupons", icon: "🏷️" },
     { href: "/admin/settings/whatsapp", label: "WhatsApp Settings", icon: "💬" },
-    { href: "/admin/customers", label: "Customer Analytics", icon: "👥" },
+    { href: "/admin/customers", label: "Customer Database", icon: "👥" },
     { href: "/admin/products", label: "Products", icon: "🧴" },
     { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
     { href: "/admin/pricing", label: "Pricing & Shipping", icon: "💳" },
