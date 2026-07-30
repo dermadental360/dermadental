@@ -41,6 +41,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
 
+  const syncAbandonedCart = (details?: { customerName?: string; email?: string; phone?: string }, customItems?: CartItem[]) => {
+    let currentSid = sessionId || (typeof window !== "undefined" ? localStorage.getItem("dd360_cart_session_id") || "" : "");
+    if (!currentSid && typeof window !== "undefined") {
+      currentSid = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem("dd360_cart_session_id", currentSid);
+      setSessionId(currentSid);
+    }
+
+    const cartItems = customItems || items;
+    if (!currentSid || !cartItems || cartItems.length === 0) return;
+
+    const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    fetch("/api/cart/abandoned", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: currentSid,
+        items: cartItems,
+        cartValue: subtotal,
+        customerName: details?.customerName,
+        email: details?.email,
+        phone: details?.phone,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) console.warn("Abandoned cart sync response:", data);
+      })
+      .catch((err) => console.warn("Failed to sync abandoned cart:", err));
+  };
+
   useEffect(() => {
     let sid = localStorage.getItem("dd360_cart_session_id");
     if (!sid) {
@@ -48,38 +80,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("dd360_cart_session_id", sid);
     }
     setSessionId(sid);
+
+    try {
+      const saved = localStorage.getItem("dd360_cart");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setItems(parsed);
+          syncAbandonedCart(undefined, parsed);
+        }
+      }
+    } catch (e) {}
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem("dd360_cart");
-    if (saved) setItems(JSON.parse(saved));
-  }, []);
-
-  const syncAbandonedCart = (details?: { customerName?: string; email?: string; phone?: string }) => {
-    if (!sessionId || items.length === 0) return;
-
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-    fetch("/api/cart/abandoned", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionId,
-        items,
-        cartValue: subtotal,
-        customerName: details?.customerName,
-        email: details?.email,
-        phone: details?.phone,
-      }),
-    }).catch((err) => console.warn("Failed to sync abandoned cart:", err));
-  };
-
-  useEffect(() => {
-    localStorage.setItem("dd360_cart", JSON.stringify(items));
-    if (items.length > 0 && sessionId) {
+    if (items.length > 0) {
+      localStorage.setItem("dd360_cart", JSON.stringify(items));
       syncAbandonedCart();
     }
-  }, [items, sessionId]);
+  }, [items]);
 
   const showToast = (message: string) => {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

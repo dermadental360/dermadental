@@ -365,6 +365,18 @@ export default function CheckoutPage() {
     }
   }
 
+  // Sync abandoned cart immediately on entering checkout
+  useEffect(() => {
+    if (cart.items.length > 0) {
+      const formEl = document.getElementById("checkout-form") as HTMLFormElement | null;
+      const formData = formEl ? new FormData(formEl) : null;
+      const name = (formData?.get("name") as string || customer?.name || "").trim();
+      const email = (formData?.get("email") as string || customer?.email || "").trim();
+      const phone = (formData?.get("phone") as string || customer?.phone || "").trim();
+      cart.syncAbandonedCart({ customerName: name, email, phone });
+    }
+  }, [cart.items.length, customer]);
+
   function handleFieldBlur() {
     const formEl = document.getElementById("checkout-form") as HTMLFormElement | null;
     if (!formEl) return;
@@ -413,6 +425,7 @@ export default function CheckoutPage() {
               placeholder="Your full name"
               aria-required="true"
               onBlur={handleFieldBlur}
+              onChange={handleFieldBlur}
             />
           </div>
 
@@ -431,6 +444,7 @@ export default function CheckoutPage() {
                 placeholder="10-digit mobile number"
                 aria-required="true"
                 onBlur={handleFieldBlur}
+                onChange={handleFieldBlur}
               />
             </div>
 
@@ -446,6 +460,7 @@ export default function CheckoutPage() {
                 defaultValue={customer?.email || ""}
                 placeholder="name@example.com"
                 onBlur={handleFieldBlur}
+                onChange={handleFieldBlur}
               />
             </div>
           </div>
