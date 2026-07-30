@@ -227,6 +227,32 @@ export async function POST(request: NextRequest) {
       console.warn("Failed to send admin COD email:", adminEmailErr);
     }
 
+    // Dispatch Admin WhatsApp Alert
+    try {
+      const { sendAdminNewOrderWhatsApp } = await import("@/lib/whatsapp");
+      await sendAdminNewOrderWhatsApp({
+        id: order.id,
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        customerEmail: customer.email,
+        customerAddress: customer.address,
+        total: grandTotal,
+        paymentMethod: "COD",
+        items,
+        createdAt: order.createdAt,
+      });
+    } catch (waErr) {
+      console.warn("Failed to send Admin WhatsApp notification:", waErr);
+    }
+
+    // Auto-mark Abandoned Cart as Recovered
+    try {
+      const { markCartRecovered } = await import("@/lib/abandonedCart");
+      await markCartRecovered(undefined, customer.email, customer.phone, order.id);
+    } catch (acErr) {
+      console.warn("Failed to mark cart as recovered:", acErr);
+    }
+
     await logAction("Create COD Order", `New COD Order ID "${order.id}" placed by "${customer.name}" (Total: ₹${grandTotal}).`);
 
     return NextResponse.json({

@@ -297,29 +297,90 @@ export function AdminOrders() {
                     <select
                       className="input"
                       value={(order.status || "PLACED").toUpperCase()}
-                      onChange={(e) => updateOrderDetails(orderIdStr, { status: e.target.value })}
+                      onChange={async (e) => {
+                        const newStatus = e.target.value;
+                        await fetch(`/api/admin/orders/${orderIdStr}/status`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: newStatus }),
+                        });
+                        load();
+                      }}
                       style={{ padding: "6px 10px", width: 160, fontSize: 13, fontWeight: 600 }}
                     >
                       <option value="PLACED">1. PLACED</option>
                       <option value="CONFIRMED">2. CONFIRMED</option>
-                      <option value="PROCESSING">3. PROCESSING</option>
-                      <option value="PACKED">4. PACKED</option>
-                      <option value="SHIPPED">5. SHIPPED</option>
-                      <option value="OUT_FOR_DELIVERY">6. OUT FOR DELIVERY</option>
-                      <option value="DELIVERED">7. DELIVERED</option>
+                      <option value="PACKED">3. PACKED</option>
+                      <option value="SHIPPED">4. SHIPPED</option>
+                      <option value="OUT_FOR_DELIVERY">5. OUT FOR DELIVERY</option>
+                      <option value="DELIVERED">6. DELIVERED</option>
                       <option value="CANCELLED">❌ CANCELLED</option>
+                      <option value="REFUNDED">💸 REFUNDED</option>
                     </select>
 
-                    {/* Quick Confirm Button for New COD Orders */}
-                    {isPlaced && (
-                      <button
-                        className="btn"
-                        style={{ padding: "6px 12px", fontSize: 12, backgroundColor: "#16a34a", borderColor: "#16a34a", color: "white" }}
-                        onClick={() => updateOrderDetails(orderIdStr, { status: "CONFIRMED" })}
-                      >
-                        ✓ Confirm Order
-                      </button>
-                    )}
+                    {/* Send WhatsApp Now Button Beside Status */}
+                    <button
+                      className="btn"
+                      style={{ padding: "6px 12px", fontSize: 12, backgroundColor: "#16a34a", borderColor: "#16a34a", color: "white", display: "flex", alignItems: "center", gap: 4 }}
+                      onClick={async () => {
+                        const res = await fetch(`/api/admin/orders/${orderIdStr}/whatsapp`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert(`WhatsApp update sent successfully to ${order.customerPhone || "customer"}`);
+                        } else {
+                          alert(`WhatsApp dispatch failed: ${data.error || "Unknown error"}`);
+                        }
+                      }}
+                    >
+                      💬 Send WhatsApp Now
+                    </button>
+
+                    {/* Print Invoice Button */}
+                    <button
+                      className="btn soft"
+                      style={{ padding: "6px 12px", fontSize: 12, color: "#0284c7", borderColor: "#bae6fd" }}
+                      onClick={async () => {
+                        const res = await fetch(`/api/admin/orders/${orderIdStr}/invoice`);
+                        const data = await res.json();
+                        if (data.invoice) {
+                          const printWin = window.open("", "_blank");
+                          if (printWin) {
+                            const inv = data.invoice;
+                            const itemsHtml = (inv.items || []).map((i: any) => `<tr><td style="padding:8px;border-bottom:1px solid #ddd;">${i.name}</td><td style="padding:8px;border-bottom:1px solid #ddd;" align="center">${i.quantity}</td><td style="padding:8px;border-bottom:1px solid #ddd;" align="right">₹${i.price}</td><td style="padding:8px;border-bottom:1px solid #ddd;" align="right">₹${i.price * i.quantity}</td></tr>`).join("");
+                            printWin.document.write(`
+                              <html>
+                                <head><title>Invoice #${inv.orderId}</title></head>
+                                <body style="font-family:Arial,sans-serif;padding:30px;color:#333;">
+                                  <h2>TAX INVOICE - ${inv.seller.name}</h2>
+                                  <p><strong>GSTIN:</strong> ${inv.seller.gstin} | <strong>Order ID:</strong> #${inv.orderId} | <strong>Date:</strong> ${inv.orderDate}</p>
+                                  <hr/>
+                                  <div style="display:flex;justify-content:space-between;margin:20px 0;">
+                                    <div><strong>Billed To:</strong><br/>${inv.customerName}<br/>${inv.customerAddress}<br/>Phone: ${inv.customerPhone}</div>
+                                    <div><strong>Payment Info:</strong><br/>Method: ${inv.paymentMethod}<br/>Status: ${inv.paymentStatus}</div>
+                                  </div>
+                                  <table width="100%" cellspacing="0" style="border-collapse:collapse;margin:20px 0;">
+                                    <thead><tr style="background:#f4f4f4;"><th align="left" style="padding:8px;">Item</th><th align="center" style="padding:8px;">Qty</th><th align="right" style="padding:8px;">Price</th><th align="right" style="padding:8px;">Total</th></tr></thead>
+                                    <tbody>${itemsHtml}</tbody>
+                                    <tfoot>
+                                      <tr><td colspan="3" align="right" style="padding:8px;"><strong>Subtotal:</strong></td><td align="right" style="padding:8px;">₹${inv.subtotal}</td></tr>
+                                      ${inv.discountAmount > 0 ? `<tr><td colspan="3" align="right" style="padding:8px;color:green;"><strong>Discount:</strong></td><td align="right" style="padding:8px;color:green;">-₹${inv.discountAmount}</td></tr>` : ""}
+                                      <tr><td colspan="3" align="right" style="padding:8px;"><strong>Grand Total:</strong></td><td align="right" style="padding:8px;font-size:18px;"><strong>₹${inv.total}</strong></td></tr>
+                                    </tfoot>
+                                  </table>
+                                </body>
+                              </html>
+                            `);
+                            printWin.document.close();
+                            printWin.print();
+                          }
+                        }
+                      }}
+                    >
+                      📄 Print Invoice
+                    </button>
 
                     {/* Quick Mark Paid Button */}
                     {!isPaid && (

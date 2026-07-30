@@ -39,7 +39,31 @@ export const DEFAULT_SETTINGS = {
   cod_fee: "0",
   enable_prepaid_discount: "true",
   enable_free_shipping: "true",
-  enable_cod_fee: "false"
+  enable_cod_fee: "false",
+  // WhatsApp Settings
+  whatsapp_provider: "META",
+  whatsapp_phone_number_id: "",
+  whatsapp_business_account_id: "",
+  whatsapp_access_token: "",
+  whatsapp_verify_token: "dd360_verify_token",
+  whatsapp_webhook_url: "",
+  whatsapp_admin_numbers: "9833699887",
+  whatsapp_enable_new_order: "true",
+  whatsapp_enable_new_inquiry: "true",
+  whatsapp_enable_payment_success: "true",
+  whatsapp_enable_order_packed: "true",
+  whatsapp_enable_order_shipped: "true",
+  whatsapp_enable_out_for_delivery: "true",
+  whatsapp_enable_delivered: "true",
+  whatsapp_enable_cancelled: "true",
+  whatsapp_enable_refunded: "true",
+  whatsapp_enable_abandoned_cart: "true",
+  // Abandoned Cart Settings
+  abandoned_cart_timer: "60", // in minutes
+  abandoned_cart_auto_reminder: "true",
+  // Coupon Defaults
+  coupon_default_min_order: "0",
+  coupon_default_usage_limit: "100"
 };
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

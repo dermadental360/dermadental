@@ -267,5 +267,131 @@ model NotificationPreference {
   updatedAt            DateTime @updatedAt
 }
 
+model Coupon {
+  id                        String        @id @default(cuid())
+  code                      String        @unique
+  discountType              String        @default("PERCENTAGE") // PERCENTAGE or FLAT
+  discountValue             Float
+  minOrderAmount            Float         @default(0)
+  maxDiscountAmount         Float?
+  startDate                 DateTime      @default(now())
+  expiryDate                DateTime?
+  usageLimit                Int?
+  usagePerCustomer          Int           @default(1)
+  active                    Boolean       @default(true)
+  applicableCustomerEmails  Json?         // Array of emails
+  applicableCategories      Json?         // Array of category strings
+  applicableProductIds      Json?         // Array of product ID strings
+  firstOrderOnly            Boolean       @default(false)
+  birthdayOnly              Boolean       @default(false)
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+  usages                    CouponUsage[]
+
+  @@index([code])
+  @@index([active])
+}
+
+model CouponUsage {
+  id            String   @id @default(cuid())
+  couponId      String
+  coupon        Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  orderId       String?
+  customerEmail String
+  customerPhone String?
+  discountAmount Float
+  usedAt        DateTime @default(now())
+
+  @@index([couponId])
+  @@index([customerEmail])
+}
+
+model AbandonedCart {
+  id               String    @id @default(cuid())
+  sessionId        String    @unique
+  customerName     String?
+  email            String?
+  phone            String?
+  items            Json
+  cartValue        Float
+  recovered        Boolean   @default(false)
+  recoveredOrderId String?
+  lastActivity     DateTime  @default(now())
+  whatsappSent     Boolean   @default(false)
+  whatsappSentAt   DateTime?
+  emailSent        Boolean   @default(false)
+  emailSentAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([sessionId])
+  @@index([email])
+  @@index([phone])
+  @@index([recovered])
+  @@index([lastActivity])
+}
+
+model WhatsAppLog {
+  id             String   @id @default(cuid())
+  recipientPhone String
+  recipientName  String?
+  templateName   String?
+  message        String   @db.Text
+  status         String   @default("SENT") // SENT, FAILED, DELIVERED
+  orderId        String?
+  errorMessage   String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  @@index([recipientPhone])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model EmailLog {
+  id             String   @id @default(cuid())
+  recipientEmail String
+  subject        String
+  type           String   // WELCOME, ORDER_CONFIRMATION, INVOICE, SHIPPING, DELIVERY, ABANDONED_CART, COUPON
+  status         String   @default("SENT") // SENT, FAILED
+  orderId        String?
+  errorMessage   String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  @@index([recipientEmail])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model OrderTracking {
+  id                String                 @id @default(cuid())
+  orderId           String                 @unique
+  status            String                 @default("PENDING") // PENDING, CONFIRMED, PACKED, SHIPPED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED, REFUNDED
+  location          String?
+  notes             String?                @db.Text
+  courierName       String?
+  trackingNumber    String?
+  estimatedDelivery DateTime?
+  updatedBy         String                 @default("SYSTEM")
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  history           OrderTrackingHistory[]
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model OrderTrackingHistory {
+  id              String        @id @default(cuid())
+  orderTrackingId String
+  orderTracking   OrderTracking @relation(fields: [orderTrackingId], references: [id], onDelete: Cascade)
+  status          String
+  notes           String?       @db.Text
+  location        String?
+  timestamp       DateTime      @default(now())
+
+  @@index([orderTrackingId])
+}
+
+
 
 

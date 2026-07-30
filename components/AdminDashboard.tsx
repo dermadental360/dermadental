@@ -23,6 +23,7 @@ function getGreeting(date: Date): string {
 
 export function AdminDashboard() {
   const [metrics, setMetrics] = useState<any>(null);
+  const [overview, setOverview] = useState<any>(null);
   const [visitors, setVisitors] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState<string>("");
@@ -30,9 +31,10 @@ export function AdminDashboard() {
   // Fetch metrics and live analytics
   const loadData = async () => {
     try {
-      const [resMetrics, resAnalytics] = await Promise.all([
+      const [resMetrics, resAnalytics, resOverview] = await Promise.all([
         fetch("/api/admin/metrics"),
-        fetch("/api/admin/analytics")
+        fetch("/api/admin/analytics"),
+        fetch("/api/admin/analytics/overview")
       ]);
 
       if (resMetrics.status === 401) {
@@ -46,6 +48,9 @@ export function AdminDashboard() {
       if (resAnalytics.ok) {
         const data = await resAnalytics.json();
         setVisitors(data.activeVisitors || 1);
+      }
+      if (resOverview.ok) {
+        setOverview(await resOverview.json());
       }
     } catch (err) {
       console.error("Dashboard metrics loading failed", err);
@@ -219,6 +224,35 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Executive Overview Widgets Grid */}
+      {overview && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 18 }}>
+          <div className="card pad" style={{ borderLeft: "4px solid #16a34a" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>Today&apos;s Revenue</span>
+            <h3 style={{ fontSize: 24, margin: "6px 0 0 0", color: "#16a34a", fontWeight: 800 }}>₹{(overview.todaysRevenue || 0).toLocaleString("en-IN")}</h3>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>{overview.todaysOrdersCount || 0} Orders Today</span>
+          </div>
+
+          <div className="card pad" style={{ borderLeft: "4px solid #f59e0b" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>Abandoned Carts</span>
+            <h3 style={{ fontSize: 24, margin: "6px 0 0 0", color: "#f59e0b", fontWeight: 800 }}>{overview.abandonedCartsCount || 0}</h3>
+            <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600 }}>{overview.recoveredCartsCount || 0} Recovered ({overview.recoveryRate}%)</span>
+          </div>
+
+          <div className="card pad" style={{ borderLeft: "4px solid #0284c7" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>Coupon Redemptions</span>
+            <h3 style={{ fontSize: 24, margin: "6px 0 0 0", color: "#0284c7", fontWeight: 800 }}>{overview.couponUsageCount || 0}</h3>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>₹{(overview.couponDiscountTotal || 0).toLocaleString("en-IN")} Given</span>
+          </div>
+
+          <div className="card pad" style={{ borderLeft: "4px solid #8b5cf6" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>Conversion Rate</span>
+            <h3 style={{ fontSize: 24, margin: "6px 0 0 0", color: "#8b5cf6", fontWeight: 800 }}>{overview.conversionRate}%</h3>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>Store Visit to Order</span>
+          </div>
+        </div>
+      )}
 
       {/* Metrics Row Grid */}
       <div className="grid cols-3" style={{ gap: 24 }}>

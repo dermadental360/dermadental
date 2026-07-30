@@ -532,3 +532,142 @@ export async function sendAdminOrderEmail(data: AdminOrderEmailData): Promise<bo
     return false;
   }
 }
+
+/**
+ * Log email in PostgreSQL EmailLog model
+ */
+async function logEmailToDb(data: { recipientEmail: string; subject: string; type: string; status: string; orderId?: string; errorMessage?: string }) {
+  try {
+    const { prisma } = await import("./prisma");
+    await prisma.emailLog.create({
+      data: {
+        recipientEmail: data.recipientEmail,
+        subject: data.subject,
+        type: data.type,
+        status: data.status,
+        orderId: data.orderId || null,
+        errorMessage: data.errorMessage || null,
+      },
+    });
+  } catch (err) {
+    console.error("Failed to log email to DB:", err);
+  }
+}
+
+/**
+ * Send Customer Welcome Email
+ */
+export async function sendWelcomeEmail(customer: { name: string; email: string }): Promise<boolean> {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com";
+  const subject = `Welcome to DermaDental 360, ${customer.name}! 🎉`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+      <h2 style="color: #2d5a27;">Welcome to DermaDental 360</h2>
+      <p>Hello ${customer.name},</p>
+      <p>Thank you for joining DermaDental 360. Explore our dermatologist-led skincare and oral wellness products directly selected for your individual skin and dental health goals.</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${appUrl}/shop" style="background-color: #2d5a27; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Shop Catalog →</a>
+      </div>
+      <p style="color: #64748b; font-size: 13px;">If you have any questions, feel free to reply directly to this email or reach us on WhatsApp.</p>
+    </div>
+  `;
+
+  try {
+    const transporter = getEmailTransporter();
+    if (transporter) {
+      const fromAddress = process.env.SMTP_USER || process.env.ADMIN_EMAIL || "dd360health@gmail.com";
+      await transporter.sendMail({
+        from: `"DermaDental 360" <${fromAddress}>`,
+        to: customer.email,
+        subject,
+        html,
+      });
+    }
+    await logEmailToDb({ recipientEmail: customer.email, subject, type: "WELCOME", status: "SENT" });
+    return true;
+  } catch (err: any) {
+    await logEmailToDb({ recipientEmail: customer.email, subject, type: "WELCOME", status: "FAILED", errorMessage: err.message });
+    return false;
+  }
+}
+
+/**
+ * Send Abandoned Cart Reminder Email
+ */
+export async function sendAbandonedCartEmail(data: { customerName: string; email: string; cartValue: number; items: any[] }): Promise<boolean> {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com";
+  const subject = `You left items in your cart at DermaDental 360 🛍️`;
+  const itemsHtml = (data.items || []).map((i) => `<li style="margin-bottom: 6px;"><strong>${i.name || "Product"}</strong> x${i.quantity || 1} - ₹${i.price || 0}</li>`).join("");
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+      <h2 style="color: #2d5a27;">Complete Your Purchase at DermaDental 360</h2>
+      <p>Hello ${data.customerName},</p>
+      <p>You left some dermatologist-curated skincare products in your shopping cart. Total Cart Value: <strong>₹${data.cartValue.toLocaleString("en-IN")}</strong>.</p>
+      <ul style="background: #f8fafc; padding: 15px 30px; border-radius: 6px;">${itemsHtml}</ul>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${appUrl}/checkout" style="background-color: #2d5a27; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">Return to Checkout →</a>
+      </div>
+    </div>
+  `;
+
+  try {
+    const transporter = getEmailTransporter();
+    if (transporter) {
+      const fromAddress = process.env.SMTP_USER || process.env.ADMIN_EMAIL || "dd360health@gmail.com";
+      await transporter.sendMail({
+        from: `"DermaDental 360" <${fromAddress}>`,
+        to: data.email,
+        subject,
+        html,
+      });
+    }
+    await logEmailToDb({ recipientEmail: data.email, subject, type: "ABANDONED_CART", status: "SENT" });
+    return true;
+  } catch (err: any) {
+    await logEmailToDb({ recipientEmail: data.email, subject, type: "ABANDONED_CART", status: "FAILED", errorMessage: err.message });
+    return false;
+  }
+}
+
+/**
+ * Send Special Coupon Email to Customer
+ */
+export async function sendCouponEmail(data: { customerEmail: string; couponCode: string; discountDetails: string; expiryDate?: string }): Promise<boolean> {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dd360health.com";
+  const subject = `Exclusive Gift Coupon For You: ${data.couponCode} 🎁`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+      <h2 style="color: #2d5a27;">Exclusive Discount Code Inside</h2>
+      <p>Hello,</p>
+      <p>We've created a special discount coupon just for you:</p>
+      <div style="background-color: #f0fdf4; border: 2px dashed #16a34a; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+        <span style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #166534;">${data.couponCode}</span>
+        <p style="margin: 6px 0 0 0; color: #15803d;">${data.discountDetails}</p>
+        ${data.expiryDate ? `<p style="font-size: 12px; color: #64748b; margin-top: 4px;">Valid until: ${data.expiryDate}</p>` : ""}
+      </div>
+      <div style="text-align: center;">
+        <a href="${appUrl}/shop" style="background-color: #2d5a27; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Apply at Checkout →</a>
+      </div>
+    </div>
+  `;
+
+  try {
+    const transporter = getEmailTransporter();
+    if (transporter) {
+      const fromAddress = process.env.SMTP_USER || process.env.ADMIN_EMAIL || "dd360health@gmail.com";
+      await transporter.sendMail({
+        from: `"DermaDental 360" <${fromAddress}>`,
+        to: data.customerEmail,
+        subject,
+        html,
+      });
+    }
+    await logEmailToDb({ recipientEmail: data.customerEmail, subject, type: "COUPON", status: "SENT" });
+    return true;
+  } catch (err: any) {
+    await logEmailToDb({ recipientEmail: data.customerEmail, subject, type: "COUPON", status: "FAILED", errorMessage: err.message });
+    return false;
+  }
+}
+

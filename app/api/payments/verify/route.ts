@@ -204,6 +204,30 @@ export async function POST(request: NextRequest) {
           stage: "ORDER_CONFIRMED"
         }).catch((custEmailErr: any) => console.warn("Could not send customer email:", custEmailErr?.message || custEmailErr));
       }
+
+      // WhatsApp Notifications
+      import("@/lib/whatsapp").then(({ sendAdminNewOrderWhatsApp, sendCustomerOrderStatusWhatsApp }) => {
+        sendAdminNewOrderWhatsApp({
+          id: orderId,
+          customerName,
+          customerPhone,
+          customerEmail,
+          customerAddress,
+          total: totalAmount,
+          paymentMethod: "RAZORPAY",
+          items: itemsList,
+        }).catch((waErr) => console.warn("Admin WhatsApp error:", waErr));
+
+        sendCustomerOrderStatusWhatsApp(
+          { id: orderId, customerName, customerPhone, total: totalAmount },
+          "CONFIRMED"
+        ).catch((waErr) => console.warn("Customer WhatsApp error:", waErr));
+      });
+
+      // Auto-mark Abandoned Cart as Recovered
+      import("@/lib/abandonedCart").then(({ markCartRecovered }) => {
+        markCartRecovered(undefined, customerEmail, customerPhone, orderId).catch((acErr) => console.warn("Cart recovery error:", acErr));
+      });
     });
 
     await logAction(
