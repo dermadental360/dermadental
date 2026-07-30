@@ -52,6 +52,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const cartItems = customItems || items;
     if (!currentSid || !cartItems || cartItems.length === 0) return;
 
+    let savedCustomer: any = {};
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("dd360_customer_info");
+        if (raw) savedCustomer = JSON.parse(raw);
+      } catch {}
+    }
+
+    const finalCustomerName = details?.customerName || savedCustomer.customerName || undefined;
+    const finalEmail = details?.email || savedCustomer.email || undefined;
+    const finalPhone = details?.phone || savedCustomer.phone || undefined;
+
+    if (typeof window !== "undefined" && (details?.customerName || details?.email || details?.phone)) {
+      try {
+        localStorage.setItem("dd360_customer_info", JSON.stringify({
+          customerName: finalCustomerName,
+          email: finalEmail,
+          phone: finalPhone,
+        }));
+      } catch {}
+    }
+
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     fetch("/api/cart/abandoned", {
@@ -61,9 +83,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         sessionId: currentSid,
         items: cartItems,
         cartValue: subtotal,
-        customerName: details?.customerName,
-        email: details?.email,
-        phone: details?.phone,
+        customerName: finalCustomerName,
+        email: finalEmail,
+        phone: finalPhone,
       }),
     })
       .then((res) => res.json())
@@ -123,20 +145,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       total: items.length > 0 ? shippingInfo.grandTotal : 0,
       syncAbandonedCart,
       add(product, quantity = 1) {
+        const pId = product._id || (product as any).id || `prod_${Date.now()}`;
         setItems((current) => {
-          const found = current.find((item) => item.productId === product._id);
+          const found = current.find((item) => item.productId === pId);
           if (found) {
             return current.map((item) =>
-              item.productId === product._id ? { ...item, quantity: item.quantity + quantity } : item
+              item.productId === pId ? { ...item, quantity: item.quantity + quantity } : item
             );
           }
           return [
             ...current,
             {
-              productId: product._id,
+              productId: pId,
               name: product.name,
               price: product.discountedPrice || product.price,
-              image: product.images[0],
+              image: product.images?.[0] || "",
               quantity,
             },
           ];
@@ -148,15 +171,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setItems((current) => {
           let updated = [...current];
           for (const product of products) {
-            const foundIdx = updated.findIndex((item) => item.productId === product._id);
+            const pId = product._id || (product as any).id || `prod_${Date.now()}`;
+            const foundIdx = updated.findIndex((item) => item.productId === pId);
             if (foundIdx >= 0) {
               updated[foundIdx] = { ...updated[foundIdx], quantity: updated[foundIdx].quantity + 1 };
             } else {
               updated.push({
-                productId: product._id,
+                productId: pId,
                 name: product.name,
                 price: product.discountedPrice || product.price,
-                image: product.images[0],
+                image: product.images?.[0] || "",
                 quantity: 1,
               });
             }
@@ -177,6 +201,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       },
       clear() {
         setItems([]);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("dd360_cart");
+          localStorage.removeItem("dd360_customer_info");
+        }
       },
     };
   }, [items, sessionId]);
