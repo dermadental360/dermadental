@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
   }
 
-  const { customer, items, idempotencyKey, couponCode } = body;
+  const { customer, items, idempotencyKey, couponCode, sessionId } = body;
 
   if (!customer?.name || !customer?.phone || !customer?.address || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Missing required order details" }, { status: 400 });

@@ -60,7 +60,14 @@ export default function CheckoutPage() {
     fetch("/api/customer/session")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.customer) setCustomer(data.customer);
+        if (data?.customer) {
+          setCustomer(data.customer);
+          cart.syncAbandonedCart({
+            customerName: data.customer.name,
+            email: data.customer.email,
+            phone: data.customer.phone,
+          });
+        }
       })
       .catch(() => setCustomer(null));
 
@@ -228,6 +235,7 @@ export default function CheckoutPage() {
             items: cart.items,
             idempotencyKey: idempotencyKeyRef,
             couponCode: appliedCoupon?.code,
+            sessionId: cart.sessionId,
           }),
         });
 
@@ -267,6 +275,7 @@ export default function CheckoutPage() {
           customer: customerDetails,
           items: cart.items,
           couponCode: appliedCoupon?.code,
+          sessionId: cart.sessionId,
         }),
       });
 
@@ -356,6 +365,18 @@ export default function CheckoutPage() {
     }
   }
 
+  function handleFieldBlur() {
+    const formEl = document.getElementById("checkout-form") as HTMLFormElement | null;
+    if (!formEl) return;
+    const formData = new FormData(formEl);
+    const name = (formData.get("name") as string || "").trim();
+    const email = (formData.get("email") as string || "").trim();
+    const phone = (formData.get("phone") as string || "").trim();
+    if (name || email || phone) {
+      cart.syncAbandonedCart({ customerName: name, email, phone });
+    }
+  }
+
   return (
     <main className="section page-enter checkout-main">
       <div className="container split checkout-split">
@@ -391,6 +412,7 @@ export default function CheckoutPage() {
               required
               placeholder="Your full name"
               aria-required="true"
+              onBlur={handleFieldBlur}
             />
           </div>
 
@@ -408,6 +430,7 @@ export default function CheckoutPage() {
                 required
                 placeholder="10-digit mobile number"
                 aria-required="true"
+                onBlur={handleFieldBlur}
               />
             </div>
 
@@ -422,6 +445,7 @@ export default function CheckoutPage() {
                 autoComplete="email"
                 defaultValue={customer?.email || ""}
                 placeholder="name@example.com"
+                onBlur={handleFieldBlur}
               />
             </div>
           </div>
