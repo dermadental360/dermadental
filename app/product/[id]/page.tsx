@@ -3,12 +3,7 @@ import { getProduct, getProducts, getFrequentlyBoughtTogether } from "@/lib/prod
 import { ProductDetailPageClient } from "@/components/ProductDetailPageClient";
 import { getAllSettings } from "@/lib/settings";
 
-export const revalidate = 300;
-
-export async function generateStaticParams() {
-  const products = await getProducts();
-  return products.slice(0, 20).map((p) => ({ id: p._id }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
