@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { OrderTimeline } from "@/components/OrderTimeline";
+import { trackPurchase } from "@/lib/metaPixel";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -23,7 +24,31 @@ function PaymentSuccessContent() {
       .then((res) => res.json())
       .then((orders: any[]) => {
         const found = orders.find((o) => String(o._id) === String(orderId) || String(o.id) === String(orderId));
-        if (found) setOrder(found);
+        if (found) {
+          setOrder(found);
+
+          // Deduplication Guard: Never fire Purchase event twice for the same order
+          if (typeof window !== "undefined") {
+            const storageKey = `dd360_pixel_purchase_${orderId}`;
+            if (!sessionStorage.getItem(storageKey)) {
+              sessionStorage.setItem(storageKey, "true");
+              const contentIds = Array.isArray(found.items)
+                ? found.items.map((item: any) => String(item.productId || item._id || item.id))
+                : [];
+              const totalQty = Array.isArray(found.items)
+                ? found.items.reduce((sum: number, item: any) => sum + Number(item.quantity || 1), 0)
+                : 1;
+
+              trackPurchase({
+                transaction_id: String(orderId),
+                currency: "INR",
+                value: Number(found.finalAmount || found.total || 0),
+                content_ids: contentIds,
+                quantity: totalQty,
+              });
+            }
+          }
+        }
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));

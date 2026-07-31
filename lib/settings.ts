@@ -63,7 +63,13 @@ export const DEFAULT_SETTINGS = {
   abandoned_cart_auto_reminder: "true",
   // Coupon Defaults
   coupon_default_min_order: "0",
-  coupon_default_usage_limit: "100"
+  coupon_default_usage_limit: "100",
+  // Meta Pixel Settings
+  meta_pixel_enabled: "false",
+  meta_pixel_id: "1040837018670941",
+  meta_pixel_advanced_matching: "true",
+  meta_pixel_auto_pageview: "true",
+  meta_pixel_test_mode: "false"
 };
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

@@ -27,10 +27,20 @@ const FloatingCallWidget = dynamic(
   () => import("./FloatingCallWidget").then((m) => m.FloatingCallWidget),
   { ssr: false }
 );
+const MetaPixelProvider = dynamic(
+  () => import("./MetaPixelProvider").then((m) => m.MetaPixelProvider),
+  { ssr: false }
+);
+const CookieConsentBanner = dynamic(
+  () => import("./CookieConsentBanner").then((m) => m.CookieConsentBanner),
+  { ssr: false }
+);
 
 export function ClientLayoutWidgets({ children }: { children: React.ReactNode }) {
   return (
     <LenisProvider>
+      <MetaPixelProvider />
+      <CookieConsentBanner />
       <ScrollProgress />
       <CustomCursor />
       <AmbientBackground />

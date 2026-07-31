@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OrderConfirmationTracker } from "@/components/OrderConfirmationTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,7 @@ export default async function OrderConfirmation({ searchParams }: { searchParams
   const whatsapp = params.whatsapp ? decodeURIComponent(params.whatsapp) : "";
   return (
     <main className="section page-enter" style={{ display: "grid", placeItems: "center", minHeight: "65vh" }}>
+      {params.order && <OrderConfirmationTracker orderRef={params.order} />}
       <div className="container card pad reveal" style={{ maxWidth: 640, textAlign: "center", padding: "48px 32px" }}>
         <div style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: "50%", backgroundColor: "var(--sage-light)", color: "var(--sage-dark)", fontSize: 32, marginBottom: 24, fontWeight: "bold" }}>
           ✓

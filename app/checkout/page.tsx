@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
 import { calculatePricingDetails } from "@/lib/pricing";
+import { trackInitiateCheckout, trackAddPaymentInfo } from "@/lib/metaPixel";
 
 declare global {
   interface Window {
@@ -54,6 +55,18 @@ export default function CheckoutPage() {
 
   // Idempotency Key ref (persisted across retries, regenerated on form change)
   const idempotencyKeyRef = useState(() => `checkout-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`)[0];
+
+  // Track Meta Pixel InitiateCheckout Event on mount
+  useEffect(() => {
+    if (cart.items && cart.items.length > 0) {
+      trackInitiateCheckout({
+        content_ids: cart.items.map((i) => i.productId),
+        value: cart.total || cart.subtotal,
+        currency: "INR",
+        num_items: cart.count,
+      });
+    }
+  }, [cart.items.length]);
 
   // Fetch customer session & live COD configuration settings
   useEffect(() => {
@@ -217,6 +230,13 @@ export default function CheckoutPage() {
       setLoading(false);
       return;
     }
+
+    // Track AddPaymentInfo event
+    trackAddPaymentInfo({
+      content_ids: cart.items.map((i) => i.productId),
+      value: grandTotal,
+      currency: "INR",
+    });
 
     // CASH ON DELIVERY (COD) FLOW
     if (paymentMethod === "COD") {

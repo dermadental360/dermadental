@@ -8,6 +8,7 @@ import { useCart } from "./CartProvider";
 import { ProductImages } from "./ProductImages";
 import { ProductCard } from "./ProductCard";
 import { FrequentlyBoughtTogether } from "./FrequentlyBoughtTogether";
+import { trackViewContent, trackAddToCart } from "@/lib/metaPixel";
 
 const ProductReviews = dynamic(
   () => import("./ProductReviews").then((mod) => mod.ProductReviews),
@@ -52,6 +53,19 @@ export function ProductDetailPageClient({ product, relatedProducts, fbtProducts 
     ? Math.round((discountAmt / product.price) * 100)
     : 0;
 
+  // Track ViewContent Meta Pixel Event on mount
+  useEffect(() => {
+    if (product?._id) {
+      trackViewContent({
+        content_ids: [product._id],
+        content_name: product.name,
+        content_category: product.category || "Skincare",
+        value: product.discountedPrice || product.price,
+        currency: "INR"
+      });
+    }
+  }, [product._id, product.name, product.category, product.discountedPrice, product.price]);
+
   // Initialize wishlist from localStorage
   useEffect(() => {
     const list = localStorage.getItem("dd360_wishlist");
@@ -93,10 +107,26 @@ export function ProductDetailPageClient({ product, relatedProducts, fbtProducts 
 
   const handleAddToCart = () => {
     cart.add(product, quantity);
+    trackAddToCart({
+      content_ids: [product._id],
+      content_name: product.name,
+      content_category: product.category || "Skincare",
+      value: (product.discountedPrice || product.price) * quantity,
+      currency: "INR",
+      quantity: quantity
+    });
   };
 
   const handleBuyNow = () => {
     cart.add(product, quantity);
+    trackAddToCart({
+      content_ids: [product._id],
+      content_name: product.name,
+      content_category: product.category || "Skincare",
+      value: (product.discountedPrice || product.price) * quantity,
+      currency: "INR",
+      quantity: quantity
+    });
     router.push("/checkout");
   };
 

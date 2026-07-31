@@ -9,6 +9,8 @@ import { useCart } from "./CartProvider";
 import { Tilt3DCard } from "./motion/Tilt3DCard";
 import { MagneticButton } from "./motion/MagneticButton";
 
+import { trackAddToCart } from "@/lib/metaPixel";
+
 export const ProductCard = React.memo(function ProductCard({ product }: { product: Product }) {
   const cart = useCart();
   const router = useRouter();
@@ -17,6 +19,31 @@ export const ProductCard = React.memo(function ProductCard({ product }: { produc
   const discountPercent = hasDiscount
     ? Math.round(((product.price - product.discountedPrice) / product.price) * 100)
     : 0;
+
+  const handleAddToCart = () => {
+    cart.add(product);
+    trackAddToCart({
+      content_ids: [product._id],
+      content_name: product.name,
+      content_category: product.category || "Skincare",
+      value: product.discountedPrice || product.price,
+      currency: "INR",
+      quantity: 1
+    });
+  };
+
+  const handleBuyNow = () => {
+    cart.add(product);
+    trackAddToCart({
+      content_ids: [product._id],
+      content_name: product.name,
+      content_category: product.category || "Skincare",
+      value: product.discountedPrice || product.price,
+      currency: "INR",
+      quantity: 1
+    });
+    router.push("/checkout");
+  };
 
   return (
     <Tilt3DCard className="h-full">
@@ -59,7 +86,7 @@ export const ProductCard = React.memo(function ProductCard({ product }: { produc
                 <button
                   className="btn w-full"
                   style={{ padding: "10px 8px", fontSize: "13px" }}
-                  onClick={() => cart.add(product)}
+                  onClick={handleAddToCart}
                   disabled={isOutOfStock}
                 >
                   {isOutOfStock ? "Out of Stock" : "Add to Cart"}
@@ -70,10 +97,7 @@ export const ProductCard = React.memo(function ProductCard({ product }: { produc
                   <button
                     className="btn secondary w-full"
                     style={{ padding: "10px 8px", fontSize: "13px" }}
-                    onClick={() => {
-                      cart.add(product);
-                      router.push("/checkout");
-                    }}
+                    onClick={handleBuyNow}
                   >
                     Buy Now
                   </button>

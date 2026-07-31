@@ -44,6 +44,13 @@ export function AdminSettings() {
   const [codFeeEnabled, setCodFeeEnabled] = useState(false);
   const [codFeeAmount, setCodFeeAmount] = useState("0");
 
+  // Marketing & Analytics (Meta Pixel) fields
+  const [metaPixelEnabled, setMetaPixelEnabled] = useState(false);
+  const [metaPixelId, setMetaPixelId] = useState("1040837018670941");
+  const [metaPixelAdvancedMatching, setMetaPixelAdvancedMatching] = useState(true);
+  const [metaPixelAutoPageView, setMetaPixelAutoPageView] = useState(true);
+  const [metaPixelTestMode, setMetaPixelTestMode] = useState(false);
+
   const [shippingHighlights, setShippingHighlights] = useState<Array<{icon: string, title: string, text: string}>>([]);
 
   const handleHighlightChange = (index: number, field: 'icon' | 'title' | 'text', value: string) => {
@@ -107,6 +114,11 @@ export function AdminSettings() {
         cod_max_amount: data.cod_max_amount || "5000",
         cod_fee_enabled: data.cod_fee_enabled || "false",
         cod_fee_amount: data.cod_fee_amount || "0",
+        meta_pixel_enabled: data.meta_pixel_enabled || "false",
+        meta_pixel_id: data.meta_pixel_id || "1040837018670941",
+        meta_pixel_advanced_matching: data.meta_pixel_advanced_matching || "true",
+        meta_pixel_auto_pageview: data.meta_pixel_auto_pageview || "true",
+        meta_pixel_test_mode: data.meta_pixel_test_mode || "false",
       };
 
       setInitialSettings(normalizedData);
@@ -138,6 +150,12 @@ export function AdminSettings() {
       setCodMaxAmount(normalizedData.cod_max_amount);
       setCodFeeEnabled(normalizedData.cod_fee_enabled === "true");
       setCodFeeAmount(normalizedData.cod_fee_amount);
+
+      setMetaPixelEnabled(normalizedData.meta_pixel_enabled === "true");
+      setMetaPixelId(normalizedData.meta_pixel_id);
+      setMetaPixelAdvancedMatching(normalizedData.meta_pixel_advanced_matching !== "false");
+      setMetaPixelAutoPageView(normalizedData.meta_pixel_auto_pageview !== "false");
+      setMetaPixelTestMode(normalizedData.meta_pixel_test_mode === "true");
 
       try {
         setShippingHighlights(JSON.parse(normalizedData.shipping_highlights));
@@ -196,6 +214,19 @@ export function AdminSettings() {
       setError("");
       setSuccess(false);
 
+      // Validate Pixel ID: must only accept numbers
+      const trimmedPixelId = metaPixelId.trim();
+      if (metaPixelEnabled) {
+        if (!trimmedPixelId) {
+          throw new Error("Meta Pixel ID cannot be empty when Meta Pixel is enabled.");
+        }
+        if (!/^\d+$/.test(trimmedPixelId)) {
+          throw new Error("Meta Pixel ID is invalid. Pixel ID must contain numbers only.");
+        }
+      } else if (trimmedPixelId && !/^\d+$/.test(trimmedPixelId)) {
+        throw new Error("Meta Pixel ID is invalid. Pixel ID must contain numbers only.");
+      }
+
       const currentSettings = {
         top_bar_text: topBarText,
         hero_eyebrow: heroEyebrow,
@@ -221,6 +252,11 @@ export function AdminSettings() {
         cod_max_amount: codMaxAmount,
         cod_fee_enabled: codFeeEnabled ? "true" : "false",
         cod_fee_amount: codFeeAmount,
+        meta_pixel_enabled: metaPixelEnabled ? "true" : "false",
+        meta_pixel_id: trimmedPixelId,
+        meta_pixel_advanced_matching: metaPixelAdvancedMatching ? "true" : "false",
+        meta_pixel_auto_pageview: metaPixelAutoPageView ? "true" : "false",
+        meta_pixel_test_mode: metaPixelTestMode ? "true" : "false",
       };
 
       // Dirty checking: Determine changed settings
@@ -836,6 +872,95 @@ export function AdminSettings() {
               />
             </div>
           )}
+        </div>
+
+        <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />
+
+        {/* Marketing & Analytics - Meta Pixel Section */}
+        <h3 id="marketing-analytics" style={{ fontSize: 18, color: "var(--sage-dark)", display: "flex", alignItems: "center", gap: 8 }}>
+          <span>📈</span> Marketing &amp; Analytics (Meta / Facebook Pixel)
+        </h3>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginTop: -15, marginBottom: 10 }}>
+          Configure Meta (Facebook) Pixel tracking for e-commerce performance analytics, ads retargeting, and Conversion API readiness.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, background: "var(--bg-secondary)", padding: 18, borderRadius: 10, border: "1px solid var(--line)" }}>
+          {/* 1. Enable Meta Pixel (Toggle) */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingBottom: 12, borderBottom: "1px solid var(--line)" }}>
+            <div>
+              <label style={{ fontSize: 14, fontWeight: 700, display: "block" }}>Enable Meta Pixel</label>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Dynamically loads Meta Pixel across all pages. Disabled by default.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={metaPixelEnabled}
+              onChange={(e) => setMetaPixelEnabled(e.target.checked)}
+              style={{ width: 22, height: 22, accentColor: "var(--sage-dark)", cursor: "pointer" }}
+            />
+          </div>
+
+          {/* 2. Meta Pixel ID (Text Input) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{ fontSize: 14, fontWeight: 600 }}>Meta Pixel ID *</label>
+            <input
+              type="text"
+              value={metaPixelId}
+              onChange={(e) => setMetaPixelId(e.target.value)}
+              placeholder="e.g. 1040837018670941"
+              style={{
+                padding: "10px 14px",
+                border: "1px solid var(--line)",
+                borderRadius: 6,
+                background: "var(--white)",
+                fontSize: 14,
+                fontFamily: "monospace",
+                fontWeight: 600,
+              }}
+            />
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>Must contain numbers only (e.g. 1040837018670941). Default: 1040837018670941.</span>
+          </div>
+
+          {/* 3. Enable Advanced Matching (Toggle) */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingTop: 6 }}>
+            <div>
+              <label style={{ fontSize: 14, fontWeight: 600, display: "block" }}>Enable Advanced Matching</label>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Passes customer attributes (email, phone) securely to improve ad attribution.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={metaPixelAdvancedMatching}
+              onChange={(e) => setMetaPixelAdvancedMatching(e.target.checked)}
+              style={{ width: 18, height: 18, accentColor: "var(--sage-dark)", cursor: "pointer" }}
+            />
+          </div>
+
+          {/* 4. Enable Automatic Page Tracking (Toggle) */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingTop: 6 }}>
+            <div>
+              <label style={{ fontSize: 14, fontWeight: 600, display: "block" }}>Enable Automatic Page Tracking</label>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Triggers PageView automatically on client-side route changes without duplicates.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={metaPixelAutoPageView}
+              onChange={(e) => setMetaPixelAutoPageView(e.target.checked)}
+              style={{ width: 18, height: 18, accentColor: "var(--sage-dark)", cursor: "pointer" }}
+            />
+          </div>
+
+          {/* 5. Test Mode (Toggle) */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingTop: 6, borderTop: "1px solid var(--line)", marginTop: 6 }}>
+            <div>
+              <label style={{ fontSize: 14, fontWeight: 600, display: "block", color: metaPixelTestMode ? "var(--sage-dark)" : "inherit" }}>Test Mode (Console Logging)</label>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Logs all Pixel events (PageView, ViewContent, AddToCart, Purchase, etc.) into developer console.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={metaPixelTestMode}
+              onChange={(e) => setMetaPixelTestMode(e.target.checked)}
+              style={{ width: 18, height: 18, accentColor: "var(--sage-dark)", cursor: "pointer" }}
+            />
+          </div>
         </div>
 
         <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />

@@ -1,5 +1,6 @@
 import { ShopGrid } from "@/components/ShopGrid";
 import { getProducts } from "@/lib/products";
+import { SearchTracker } from "@/components/SearchTracker";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
   return (
     <main className="section page-enter">
+      {q && <SearchTracker query={q} />}
       <div className="container">
         <div className="reveal">
           <p className="eyebrow">Product Search</p>
